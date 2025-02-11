@@ -1,0 +1,6 @@
+---
+
+new_admin_user: "bingo"
+
+prodk3s_ip: "{{ hostvars['prodk3s']['ansible_host'] }}"
+ppk3s_ip: "{{ hostvars['ppk3s']['ansible_host'] }}"
