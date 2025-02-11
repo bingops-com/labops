@@ -1,6 +1,9 @@
 # Jetbrains
 .idea
 
+# Ansible
+.ansible
+
 # Terraform
 .terraform*
 terraform.tfstate*
