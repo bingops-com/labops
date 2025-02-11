@@ -1,0 +1,21 @@
+---
+
+- name: Update apt package index
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: true
+
+- name: Install dependencies
+  ansible.builtin.package:
+    name: curl
+    state: present
+
+- name: Download the K3s installation script
+  ansible.builtin.get_url:
+    url: https://get.k3s.io
+    dest: /tmp/install_k3s.sh
+    mode: '0755'
+
+- name: Execute the K3s installation script
+  ansible.builtin.command: /tmp/install_k3s.sh --write-kubeconfig-mode 644
+  become: false

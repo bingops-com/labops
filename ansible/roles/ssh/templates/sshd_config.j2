@@ -1,0 +1,44 @@
+Port {{ ssh_port }}
+{% for address in ssh_listen_address %}
+ListenAddress {{ address }}
+{% endfor %}
+{% if ssh_allow_groups %}
+AllowGroups {{ ssh_allow_groups | unique | join(" ") }}
+{% endif %}
+Protocol {{ ssh_protocol }}
+{% for key in ssh_host_keys %}
+HostKey /etc/ssh/ssh_host_{{ key }}_key
+{% endfor %}
+KexAlgorithms {{ ssh_kex_algorithms | unique | join(",") }}
+Ciphers {{ ssh_ciphers | unique | join(",") }}
+MACs {{ ssh_macs | unique | join(",") }}
+UsePrivilegeSeparation {{ ssh_use_privilege_separation }}
+KeyRegenerationInterval {{ ssh_key_regeneration_interval }}
+ServerKeyBits {{ ssh_server_key_bits }}
+SyslogFacility {{ ssh_syslog_facility }}
+LogLevel {{ ssh_log_level }}
+LoginGraceTime {{ ssh_login_grace_time }}
+PermitRootLogin {{ ssh_permit_root_login }}
+StrictModes {{ ssh_strict_modes }}
+RSAAuthentication {{ ssh_rsa_authentication }}
+PubkeyAuthentication {{ ssh_pubkey_authentication }}
+AuthorizedKeysFile {{ ssh_authorized_keys_file }}
+IgnoreRhosts {{ ssh_ignore_rhosts }}
+RhostsRSAAuthentication {{ ssh_rhosts_rsa_authentication }}
+HostbasedAuthentication {{ ssh_host_based_authentication }}
+IgnoreUserKnownHosts {{ ssh_ignore_user_known_hosts }}
+PermitEmptyPasswords {{ ssh_permit_empty_passwords }}
+ChallengeResponseAuthentication {{ ssh_challenge_response_authentication }}
+PasswordAuthentication {{ ssh_password_authentication }}
+GSSAPIAuthentication {{ ssh_gss_api_authentication }}
+GSSAPICleanupCredentials {{ ssh_gss_api_cleanup_credentials }}
+X11Forwarding {{ ssh_x11_forwarding }}
+X11DisplayOffset {{ ssh_x11_display_offset }}
+PrintMotd {{ ssh_print_motd }}
+PrintLastLog {{ ssh_print_last_log }}
+TCPKeepAlive {{ ssh_tcp_keep_alive }}
+MaxStartups {{ ssh_max_startups }}
+Banner {{ ssh_banner }}
+AcceptEnv {{ ssh_accept_env }}
+Subsystem {{ ssh_subsystem }}
+UsePAM {{ ssh_use_pam }}
