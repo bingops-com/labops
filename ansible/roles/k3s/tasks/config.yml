@@ -9,7 +9,8 @@
     sed -i '/users:/,/contexts:/s/name: .*/name: {{ new_admin_user }}/' /etc/rancher/k3s/k3s.yaml
     sed -i '/contexts:/,/current-context:/s/user: .*/user: {{ new_admin_user }}/' /etc/rancher/k3s/k3s.yaml
 
-- name: "Kube configuration for {{ new_admin_user }} user"
+- name: "Kube configuration for user {{ new_admin_user }}"
+  become: false
   block:
     - name: Create the .kube directory if it does not exist
       ansible.builtin.file:
@@ -36,9 +37,9 @@
         mode: '0600'
 
     - name: Set KUBECONFIG environment variables in the user's shell profile
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: "/home/{{ new_admin_user }}/{{ ansible_env.SHELL | regex_replace('.*/', '.') }}rc"
         line: |
           export KUBECONFIG=$(find $HOME/.kube -type f -name "config*" | tr '\n' ':')
-        create: yes
-  become: false
+        create: true
+        mode: '0600'
