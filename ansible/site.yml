@@ -1,0 +1,11 @@
+---
+
+- name: Bootstrap playbook
+  hosts: masters
+  become: true
+  remote_user: "{{ new_admin_user }}"
+  roles:
+    - ssh
+    # - firewall
+    - node_exporter
+    - k3s

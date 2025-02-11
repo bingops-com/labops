@@ -1,0 +1,6 @@
+[masters]
+prodk3s ansible_host=192.168.1.160
+ppk3s ansible_host=192.168.1.170
+
+[local]
+localhost ansible_connection=local
