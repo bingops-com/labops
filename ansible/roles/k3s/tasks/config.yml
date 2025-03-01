@@ -1,13 +1,27 @@
 ---
 
-- name: Set correct cluster and user in kubeconfig
-  ansible.builtin.shell: |
-    sed -i 's/name: default/name: {{ "prodlab" if "prod" in inventory_hostname else "pplab" }}/g' /etc/rancher/k3s/k3s.yaml
-    sed -i 's/cluster: ""/cluster: {{ "prodlab" if "prod" in inventory_hostname else "pplab" }}/g' /etc/rancher/k3s/k3s.yaml
-    sed -i '/contexts:/,/current-context:/s/cluster: .*/cluster: {{ "prodlab" if "prod" in inventory_hostname else "pplab" }}/' /etc/rancher/k3s/k3s.yaml
-    sed -i 's/current-context: default/current-context: {{ "prodlab" if "prod" in inventory_hostname else "pplab" }}/g' /etc/rancher/k3s/k3s.yaml
-    sed -i '/users:/,/contexts:/s/name: .*/name: {{ new_admin_user }}/' /etc/rancher/k3s/k3s.yaml
-    sed -i '/contexts:/,/current-context:/s/user: .*/user: {{ new_admin_user }}/' /etc/rancher/k3s/k3s.yaml
+- name: Update kubeconfig with correct cluster name and user
+  ansible.builtin.replace:
+    path: /etc/rancher/k3s/k3s.yaml
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+    after: "{{ item.after | default(omit) }}"
+  loop:
+    - regexp: "name: default"
+      replace: "name: {{ k3s_cluster_name }}"
+    - regexp: 'cluster: ""'
+      replace: "cluster: {{ k3s_cluster_name }}"
+    - regexp: "cluster: .*"
+      replace: 'cluster: {{ k3s_cluster_name }}'
+      after: "contexts:"
+    - regexp: "current-context: default"
+      replace: "current-context: {{ k3s_cluster_name }}"
+    - regexp: "name: .*"
+      replace: "name: {{ new_admin_user }}"
+      after: "users:"
+    - regexp: "user: .*"
+      replace: "user: {{ new_admin_user }}"
+      after: "contexts:"
 
 - name: "Kube configuration for user {{ new_admin_user }}"
   become: false
