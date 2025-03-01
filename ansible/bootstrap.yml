@@ -1,9 +1,10 @@
 ---
 
 - name: Bootstrap playbook
-  hosts: masters
+  hosts:
+    - preprod
+    - production
   become: true
   remote_user: ubuntu
   roles:
     - ssh
-    # - firewall
