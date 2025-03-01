@@ -2,4 +2,3 @@
 
 - name: Include install tasks
   include_tasks: install.yml
-
