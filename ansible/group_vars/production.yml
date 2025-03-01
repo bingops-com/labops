@@ -1,0 +1,5 @@
+---
+
+environment: "production"
+k3s_cluster_name: "prodlab"
+prodk3s_ip: "{{ hostvars['prodk3s']['ansible_host'] }}"
