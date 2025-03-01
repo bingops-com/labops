@@ -1,5 +1,7 @@
-[masters]
+[production]
 prodk3s ansible_host=192.168.1.160
+
+[preprod]
 ppk3s ansible_host=192.168.1.170
 
 [local]

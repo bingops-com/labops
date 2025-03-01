@@ -1,11 +1,24 @@
 ---
-
-- name: Bootstrap playbook
-  hosts: masters
+- name: Deploy Kubernetes Cluster - Preprod
+  hosts: preprod
   become: true
   remote_user: "{{ new_admin_user }}"
+  tags:
+    - preprod
+    - pp
   roles:
     - ssh
-    # - firewall
+    - node_exporter
+    - k3s
+
+- name: Deploy Kubernetes Cluster - Production
+  hosts: production
+  become: true
+  remote_user: "{{ new_admin_user }}"
+  tags:
+    - production
+    - prod
+  roles:
+    - ssh
     - node_exporter
     - k3s
