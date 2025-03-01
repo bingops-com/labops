@@ -1,0 +1,42 @@
+fix:
+  - any:
+      branches:
+        - "fix/**"
+
+feature:
+  - any:
+      branches:
+        - "feat/**"
+
+documentation:
+  - any:
+      branches:
+        - "docs/**"
+
+ci:
+  - any:
+      branches:
+        - "ci/**"
+
+test:
+  - any:
+      branches:
+        - "test/**"
+
+performance:
+  - any:
+      branches:
+        - "perf/**"
+
+ansible:
+  - any:
+      changed-files:
+        - "ansible/**"
+        - "**/*.yml"
+
+terraform:
+  - any:
+      changed-files:
+        - "terraform/**"
+        - "**/*.tf"
+        - "**/*.tfvars"
