@@ -1,6 +1,5 @@
 ---
-
-- name: Preprod playbook
+- name: Deploy Kubernetes Cluster - Preprod
   hosts: preprod
   become: true
   remote_user: "{{ new_admin_user }}"
@@ -12,7 +11,7 @@
     - node_exporter
     - k3s
 
-- name: Production playbook
+- name: Deploy Kubernetes Cluster - Production
   hosts: production
   become: true
   remote_user: "{{ new_admin_user }}"

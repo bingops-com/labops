@@ -1,5 +1,3 @@
 ---
 
-environment: "preprod"
 k3s_cluster_name: "pplab"
-ppk3s_ip: "{{ hostvars['ppk3s']['ansible_host'] }}"
