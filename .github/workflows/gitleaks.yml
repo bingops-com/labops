@@ -23,8 +23,5 @@ jobs:
 
       - name: Run Gitleaks
         uses: zricethezav/gitleaks-action@v2
-        with:
-          verbose: true
-          redacted: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
