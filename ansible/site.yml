@@ -10,6 +10,7 @@
     - ssh
     - node_exporter
     - k3s
+    - helm
 
 - name: Deploy Kubernetes Cluster - Production
   hosts: production
@@ -22,3 +23,4 @@
     - ssh
     - node_exporter
     - k3s
+    - helm
