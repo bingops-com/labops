@@ -1,0 +1,14 @@
+controller:
+  replicaCount: 3
+  service:
+    type: LoadBalancer
+  ingressClassResource:
+    name: nginx
+    enabled: true
+  metrics:
+    enabled: true
+  tolerations:
+    - key: "environment"
+      operator: "Equal"
+      value: "production"
+      effect: "NoSchedule"

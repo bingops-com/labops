@@ -1,0 +1,7 @@
+global:
+  namespace: vault
+server:
+  ha:
+    enabled: true
+  ingress:
+    ingressClassName: "nginx"

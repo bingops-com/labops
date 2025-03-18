@@ -1,0 +1,6 @@
+service:
+  type: NodePort
+  nodePort: 30000
+
+extraArgs:
+  - --metric-labels-allowlist=pods=[*]
