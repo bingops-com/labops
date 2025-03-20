@@ -1,0 +1,12 @@
+controller:
+  service:
+    type: ClusterIP
+  hostNetwork: true
+  dnsPolicy: ClusterFirstWithHostNet
+  metrics:
+    enabled: true
+  tolerations:
+    - key: "environment"
+      operator: "Equal"
+      value: "preprod"
+      effect: "NoSchedule"
