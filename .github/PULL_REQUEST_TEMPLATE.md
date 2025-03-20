@@ -1,3 +1,5 @@
+# 📡 Labops Pull Request Description
+
 ## 📋 Description
 
 **Briefly describe the purpose of this PR**:
@@ -24,9 +26,11 @@ Procedure to test this PR:
     cd $PROJECT_PATH/terraform \
       && terraform init \
       && terraform plan
-
+    
     cd $PROJECT_PATH/ansible \
       && ansible-playbook site.yml --tags preprod -i inventories/main/hosts
+    
+    kubectl kustomize --enable-helm apps/xxx/clusters/preprod | kubectl apply -f -
     ```
 3. Check if the new feature/fix works as expected.
 4. Confirm that existing features are not impacted.
@@ -40,17 +44,23 @@ Procedure to deploy this PR to production:
 2. Ensure the CI/CD pipeline completes successfully.
 3. Deploy using the following command:
     ```sh
+   # Update the master branch
     git checkout master \
       && git pull origin master
 
     export PROJECT_PATH="/opt/homeops/labops"
    
+   # Deploy Terraform
     cd $PROJECT_PATH/terraform \
       && terraform init \
       && terraform apply
 
+   # Deploy Ansible
     cd $PROJECT_PATH/ansible \
       && ansible-playbook site.yml --tags production -i inventories/main/hosts
+   
+   # Deploy Kustomize
+    kubectl kustomize --enable-helm apps/xxx/clusters/production | kubectl apply -f -
     ```
 4. Monitor logs and metrics for any issues.
 
