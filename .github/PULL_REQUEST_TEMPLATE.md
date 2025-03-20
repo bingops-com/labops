@@ -1,3 +1,5 @@
+# 📡 Labops Pull Request Description
+
 ## 📋 Description
 
 **Briefly describe the purpose of this PR**:
@@ -21,13 +23,16 @@ Procedure to test this PR:
     ```sh
     export PROJECT_PATH="/opt/homeops/labops"
    
+   # Deploy Terraform
     cd $PROJECT_PATH/terraform \
       && terraform init \
       && terraform plan
-    
+   
+    # Deploy Ansible
     cd $PROJECT_PATH/ansible \
       && ansible-playbook site.yml --tags preprod -i inventories/main/hosts
     
+   # Deploy Kustomize
     kubectl kustomize --enable-helm apps/xxx/clusters/preprod | kubectl apply -f -
     ```
 3. Check if the new feature/fix works as expected.
