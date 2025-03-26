@@ -8,3 +8,6 @@
 .terraform*
 terraform.tfstate*
 credentials.auto.tfvars
+
+# Kubernetes
+apps/**/charts

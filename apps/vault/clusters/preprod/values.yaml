@@ -1,0 +1,9 @@
+global:
+  namespace: vault
+
+server:
+  ha:
+    enabled: true
+  service:
+    type: ClusterIP
+    port: 8200
