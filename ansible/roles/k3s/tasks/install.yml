@@ -17,5 +17,5 @@
     mode: '0755'
 
 - name: Execute the K3s installation script
-  ansible.builtin.command: /tmp/install_k3s.sh --write-kubeconfig-mode 644
+  ansible.builtin.command: /tmp/install_k3s.sh --disable=traefik --write-kubeconfig-mode 644
   become: false
