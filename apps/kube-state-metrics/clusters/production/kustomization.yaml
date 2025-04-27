@@ -3,7 +3,6 @@ kind: Kustomization
 
 resources:
   - ../../base
-  - ingress.yaml
 
 labels:
   - pairs:
@@ -15,3 +14,13 @@ helmCharts:
     version: 5.30.1
     releaseName: kube-state-metrics
     namespace: monitoring
+    valuesFile: values.yaml
+
+patches:
+  - target:
+      kind: Ingress
+      name: kube-metrics-ingress
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: kube-metrics.prod.homelab.local
