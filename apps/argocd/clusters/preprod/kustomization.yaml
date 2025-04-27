@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+labels:
+  - pairs:
+      environment: preprod
+
+resources:
+  - ../../base
+
+helmCharts:
+  - name: argo-cd
+    repo: https://argoproj.github.io/argo-helm
+    releaseName: argocd
+    namespace: argocd-system
+    version: 7.8.27
+    valuesFile: values.yaml
