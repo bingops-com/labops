@@ -1,0 +1,16 @@
+kind: Kustomization
+
+resources:
+  - ../../base
+
+labels:
+  - pairs:
+      environment: production
+
+helmCharts:
+  - name: sealed-secrets
+    repo: https://bitnami-labs.github.io/sealed-secrets
+    version: 2.17.2
+    releaseName: sealed-secrets
+    namespace: tools
+    valuesFile: values.yaml
