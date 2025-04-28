@@ -1,0 +1,4 @@
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hostname: secrets.preprod.homelab.local
