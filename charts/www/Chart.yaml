@@ -1,0 +1,6 @@
+apiVersion: v2
+name: bingo-portfolio
+description: Deployment of the bingo-portfolio application
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
