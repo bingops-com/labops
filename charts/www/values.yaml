@@ -1,0 +1,33 @@
+replicaCount: 1
+
+image:
+  repository: oslonline/bingo-portfolio
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  host: www.bingops.com
+  annotations: {}
+  tls: false
+  tlsSecret: ""
+
+resources: {}
+# Exemple :
+# resources:
+#   limits:
+#     cpu: 100m
+#     memory: 128Mi
+#   requests:
+#     cpu: 100m
+#     memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

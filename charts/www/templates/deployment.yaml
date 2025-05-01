@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bingo-portfolio.fullname" . }}
+  labels:
+    app: {{ include "bingo-portfolio.name" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "bingo-portfolio.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "bingo-portfolio.name" . }}
+    spec:
+      containers:
+        - name: bingo-portfolio
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 80
+          resources: {{- toYaml .Values.resources | nindent 12 }}
