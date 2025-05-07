@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       packages: write
+      contents: read
 
     env:
       IMAGE_NAME: ${{ github.event.client_payload.image }}
