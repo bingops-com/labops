@@ -4,8 +4,31 @@ on:
   repository_dispatch:
     types: [rebuild-image]
 
+  push:
+    branches:
+      - master
+    paths:
+      - 'docker/www/**'
+      - 'docker/blog/**'
+
 jobs:
+  hadolint:
+    runs-on: ubuntu-latest
+
+    container:
+      image: hadolint/hadolint:v2.12.0
+      options: --entrypoint ""  # pour éviter que l'image force l'entrée standard
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run Hadolint on all Dockerfiles
+        run: |
+          find docker/** -name Dockerfile -print0 | xargs -0 -n1 hadolint
+
   build-push:
+    needs: hadolint
     runs-on: ubuntu-latest
     permissions:
       packages: write
