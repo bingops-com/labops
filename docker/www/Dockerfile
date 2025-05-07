@@ -1,4 +1,5 @@
 FROM docker.io/debian:trixie-slim@sha256:2a68788db17e6f845263ea011a249de9d78394607da22836f107fa033b70882c
+LABEL name="www"
 
 ENV NODE_VERSION=23.0.0
 ENV CADDY_VERSION=v2.7.6
@@ -39,7 +40,7 @@ RUN curl -fsSL "https://github.com/caddyserver/caddy/releases/download/${CADDY_V
 WORKDIR ${APP_DIR}
 
 RUN set -x \
-    && git clone --branch main https://github.com/Oslonline/bingo-portfolio.git . \
+    && git clone --branch main https://github.com/bingops-com/www.bingops.com.git . \
     && npm install  \
     && npm run build \
     && npm cache clean --force \
