@@ -1,6 +1,5 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
   "enabledManagers": ["dockerfile", "github-actions"],
   "docker": {
     "enabled": true,
@@ -11,5 +10,8 @@
   },
   "github-actions": {
     "enabled": true
-  }
+  },
+  "extends": [
+    "config:recommended"
+  ]
 }
