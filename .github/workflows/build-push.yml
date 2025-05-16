@@ -7,13 +7,7 @@ on:
   push:
     branches:
       - master
-    paths:
-      - 'docker/www/**'
-      - 'docker/blog/**'
-
-  pull_request:
-    branches:
-      - main
+      - "*"
     paths:
       - 'docker/www/**'
       - 'docker/blog/**'
@@ -33,6 +27,7 @@ jobs:
       - name: Run Hadolint on all Dockerfiles
         run: |
           find docker/** -name Dockerfile -print0 | xargs -0 -n1 hadolint
+
   build-push:
     needs: hadolint
     runs-on: ubuntu-latest
@@ -68,6 +63,7 @@ jobs:
             type=raw,value=latest
             type=sha
             type=raw,value={{date 'YYYYMMDD-HHmmss'}}
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
