@@ -8,45 +8,69 @@ on:
     branches:
       - master
     paths:
-      - 'docker/www/**'
-      - 'docker/blog/**'
+      - 'docker/**'
 
   pull_request:
     branches:
-      - main
+      - master
     paths:
-      - 'docker/www/**'
-      - 'docker/blog/**'
+      - 'docker/**'
 
 jobs:
   hadolint:
     runs-on: ubuntu-latest
 
-    container:
-      image: hadolint/hadolint:v2.12.0
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Run Hadolint on all Dockerfiles
-        run: |
-          find docker/** -name Dockerfile -print0 | xargs -0 -n1 hadolint
-  build-push:
+      - name: Lint Dockerfiles
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: "*Dockerfile"
+          recursive: true
+
+  get-modified-images:
     needs: hadolint
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get list of modified docker contexts
+        id: set-matrix
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+          GITHUB_SHA: ${{ github.sha }}
+          IMAGE_NAME: ${{ github.event.client_payload.image }}
+          IS_PR: ${{ github.event.client_payload.is_pr }}
+        run: bash .github/scripts/get-modified-images.sh
+
+  build-push:
+    needs: get-modified-images
+    if: ${{ fromJson(needs.get-modified-images.outputs.matrix).include != '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.get-modified-images.outputs.matrix) }}
     permissions:
       packages: write
       contents: read
-
     env:
-      IMAGE_NAME: ${{ github.event.client_payload.image }}
-      BUILD_CONTEXT: docker/${{ github.event.client_payload.image }}
-      DOCKERFILE_PATH: docker/${{ github.event.client_payload.image }}/Dockerfile
+      IMAGE_NAME: ${{ matrix.image }}
+      BUILD_CONTEXT: docker/${{ matrix.image }}
+      DOCKERFILE_PATH: docker/${{ matrix.image }}/Dockerfile
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Validate input
+        run: bash .github/scripts/validate-input.sh
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -58,6 +82,12 @@ jobs:
           username: bingops
           password: ${{ secrets.GHCR_TOKEN }}
 
+      - name: Determine tag prefix
+        id: tagprefix
+        run: bash .github/scripts/determine-tag-prefix.sh
+        env:
+          IS_PR: ${{ matrix.is_pr }}
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -66,7 +96,8 @@ jobs:
           tags: |
             type=raw,value=latest
             type=sha
-            type=raw,value={{date 'YYYYMMDD-HHmmss'}}
+            type=raw,value=${{ steps.tagprefix.outputs.prefix }}{{date 'YYYYMMDD-HHmmss'}}
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
