@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash
 
 if [[ "${GITHUB_EVENT_NAME}" == "repository_dispatch" ]]; then
   echo "::notice:: Triggered by repository_dispatch. Using image from payload."
