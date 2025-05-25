@@ -1,0 +1,40 @@
+name: Helm Chart Lint & Validate
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'charts/**'
+
+jobs:
+  get-modified:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: set-matrix
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+          GITHUB_SHA: ${{ github.sha }}
+          CHART_NAME: ""
+          IS_PR: true
+        run: bash .github/scripts/get-modified-charts.sh
+
+  lint:
+    needs: get-modified
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.get-modified.outputs.matrix) }}
+    name: Lint ${{ matrix.chart }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+
+      - run: helm lint charts/${{ matrix.chart }}
+      - run: helm template charts/${{ matrix.chart }}

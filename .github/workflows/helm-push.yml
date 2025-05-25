@@ -1,0 +1,52 @@
+name: Helm Package and Publish
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'charts/**'
+
+jobs:
+  get-modified:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect modified charts
+        id: set-matrix
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+          GITHUB_SHA: ${{ github.sha }}
+          CHART_NAME: ""
+          IS_PR: false
+        run: bash .github/scripts/get-modified-charts.sh
+
+  publish:
+    needs: get-modified
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.get-modified.outputs.matrix) }}
+    name: Publish ${{ matrix.chart }}
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+
+      - name: Package
+        run: |
+          mkdir -p output
+          helm package charts/${{ matrix.chart }} --destination output
+
+      - name: Push to GHCR
+        run: |
+          echo "${{ secrets.GHCR_TOKEN }}" | helm registry login ghcr.io -u bingops --password-stdin
+          VERSION=$(yq '.version' charts/${{ matrix.chart }}/Chart.yaml)
+          helm push output/${{ matrix.chart }}-${VERSION}.tgz oci://ghcr.io/bingops-com/helm
