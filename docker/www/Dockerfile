@@ -1,8 +1,12 @@
 FROM docker.io/debian:trixie-slim@sha256:2a68788db17e6f845263ea011a249de9d78394607da22836f107fa033b70882c
 LABEL name="www"
 
+# renovate: datasource=node versioning=semver
 ENV NODE_VERSION=23.0.0
+
+# renovate: datasource=github-releases depName=caddyserver/caddy versioning=semver
 ENV CADDY_VERSION=v2.7.6
+
 ENV APP_DIR=/app
 
 USER root
