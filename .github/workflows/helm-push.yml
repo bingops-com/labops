@@ -49,4 +49,6 @@ jobs:
         run: |
           echo "${{ secrets.GHCR_TOKEN }}" | helm registry login ghcr.io -u bingops --password-stdin
           VERSION=$(yq '.version' charts/${{ matrix.chart }}/Chart.yaml)
-          helm push output/${{ matrix.chart }}-${VERSION}.tgz oci://ghcr.io/bingops-com/helm
+          CHART_NAME=$(yq '.name' charts/${{ matrix.chart }}/Chart.yaml)
+          helm push output/${CHART_NAME}-${VERSION}.tgz oci://ghcr.io/bingops-com/helm
+
