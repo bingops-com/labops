@@ -94,7 +94,7 @@ jobs:
         with:
           images: ghcr.io/bingops-com/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest
+            ${{ matrix.is_pr != 'true' && 'type=raw,value=latest' || '' }}
             type=sha
             type=raw,value=${{ steps.tagprefix.outputs.prefix }}{{date 'YYYYMMDD-HHmmss'}}
 
