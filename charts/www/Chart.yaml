@@ -1,6 +1,6 @@
 apiVersion: v2
-name: www.bingops.com
-description: Portfolio de BingOps (https://www.bingops.com)
+name: www
+description: Portfolio de Bingops (https://github.com/bingops-com/www.bingops.com)
 type: application
 version: 0.1.0
 appVersion: "1.0.0"
