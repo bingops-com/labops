@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/bash
 
 if [[ "${GITHUB_EVENT_NAME}" == "repository_dispatch" ]]; then
   echo "::notice:: Triggered by repository_dispatch. Using chart from payload."
@@ -13,7 +12,8 @@ else
   fi
 
   echo "::notice:: Comparing commits: $BEFORE_SHA → ${GITHUB_SHA}"
-  modified_charts=$(git diff --name-only "$BEFORE_SHA" "${GITHUB_SHA}" | grep '^charts/' | cut -d/ -f2 | sort -u)
+  diff_output=$(git diff --name-only "$BEFORE_SHA" "${GITHUB_SHA}")
+  modified_charts=$(echo "$diff_output" | grep '^charts/[^/]\+' -o | cut -d/ -f2 | sort -u)
 
   if [ -z "$modified_charts" ]; then
     echo "::warning:: No modified Helm charts detected."
