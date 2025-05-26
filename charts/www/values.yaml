@@ -1,5 +1,7 @@
 replicaCount: 1
 
+fullnameOverride: portfolio
+
 image:
   repository: ghcr.io/bingops-com/www
   tag: latest
