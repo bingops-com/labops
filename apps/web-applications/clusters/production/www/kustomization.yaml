@@ -13,5 +13,5 @@ helmCharts:
     repo: oci://ghcr.io/bingops-com/helm
     releaseName: www
     namespace: webapps
-    version: 0.1.1
+    version: 0.1.2
     valuesFile: values.yaml
