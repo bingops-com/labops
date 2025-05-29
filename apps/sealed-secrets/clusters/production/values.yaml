@@ -1,3 +1,5 @@
+namespace: tools
+
 ingress:
   enabled: true
   ingressClassName: nginx
