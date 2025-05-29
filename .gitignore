@@ -5,9 +5,9 @@
 .ansible
 
 # Terraform
-.terraform*
-terraform.tfstate*
-credentials.auto.tfvars
+terraform/**/.terraform*
+terraform/**/terraform.tfstate*
+terraform/**/credentials.auto.tfvars
 
 # Kubernetes
 apps/**/charts
