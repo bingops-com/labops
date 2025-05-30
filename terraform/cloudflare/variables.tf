@@ -1,10 +1,9 @@
 variable "cloudflare_account_id" {
-  description = "L'identifiant du compte Cloudflare"
+  description = "Cloudflare Account ID"
   type        = string
 }
 
 variable "cloudflare_api_token" {
-  description = "Token API Cloudflare avec permissions pour gérer les tunnels"
-  type        = string
+  description = "Cloudflare API Token"
   sensitive   = true
 }
