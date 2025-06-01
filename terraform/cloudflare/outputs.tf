@@ -15,7 +15,7 @@ output "tunnel_ids" {
     for name, tunnel in cloudflare_zero_trust_tunnel_cloudflared.tunnels :
     tunnel.name => tunnel.id
   }
-  description = "IDs des tunnels Cloudflare"
+  description = "Cloudflare Tunnel IDs"
 }
 
 # Génération d'un fichier JSON par tunnel
