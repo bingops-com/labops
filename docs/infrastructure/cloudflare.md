@@ -32,6 +32,8 @@ terraform init
 terraform apply
 ```
 
+This will create credentials of each tunnel inside `terraform/cloudflare/credentials/` with the filename format `<tunnel_name>.json`.
+
 **Terraform will provision:**
 
 * A Cloudflare Zero Trust tunnel
@@ -40,30 +42,30 @@ terraform apply
 
 ---
 
-## 🔐 Export Tunnel Credentials
-
-Extract the credentials to a temporary file:
-
-```bash
-terraform output -json cloudflare_tunnel_credentials > /tmp/tunnel_credentials.json
-```
-
----
-
 ## 🛡️ Create a Sealed Secret for Kubernetes
 
-Replace `<your-namespace>` and `<your-app>` with the right values for your setup:
+Replace `<tunnel-name>` and `<your-app>` with the right values for your setup:
 
 ```bash
+export PROJECT_PATH="/opt/homeops/labops"
+
+export SEALED_NAMESPACE="tools"
+export SEALED_CONTROLLER_NAME="sealed-secrets"
+
+export CLOUDFLARE_NAMESPACE="cloudflare"
+export TUNNEL_NAME="<tunnel_name>"
+export APP_NAME="<your-app>"
+
+
 kubectl create secret generic cloudflare-tunnel-secret \
-  --namespace=<your-namespace> \
-  --from-file=credentials.json=/tmp/tunnel_credentials.json \
+  --namespace=$CLOUDFLARE_NAMESPACE \
+  --from-file=credentials.json=$PROJECT_PATH/terraform/cloudflare/credentials/$TUNNEL_NAME.json \
   --dry-run=client -o yaml | \
   kubeseal \
-    --controller-name=sealed-secrets \
-    --controller-namespace=tools \
+    --controller-name=$SEALED_CONTROLLER_NAME \
+    --controller-namespace=$SEALED_NAMESPACE \
     --format yaml \
-  > apps/<your-app>/cloudflare-tunnel-secret.yaml
+  > apps/$CLOUDFLARE_NAMESPACE/$APP_NAME/cloudflare-tunnel-secret.yaml
 ```
 
 ---
