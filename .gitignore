@@ -9,5 +9,8 @@ terraform/**/.terraform*
 terraform/**/terraform.tfstate*
 terraform/**/credentials.auto.tfvars
 
+## Cloudflare credentials file
+terraform/cloudflare/credentials
+
 # Kubernetes
 apps/**/charts

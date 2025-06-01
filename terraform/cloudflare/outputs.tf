@@ -1,14 +1,39 @@
 output "cloudflare_tunnel_credentials" {
   value = {
-    AccountTag   = var.cloudflare_account_id
-    TunnelName   = cloudflare_zero_trust_tunnel_cloudflared.bingops_tunnel.name
-    TunnelID     = cloudflare_zero_trust_tunnel_cloudflared.bingops_tunnel.id
-    TunnelSecret = random_password.tunnel_secret.result
+    for name, tunnel in cloudflare_zero_trust_tunnel_cloudflared.tunnels : name => {
+      AccountTag   = var.cloudflare_account_id
+      TunnelName   = tunnel.name
+      TunnelID     = tunnel.id
+      TunnelSecret = local.tunnels_with_secrets[name].secret
+    }
   }
   sensitive = true
 }
 
-output "tunnel_id" {
-  value       = cloudflare_zero_trust_tunnel_cloudflared.bingops_tunnel.id
-  description = "Cloudflare Zero Trust Tunnel ID"
+output "tunnel_ids" {
+  value = {
+    for name, tunnel in cloudflare_zero_trust_tunnel_cloudflared.tunnels :
+    tunnel.name => tunnel.id
+  }
+  description = "IDs des tunnels Cloudflare"
+}
+
+# Génération d'un fichier JSON par tunnel
+resource "local_file" "tunnel_credentials" {
+  for_each = cloudflare_zero_trust_tunnel_cloudflared.tunnels
+
+  filename = "${path.module}/credentials/${each.value.name}.json"
+  content = jsonencode({
+    AccountTag   = var.cloudflare_account_id
+    TunnelName   = each.value.name
+    TunnelID     = each.value.id
+    TunnelSecret = local.tunnels_with_secrets[each.key].secret
+  })
+  file_permission = "0600"
+
+  # Création automatique du répertoire credentials si nécessaire
+  provisioner "local-exec" {
+    command = "mkdir -p ${dirname(self.filename)}"
+    interpreter = ["bash", "-c"]
+  }
 }
