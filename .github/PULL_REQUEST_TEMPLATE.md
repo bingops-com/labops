@@ -24,7 +24,7 @@ Procedure to test this PR:
     export PROJECT_PATH="/opt/homeops/labops"
    
    # Deploy Terraform
-    cd $PROJECT_PATH/terraform \
+    cd $PROJECT_PATH/terraform/xxx \
       && terraform init \
       && terraform plan
    
@@ -54,7 +54,7 @@ Procedure to deploy this PR to production:
     export PROJECT_PATH="/opt/homeops/labops"
    
    # Deploy Terraform
-    cd $PROJECT_PATH/terraform \
+    cd $PROJECT_PATH/terraform/xxx \
       && terraform init \
       && terraform apply
 
