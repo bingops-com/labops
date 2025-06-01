@@ -31,9 +31,13 @@ resource "local_file" "tunnel_credentials" {
   })
   file_permission = "0600"
 
-  # Création automatique du répertoire credentials si nécessaire
+  depends_on = [null_resource.create_credentials_directory]
+
+}
+
+resource "null_resource" "create_credentials_directory" {
   provisioner "local-exec" {
-    command = "mkdir -p ${dirname(self.filename)}"
+    command = "mkdir -p ${path.module}/credentials"
     interpreter = ["bash", "-c"]
   }
 }
