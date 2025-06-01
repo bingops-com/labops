@@ -4,9 +4,9 @@ cloudflare:
 
   ingress:
     - hostname: www.bingops.com
-      service: http://portfolio.webapps.svc.cluster.local:80
+      service: http://portfolio.bingops.svc.cluster.local:80
     - hostname: bingops.com
-      service: http://portfolio.webapps.svc.cluster.local:80
+      service: http://portfolio.bingops.svc.cluster.local:80
 
 replicaCount: 2
 
