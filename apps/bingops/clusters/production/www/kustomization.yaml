@@ -3,7 +3,7 @@ kind: Kustomization
 
 labels:
   - pairs:
-      environment: preprod
+      environment: production
 
 resources:
   - ../../../base
@@ -12,6 +12,6 @@ helmCharts:
   - name: www
     repo: oci://ghcr.io/bingops-com/helm
     releaseName: www
-    namespace: webapps
+    namespace: bingops
     version: 0.1.2
     valuesFile: values.yaml
