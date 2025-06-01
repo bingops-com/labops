@@ -1,7 +1,14 @@
 replicaCount: 1
 
+<<<<<<< HEAD
 namespace: bingops
+=======
+<<<<<<< HEAD
+namespace: webapps
+>>>>>>> 1f7e53e (fix(www): remove namespace metadata and creation for kustomize)
 
+=======
+>>>>>>> 9c8045d (fix(www): remove namespace metadata and creation for kustomize)
 fullnameOverride: portfolio
 
 image:
@@ -25,9 +32,6 @@ ingress:
   tls: []
 
 resources: {}
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
