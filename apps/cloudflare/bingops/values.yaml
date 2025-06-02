@@ -7,6 +7,8 @@ cloudflare:
       service: http://portfolio.bingops.svc.cluster.local:80
     - hostname: bingops.com
       service: http://portfolio.bingops.svc.cluster.local:80
+    - hostname: blog.bingops.com
+      service: http://blog.bingops.svc.cluster.local:80
 
 replicaCount: 2
 
