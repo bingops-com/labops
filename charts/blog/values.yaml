@@ -1,0 +1,28 @@
+replicaCount: 1
+
+fullnameOverride: blog
+
+image:
+  repository: ghcr.io/bingops-com/blog
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: blog.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
