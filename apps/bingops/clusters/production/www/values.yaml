@@ -14,7 +14,11 @@ ingress:
   className: nginx
   annotations: {}
   hosts:
-    - host: www.prod.homelab.local
+    - host: www.bingops.com
+      paths:
+        - path: /
+          pathType: Prefix
+    - host: bingops.com
       paths:
         - path: /
           pathType: Prefix

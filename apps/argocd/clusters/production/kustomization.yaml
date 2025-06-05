@@ -7,6 +7,7 @@ labels:
 
 resources:
   - ../../base
+  - ../../applications/www-production.yaml
 
 helmCharts:
   - name: argo-cd

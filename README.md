@@ -3,6 +3,7 @@
 ## Documentation
 
 - [Cloudflare Terraform Guide](docs/infrastructure/cloudflare.md)
+- [Argo CD Quickstart](docs/infrastructure/argocd.md)
 
 ## Project Overview
 
