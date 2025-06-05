@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: www-production
+  namespace: argocd-system
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/bingops-com/labops.git
+    targetRevision: HEAD
+    path: apps/bingops/clusters/production/www
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: bingops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
