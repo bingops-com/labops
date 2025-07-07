@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/bingops-com/blog
   tag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: sha-7e71ec4
 
 service:
   type: ClusterIP
