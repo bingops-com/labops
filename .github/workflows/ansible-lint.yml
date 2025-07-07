@@ -4,11 +4,15 @@ on:
   push:
     branches:
       - master
+    paths:
+      - 'ansible/**'
   pull_request:
     types:
       - opened
       - synchronize
       - reopened
+    paths:
+      - 'ansible/**'
 
 jobs:
   build:
@@ -25,6 +29,6 @@ jobs:
           ansible-galaxy collection install -r ansible/requirements.yml
 
       - name: Run ansible-lint
-        uses: ansible/ansible-lint-action@v6
+        uses: ansible/ansible-lint@v6
         with:
           path: "./ansible"
