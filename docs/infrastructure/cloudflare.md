@@ -57,15 +57,15 @@ export TUNNEL_NAME="<tunnel_name>"
 export APP_NAME="<your-app>"
 
 
-kubectl create secret generic cloudflare-tunnel-secret \
-  --namespace=$CLOUDFLARE_NAMESPACE \
-  --from-file=credentials.json=$PROJECT_PATH/terraform/cloudflare/credentials/$TUNNEL_NAME.json \
+kubectl create secret generic ${TUNNEL_NAME}-cloudflare-tunnel-secret \
+  --namespace=${CLOUDFLARE_NAMESPACE} \
+  --from-file=credentials.json=$PROJECT_PATH/terraform/cloudflare/credentials/${TUNNEL_NAME}.json \
   --dry-run=client -o yaml | \
   kubeseal \
-    --controller-name=$SEALED_CONTROLLER_NAME \
-    --controller-namespace=$SEALED_NAMESPACE \
+    --controller-name=${SEALED_CONTROLLER_NAME} \
+    --controller-namespace=${SEALED_NAMESPACE} \
     --format yaml \
-  > apps/$CLOUDFLARE_NAMESPACE/$APP_NAME/cloudflare-tunnel-secret.yaml
+  > apps/${CLOUDFLARE_NAMESPACE}/${TUNNEL_NAME}/cloudflare-tunnel-secret.yaml
 ```
 
 ---
