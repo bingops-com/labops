@@ -4,8 +4,9 @@ kind: Kustomization
 resources:
   - ../../base
 
-commonLabels:
-  environment: preprod
+labels:
+  - pairs:
+    environment: preprod
 
 helmCharts:
   - name: opencti
