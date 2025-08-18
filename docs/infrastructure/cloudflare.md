@@ -1,6 +1,19 @@
 # 🧵 Cloudflare Tunnel Cheat Sheet (Terraform + Kubernetes)
 
-## ✅ Prerequisites
+## 🗺️ Table of Contents
+
+1️⃣ Prerequisites
+2️⃣ Overview
+3️⃣ Declare a New Tunnel (Terraform)
+4️⃣ Deploy or Update Tunnels
+5️⃣ Create a Sealed Secret
+6️⃣ Use the Tunnel in Your App
+7️⃣ Troubleshooting
+8️⃣ References
+
+---
+
+## 1️⃣ Prerequisites
 
 * Cloudflare **API token** with necessary permissions
 * Cloudflare **Account ID**
@@ -11,7 +24,7 @@
 
 ---
 
-## 📦 Overview
+## 2️⃣ Overview
 
 This guide helps you:
 
@@ -22,14 +35,36 @@ This guide helps you:
 
 ---
 
-## ⚙️ Terraform: Deploy Cloudflare Tunnel
+## 3️⃣ Declare a New Tunnel (Terraform)
+
+Follow these steps to declare a **new Cloudflare tunnel in code** so that Terraform can provision it automatically:
+
+1. Open `terraform/cloudflare/terraform.tfvars`.
+2. Locate the `tunnels` list variable. Each item represents one tunnel.
+3. Append a new block with your tunnel’s settings. Example:
+
+   ```hcl
+   tunnels = [
+     # ✏️ Existing tunnels…
+     {
+       name      = "myapp"                 # A unique tunnel name (no spaces)
+       hostnames = [
+         "myapp.bingops.com",             # FQDNs that should resolve through the tunnel
+         "api.bingops.com"
+       ]
+       zone_name = "bingops"               # Must map to a key in `locals.zone_domains`
+
+```
+
+---
+
+## 4️⃣ Deploy or Update Tunnels
 
 From your project’s Cloudflare Terraform module:
 
 ```bash
-cd terraform/cloudflare
-terraform init
-terraform apply
+cd ${PROJECT_PATH}/terraform/cloudflare
+terraform apply -auto-approve
 ```
 
 This will create credentials of each tunnel inside `terraform/cloudflare/credentials/` with the filename format `<tunnel_name>.json`.
@@ -42,13 +77,14 @@ This will create credentials of each tunnel inside `terraform/cloudflare/credent
 
 ---
 
-## 🛡️ Create a Sealed Secret for Kubernetes
+## 5️⃣ Create a Sealed Secret for Kubernetes
 
 Replace `<tunnel-name>` and `<your-app>` with the right values for your setup:
 
 ```bash
 export PROJECT_PATH="/opt/homeops/labops"
 
+# 2️⃣ Prepare variables for the sealed secret
 export SEALED_NAMESPACE="tools"
 export SEALED_CONTROLLER_NAME="sealed-secrets"
 
@@ -58,7 +94,11 @@ export APP_NAME="<your-app>"
 
 
 kubectl create secret generic cloudflare-tunnel-secret \
+<<<<<<< Updated upstream
   --namespace=$CLOUDFLARE_NAMESPACE \
+=======
+  --namespace=${CLOUDFLARE_NAMESPACE} \
+>>>>>>> Stashed changes
   --from-file=credentials.json=$PROJECT_PATH/terraform/cloudflare/credentials/$TUNNEL_NAME.json \
   --dry-run=client -o yaml | \
   kubeseal \
@@ -70,7 +110,7 @@ kubectl create secret generic cloudflare-tunnel-secret \
 
 ---
 
-## 📦 Usage in Your App
+## 6️⃣ Use the Tunnel in Your App
 
 Reference the secret in the cloudflare-tunnel Helm Chart values:
 
@@ -95,7 +135,9 @@ it will be mounted as a file in your pod, typically at `/etc/cloudflare/creds/cr
 
 ---
 
-## 🔗 References
+## 8️⃣ References
 
 * [Cloudflare Zero Trust Docs](https://developers.cloudflare.com/cloudflare-one/)
 * [Terraform Cloudflare Provider](https://registry.terraform.io/providers/cloudflare/cloudflare/latest)
+
+---
