@@ -2,8 +2,8 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/bingops-com/blog
-  tag: latest
-  pullPolicy: sha-7e71ec4
+  tag: sha-7e71ec4
+  pullPolicy: pullIfNotPresent
 
 service:
   type: ClusterIP

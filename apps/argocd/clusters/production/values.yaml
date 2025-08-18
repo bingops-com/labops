@@ -9,3 +9,7 @@ server:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
       nginx.ingress.kubernetes.io/service-upstream: "true"
     tls: true
+
+configs:
+  params:
+    server.insecure: "true"

@@ -1,0 +1,17 @@
+cloudflare:
+  tunnelName: "lab"
+  secretName: "lab-cloudflare-tunnel-secret"
+
+  ingress:
+    - hostname: argo.lab.bingo
+      service: http://argocd-server.argocd-system.svc.cluster.local:80
+
+replicaCount: 2
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi

@@ -1,6 +1,6 @@
 cloudflare:
-  tunnelName: "bingops-tunnel"
-  secretName: "cloudflare-tunnel-secret"
+  tunnelName: "bingops"
+  secretName: "bingops-cloudflare-tunnel-secret"
 
   ingress:
     - hostname: www.bingops.com

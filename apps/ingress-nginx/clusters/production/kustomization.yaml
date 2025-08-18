@@ -4,8 +4,9 @@ kind: Kustomization
 resources:
   - ../../base
 
-commonLabels:
-  environment: production
+labels:
+  - pairs:
+    environment: production
 
 helmCharts:
   - name: ingress-nginx
