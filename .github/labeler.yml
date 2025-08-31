@@ -1,42 +1,42 @@
 fix:
   - any:
-      branches:
-        - "fix/**"
+      head-branch: ['^fix/.*']
 
 feature:
   - any:
-      branches:
-        - "feat/**"
+      head-branch: ['^feat/.*']
 
 documentation:
   - any:
-      branches:
-        - "docs/**"
+      head-branch: ['^docs/.*']
 
 ci:
   - any:
-      branches:
-        - "ci/**"
+      head-branch: ['^ci/.*']
 
 test:
   - any:
-      branches:
-        - "test/**"
+      head-branch: ['^test/.*']
 
 performance:
   - any:
-      branches:
-        - "perf/**"
+      head-branch: ['^perf/.*']
 
 ansible:
   - any:
       changed-files:
-        - "ansible/**"
-        - "**/*.yml"
+        any-glob-to-any-file:
+          - 'ansible/**/*.yml'
 
 terraform:
   - any:
       changed-files:
-        - "terraform/**"
-        - "**/*.tf"
-        - "**/*.tfvars"
+        any-glob-to-any-file:
+          - 'terraform/**/*.tf'
+          - 'terraform/**/*.tfvars'
+
+kubernetes:
+  - any:
+      changed-files:
+        any-glob-to-any-file:
+          - 'apps/**/*.yaml'
