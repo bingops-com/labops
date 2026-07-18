@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portfolio
+  namespace: portfolio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: portfolio
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: portfolio
+    spec:
+      containers:
+        - name: portfolio
+          image: ghcr.io/bingops-com/www:sha-b3bf9ed
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
