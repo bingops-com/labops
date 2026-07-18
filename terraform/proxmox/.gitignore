@@ -1,0 +1,10 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+kubeconfig*
+talosconfig*
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json

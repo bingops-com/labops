@@ -3,6 +3,9 @@
 ## Documentation
 
 - [Cloudflare Terraform Guide](docs/infrastructure/cloudflare.md)
+- [Talos on Proxmox](terraform/proxmox/README.md)
+- [Cluster API management and workload clusters](capi/README.md)
+- [Kubeconfig helper scripts](hacks/README.md)
 
 ## Project Overview
 
