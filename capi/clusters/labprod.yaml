@@ -1,0 +1,123 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: ProxmoxCluster
+metadata:
+  name: labprod
+  namespace: capi-workloads
+spec:
+  allowedNodes:
+    - homelab
+  controlPlaneEndpoint:
+    host: 192.168.1.160
+    port: 6443
+  dnsServers:
+    - 1.1.1.1
+    - 9.9.9.9
+  ipv4Config:
+    addresses:
+      - 192.168.1.151
+    gateway: 192.168.1.1
+    prefix: 24
+  schedulerHints:
+    memoryAdjustment: 0
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: labprod
+  namespace: capi-workloads
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+        - 10.240.0.0/16
+    services:
+      cidrBlocks:
+        - 10.100.0.0/16
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+    kind: TalosControlPlane
+    name: labprod-control-plane
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+    kind: ProxmoxCluster
+    name: labprod
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: ProxmoxMachineTemplate
+metadata:
+  name: labprod-control-plane
+  namespace: capi-workloads
+spec:
+  template:
+    spec:
+      checks:
+        skipCloudInitStatus: true
+        skipQemuGuestAgent: true
+      disks:
+        bootVolume:
+          disk: scsi0
+          sizeGb: 100
+      format: raw
+      full: true
+      memoryMiB: 8192
+      network:
+        default:
+          bridge: vmbr0
+          model: virtio
+      numCores: 4
+      numSockets: 1
+      pool: Kubernetes
+      sourceNode: homelab
+      templateID: 1234
+      vmIDRange:
+        start: 151
+        end: 151
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+kind: TalosControlPlane
+metadata:
+  name: labprod-control-plane
+  namespace: capi-workloads
+spec:
+  replicas: 1
+  version: v1.36.1
+  infrastructureTemplate:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+    kind: ProxmoxMachineTemplate
+    name: labprod-control-plane
+    namespace: capi-workloads
+  controlPlaneConfig:
+    controlplane:
+      generateType: controlplane
+      talosVersion: v1.13
+      strategicPatches:
+        - |-
+          machine:
+            install:
+              disk: /dev/sda
+              extraKernelArgs:
+                - net.ifnames=0
+            network:
+              interfaces:
+                - interface: eth0
+                  dhcp: false
+                  vip:
+                    ip: 192.168.1.160
+            kubelet:
+              extraArgs:
+                cloud-provider: external
+                rotate-server-certificates: "true"
+            features:
+              kubernetesTalosAPIAccess:
+                enabled: true
+                allowedRoles:
+                  - os:reader
+                allowedKubernetesNamespaces:
+                  - kube-system
+          cluster:
+            allowSchedulingOnControlPlanes: true
+            externalCloudProvider:
+              enabled: true
+              manifests:
+                - https://raw.githubusercontent.com/siderolabs/talos-cloud-controller-manager/main/docs/deploy/cloud-controller-manager.yml
+                - https://raw.githubusercontent.com/alex1989hu/kubelet-serving-cert-approver/main/deploy/standalone-install.yaml

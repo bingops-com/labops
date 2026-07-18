@@ -5,7 +5,7 @@
 .ansible
 
 # Terraform
-terraform/**/.terraform*
+terraform/**/.terraform/
 terraform/**/terraform.tfstate*
 terraform/**/credentials.auto.tfvars
 
@@ -14,3 +14,7 @@ terraform/cloudflare/credentials
 
 # Kubernetes
 apps/**/charts
+/kubeconfig
+
+# Cluster API provider credentials
+capi/credentials.env
