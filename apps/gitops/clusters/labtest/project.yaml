@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: labops-labtest
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10"
+spec:
+  description: Platform and personal applications on labtest
+  sourceRepos:
+    - https://github.com/bingops-com/labops.git
+    - https://traefik.github.io/charts
+    - https://charts.jetstack.io
+    - https://bitnami.github.io/sealed-secrets
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: "*"
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"

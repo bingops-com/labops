@@ -5,6 +5,14 @@ The repository lifecycle also uses
 Terraform apply and CAPI workload creation. It ensures template 1234 retains
 its Talos ISO on `ide2` while `ide0` remains available for CAPMOX NoCloud data.
 
+## `gitops-preview.sh`
+
+Creates, updates, or deletes the single active feature-branch preview for an
+application on `labtest`. The branch must already exist on `origin`; Argo CD
+cannot reconcile an unpushed local branch. Deleting a preview also prunes the
+resources it owns. See [`apps/README.md`](../apps/README.md) for the promotion
+workflow and hostname convention.
+
 ## `capi-init.sh`
 
 Loads the ignored CAPI Proxmox credentials, requires the expected management
