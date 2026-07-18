@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-private
+  namespace: private-dns
+data:
+  Corefile: |
+    test.bingops.com:53 {
+        errors
+        log
+        template IN A {
+            match ^[a-z0-9-]+[.]test[.]bingops[.]com[.]$
+            answer "{{ .Name }} 30 IN A 192.168.10.152"
+        }
+        cache 30
+    }
