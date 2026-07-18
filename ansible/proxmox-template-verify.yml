@@ -1,0 +1,33 @@
+---
+- name: Verify the Talos CAPI template
+  hosts: proxmox
+  become: true
+  gather_facts: false
+  vars:
+    proxmox_template_vm_id: 1234
+  tasks:
+    - name: Read the template configuration
+      ansible.builtin.command:
+        argv:
+          - qm
+          - config
+          - "{{ proxmox_template_vm_id }}"
+      register: proxmox_template_config
+      changed_when: false
+
+    - name: Assert that the template remains bootable after CAPMOX cloning
+      ansible.builtin.assert:
+        that:
+          - 'proxmox_template_config.stdout is regex("(?m)^template: 1$")'
+          - 'proxmox_template_config.stdout is regex("(?m)^boot: order=scsi0;ide2$")'
+          - 'proxmox_template_config.stdout is regex("(?m)^scsi0: ")'
+          - 'proxmox_template_config.stdout is regex("(?m)^ide2: .*talos-.*-nocloud-amd64\.iso")'
+          - 'proxmox_template_config.stdout is regex("(?m)^ide2: .*media=cdrom")'
+          - 'proxmox_template_config.stdout is not regex("(?m)^ide0: ")'
+        fail_msg: >-
+          Template {{ proxmox_template_vm_id }} is not safe for CAPMOX: it must
+          boot scsi0 before the Talos ISO on ide2 and leave ide0 free for the
+          workload NoCloud seed. Reapply terraform/proxmox before continuing.
+        success_msg: >-
+          Template {{ proxmox_template_vm_id }} is bootable and leaves ide0
+          available for CAPMOX.

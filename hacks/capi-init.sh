@@ -8,6 +8,8 @@ CREDENTIALS_FILE="${REPO_ROOT}/capi/credentials.env"
 EXPECTED_CONTEXT="labmgmt"
 ASSUME_YES=false
 WAIT=true
+API_WAIT_TIMEOUT_SECONDS=600
+API_RETRY_INTERVAL_SECONDS=10
 
 usage() {
   cat <<'EOF'
@@ -97,6 +99,20 @@ printf 'Kubernetes context: %s\n' "${current_context}"
 printf 'Proxmox endpoint: %s\n' "${PROXMOX_URL}"
 printf 'Proxmox token ID: %s\n' "${PROXMOX_TOKEN}"
 printf 'Clusterctl config: %s\n' "${CLUSTERCTL_CONFIG}"
+
+printf 'Waiting up to %ss for the Kubernetes API to become ready...\n' \
+  "${API_WAIT_TIMEOUT_SECONDS}"
+api_wait_deadline=$((SECONDS + API_WAIT_TIMEOUT_SECONDS))
+until kubectl --request-timeout=5s get --raw=/readyz >/dev/null 2>&1; do
+  if ((SECONDS >= api_wait_deadline)); then
+    die "Kubernetes API did not become ready within ${API_WAIT_TIMEOUT_SECONDS}s"
+  fi
+
+  printf 'Kubernetes API is not ready; retrying in %ss...\n' \
+    "${API_RETRY_INTERVAL_SECONDS}"
+  sleep "${API_RETRY_INTERVAL_SECONDS}"
+done
+printf 'Kubernetes API is ready.\n'
 
 if [[ "${ASSUME_YES}" == false ]]; then
   read -r -p "Install or update the pinned CAPI providers on ${current_context}? [y/N] " reply

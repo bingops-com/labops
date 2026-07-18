@@ -1,0 +1,17 @@
+[Unit]
+Description=LabOps Kubernetes VLAN routing
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStartPre=-/usr/sbin/nft delete table ip labops_kubernetes_vlan
+ExecStartPre=-/usr/sbin/nft delete table inet labops_kubernetes_vlan_filter
+ExecStart=/usr/sbin/nft -f /etc/nftables.d/labops-vlan{{ proxmox_kubernetes_vlan_id }}.nft
+ExecReload=/bin/sh -c '/usr/sbin/nft delete table ip labops_kubernetes_vlan 2>/dev/null || true; /usr/sbin/nft delete table inet labops_kubernetes_vlan_filter 2>/dev/null || true; /usr/sbin/nft -f /etc/nftables.d/labops-vlan{{ proxmox_kubernetes_vlan_id }}.nft'
+ExecStop=-/usr/sbin/nft delete table ip labops_kubernetes_vlan
+ExecStop=-/usr/sbin/nft delete table inet labops_kubernetes_vlan_filter
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

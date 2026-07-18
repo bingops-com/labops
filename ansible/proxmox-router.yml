@@ -1,0 +1,7 @@
+---
+- name: Configure the Proxmox router for the Kubernetes VLAN
+  hosts: proxmox
+  become: true
+  gather_facts: false
+  roles:
+    - proxmox_vlan_router

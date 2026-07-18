@@ -18,10 +18,12 @@ resource "proxmox_virtual_environment_vm" "talos_nocloud_template" {
   pool_id     = var.node_pool
   description = "Talos nocloud template managed by Terraform for CAPI"
 
-  started    = false
-  on_boot    = true
-  template   = true
-  boot_order = ["scsi0", "ide0"]
+  started  = false
+  on_boot  = true
+  template = true
+  # CAPMOX injects each workload machine's NoCloud seed on ide0. Keep the
+  # Talos boot media on ide2 so cloning the template does not replace it.
+  boot_order = ["scsi0", "ide2"]
 
   agent {
     enabled = false
@@ -29,7 +31,7 @@ resource "proxmox_virtual_environment_vm" "talos_nocloud_template" {
 
   cdrom {
     file_id   = proxmox_download_file.talos_nocloud_iso.id
-    interface = "ide0"
+    interface = "ide2"
   }
 
   cpu {
@@ -51,8 +53,9 @@ resource "proxmox_virtual_environment_vm" "talos_nocloud_template" {
   }
 
   network_device {
-    bridge = "vmbr0"
-    model  = "virtio"
+    bridge  = "vmbr0"
+    model   = "virtio"
+    vlan_id = var.kubernetes_vlan_id
   }
 
   operating_system {

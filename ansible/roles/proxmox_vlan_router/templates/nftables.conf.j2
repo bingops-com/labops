@@ -1,0 +1,15 @@
+# Managed by Ansible.
+table inet labops_kubernetes_vlan_filter {
+    chain forward {
+        type filter hook forward priority filter; policy accept;
+        iifname "{{ proxmox_kubernetes_parent_bridge }}.{{ proxmox_kubernetes_vlan_id }}" oifname "{{ proxmox_kubernetes_uplink }}" accept
+        iifname "{{ proxmox_kubernetes_uplink }}" oifname "{{ proxmox_kubernetes_parent_bridge }}.{{ proxmox_kubernetes_vlan_id }}" ct state established,related accept
+    }
+}
+
+table ip labops_kubernetes_vlan {
+    chain postrouting {
+        type nat hook postrouting priority srcnat; policy accept;
+        ip saddr {{ proxmox_kubernetes_vlan_subnet }} oifname "{{ proxmox_kubernetes_uplink }}" masquerade
+    }
+}
