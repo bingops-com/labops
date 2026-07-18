@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bingops-www-preprod
+  namespace: argocd-system
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: labops-preprod
+  source:
+    repoURL: https://github.com/bingops-com/labops.git
+    targetRevision: main
+    path: apps/bingops/clusters/preprod/www
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: bingops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

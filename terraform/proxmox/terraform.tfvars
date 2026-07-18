@@ -1,32 +1,26 @@
-node_name = "homelab"
-node_pool = "Kubernetes"
+node_name                    = "homelab"
+node_pool                    = "Kubernetes"
+datastore                    = "nvme2-lvm"
+iso_datastore                = "local"
+talos_nocloud_template_vm_id = 1234
 
-nodes = {
-  # Production
-  prodk3s = {
-    host_ip        = "192.168.1.160/24"
-    gw             = "192.168.1.1"
-    vm_id          = 160
-    cores          = 4
-    memory         = 8192 # 8GB
-    storage        = 300 # GB
-    network_bridge = "vmbr0"
-    role           = "master"
-    environment    = "production"
-  },
-  # Preprod
-  ppk3s = {
-    host_ip        = "192.168.1.170/24"
-    gw             = "192.168.1.1"
-    vm_id          = 170
-    cores          = 2
-    memory         = 4096 # 4GB
-    storage        = 300 # GB
-    network_bridge = "vmbr0"
-    role           = "master"
-    environment    = "preprod"
+clusters = {
+  labmgmt = {
+    endpoint = "192.168.1.150"
   }
 }
 
-datastore      = "nvme2-lvm"
-template_vm_id = "9999"
+nodes = {
+  talos-labmgmt-cp-01 = {
+    address        = "192.168.1.150/24"
+    gateway        = "192.168.1.1"
+    vm_id          = 150
+    mac_address    = "02:00:00:00:01:50"
+    cores          = 4
+    memory         = 8192
+    storage        = 100
+    network_bridge = "vmbr0"
+    cluster        = "labmgmt"
+    role           = "controlplane"
+  }
+}
