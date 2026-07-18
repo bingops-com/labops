@@ -35,7 +35,7 @@ resource "proxmox_virtual_environment_vm" "node" {
 
   started    = true
   on_boot    = true
-  boot_order = ["scsi0", "ide0"]
+  boot_order = ["scsi0", "ide2"]
 
   clone {
     vm_id        = proxmox_virtual_environment_vm.talos_nocloud_template.vm_id
@@ -48,10 +48,19 @@ resource "proxmox_virtual_environment_vm" "node" {
     enabled = false
   }
 
+  # Declare the boot ISO on labmgmt explicitly. Existing clones do not inherit
+  # hardware changes made later to template 1234.
+  cdrom {
+    file_id   = proxmox_download_file.talos_nocloud_iso.id
+    interface = "ide2"
+  }
+
   initialization {
     datastore_id = var.datastore
-    interface    = "ide2"
-    type         = "nocloud"
+    # ide2 is the explicit Talos boot ISO above. CAPMOX uses ide0 for workload
+    # seeds, so use a third interface for labmgmt's seed.
+    interface = "sata0"
+    type      = "nocloud"
 
     dns {
       servers = var.nameservers
@@ -89,6 +98,7 @@ resource "proxmox_virtual_environment_vm" "node" {
     bridge      = each.value.network_bridge
     mac_address = each.value.mac_address
     model       = "virtio"
+    vlan_id     = var.kubernetes_vlan_id
   }
 
   operating_system {

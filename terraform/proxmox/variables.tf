@@ -36,6 +36,17 @@ variable "node_pool" {
   default     = "Kubernetes"
 }
 
+variable "kubernetes_vlan_id" {
+  type        = number
+  description = "802.1Q VLAN tag applied to every Kubernetes VM network device."
+  default     = 10
+
+  validation {
+    condition     = var.kubernetes_vlan_id >= 1 && var.kubernetes_vlan_id <= 4094
+    error_message = "kubernetes_vlan_id must be between 1 and 4094."
+  }
+}
+
 variable "datastore" {
   type        = string
   description = "Proxmox datastore for VM disks."

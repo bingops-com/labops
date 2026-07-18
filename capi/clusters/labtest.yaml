@@ -7,15 +7,15 @@ spec:
   allowedNodes:
     - homelab
   controlPlaneEndpoint:
-    host: 192.168.1.170
+    host: 192.168.10.170
     port: 6443
   dnsServers:
     - 1.1.1.1
     - 9.9.9.9
   ipv4Config:
     addresses:
-      - 192.168.1.152
-    gateway: 192.168.1.1
+      - 192.168.10.152
+    gateway: 192.168.10.1
     prefix: 24
   schedulerHints:
     memoryAdjustment: 0
@@ -64,6 +64,7 @@ spec:
         default:
           bridge: vmbr0
           model: virtio
+          vlan: 10
       numCores: 2
       numSockets: 1
       pool: Kubernetes
@@ -95,14 +96,18 @@ spec:
           machine:
             install:
               disk: /dev/sda
-              extraKernelArgs:
-                - net.ifnames=0
             network:
               interfaces:
-                - interface: eth0
+                - deviceSelector:
+                    busPath: "0*"
+                  addresses:
+                    - 192.168.10.152/24
                   dhcp: false
+                  routes:
+                    - network: 0.0.0.0/0
+                      gateway: 192.168.10.1
                   vip:
-                    ip: 192.168.1.170
+                    ip: 192.168.10.170
             kubelet:
               extraArgs:
                 cloud-provider: external

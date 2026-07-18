@@ -1,0 +1,84 @@
+---
+- name: Validate Kubernetes VLAN settings
+  ansible.builtin.assert:
+    that:
+      - proxmox_kubernetes_vlan_id | int >= 1
+      - proxmox_kubernetes_vlan_id | int <= 4094
+      - proxmox_kubernetes_vlan_address is match('^[0-9.]+/[0-9]+$')
+      - proxmox_kubernetes_vlan_subnet is match('^[0-9.]+/[0-9]+$')
+    fail_msg: Invalid Proxmox Kubernetes VLAN settings
+
+- name: Install nftables
+  ansible.builtin.apt:
+    name: nftables
+    state: present
+
+- name: Configure the Proxmox VLAN interface
+  ansible.builtin.template:
+    src: vlan-interface.j2
+    dest: "/etc/network/interfaces.d/labops-vlan{{ proxmox_kubernetes_vlan_id }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload Proxmox networking
+
+- name: Enable IPv4 forwarding persistently
+  ansible.builtin.template:
+    src: sysctl.conf.j2
+    dest: /etc/sysctl.d/99-labops-vlan-router.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload kernel parameters
+
+- name: Create the nftables fragment directory
+  ansible.builtin.file:
+    path: /etc/nftables.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install the VLAN NAT rules
+  ansible.builtin.template:
+    src: nftables.conf.j2
+    dest: "/etc/nftables.d/labops-vlan{{ proxmox_kubernetes_vlan_id }}.nft"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Kubernetes VLAN routing
+
+- name: Install the VLAN routing service
+  ansible.builtin.template:
+    src: systemd.service.j2
+    dest: /etc/systemd/system/labops-kubernetes-vlan.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart Kubernetes VLAN routing
+
+- name: Enable the VLAN routing service
+  ansible.builtin.systemd_service:
+    name: labops-kubernetes-vlan.service
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: not ansible_check_mode
+
+- name: Read current Tailscale router preferences
+  ansible.builtin.command: tailscale debug prefs
+  register: proxmox_tailscale_preferences
+  changed_when: false
+  check_mode: false
+
+- name: Advertise the LAN and Kubernetes VLAN through Tailscale
+  ansible.builtin.command:
+    argv:
+      - tailscale
+      - set
+      - "--advertise-routes={{ proxmox_tailscale_advertised_routes | join(',') }}"
+  when:
+    - not ansible_check_mode
+    - ((proxmox_tailscale_preferences.stdout | from_json).AdvertiseRoutes | sort) != (proxmox_tailscale_advertised_routes | sort)

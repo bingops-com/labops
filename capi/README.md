@@ -46,7 +46,7 @@ user does not have. Create a dedicated role on the Proxmox node:
 
 ```sh
 pveum role add LabOpsCAPMox --privs \
-  'Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.CPU VM.Config.Cloudinit VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.Monitor VM.PowerMgmt SDN.Use'
+  'Datastore.Allocate Datastore.AllocateSpace Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.CPU VM.Config.Cloudinit VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.Monitor VM.PowerMgmt SDN.Use'
 ```
 
 If the role already exists, replace `role add` with `role modify`. Assign it to
@@ -69,10 +69,15 @@ permissions under `/`:
 
 ```sh
 pveum user permissions capmox@pve /
-pveum user token permissions capmox@pve capi /
+pveum user token permissions capmox@pve capi
 ```
 
 Do not disable privilege separation merely to work around a missing ACL.
+
+Template 1234 keeps the Talos boot ISO on `ide2`; CAPMOX reserves `ide0` for
+each workload machine's generated NoCloud seed. The automated lifecycle runs
+`task proxmox:template:verify` after Terraform and refuses to create workloads
+if the ISO, boot order, system disk, or free `ide0` slot is missing.
 
 On the workstation, create the ignored credentials file from the tracked
 example and insert the token secret returned by Proxmox:
@@ -85,42 +90,53 @@ $EDITOR capi/credentials.env
 
 The file uses the same pattern as Terraform's ignored
 `credentials.auto.tfvars`: only the example is committed. From the repository
-root on the workstation, run the guarded initialization helper:
+root on the workstation, load it into the environment and install the pinned
+providers on the current Kubernetes context:
 
 ```sh
+set -a
+. ./capi/credentials.env
+set +a
+
+export CLUSTERCTL_CONFIG="$PWD/capi/clusterctl.yaml"
+
 kubectl config current-context
-./hacks/capi-init.sh
+
+clusterctl init \
+  --core cluster-api:v1.12.9 \
+  --bootstrap talos:v0.6.12 \
+  --control-plane talos:v0.5.13 \
+  --infrastructure proxmox:v0.9.0 \
+  --ipam in-cluster:v1.1.0
+
+kubectl wait \
+  --for=condition=Available \
+  --timeout=5m \
+  deployment --all -A
 ```
 
-The helper requires the current context to be exactly `labmgmt`, checks that
-the credentials file has mode `0600` or `0400`, displays only the endpoint and
-token ID, and asks before running the pinned `clusterctl init`. It never prints
-the token secret. It then waits up to five minutes for all deployments to
-become available.
+Confirm that `kubectl config current-context` is `labmgmt` before running
+`clusterctl init`. These commands change the current cluster. When finished,
+remove the credentials from the current shell without deleting the ignored
+file:
 
 ```sh
-./hacks/capi-init.sh --help
+unset PROXMOX_URL PROXMOX_TOKEN PROXMOX_SECRET CLUSTERCTL_CONFIG
 ```
-
-Use `--yes` only for intentional unattended execution. `--context NAME` allows
-a different management-context name but still enforces an exact match. These
-commands change the selected Kubernetes cluster.
 
 ## 3. Create workload clusters
 
-Ensure the following dedicated VM IDs and addresses are free before applying.
-The node addresses must be excluded from DHCP:
-
-| Cluster | Proxmox VM ID | Node address | Control-plane VIP | Proxmox pool |
-| --- | ---: | --- | --- | --- |
-| `labprod` | `151` | `192.168.1.151` | `192.168.1.160` | `Kubernetes` |
-| `labtest` | `152` | `192.168.1.152` | `192.168.1.170` | `Kubernetes` |
-
-Each cluster currently has one control-plane replica and exactly one available
-node address. The manifests constrain CAPMOX with a single-value `vmIDRange`
-(`151-151` and `152-152`); `virtualMachineID` is controller-managed and must not
-be used to request an ID. Add another unique VM ID range and address allocation
-before increasing the replica count. Then apply:
+Each cluster uses a dedicated node address and a separate Kubernetes API VIP.
+`labprod` uses node `192.168.10.151` and VIP `192.168.10.160`; `labtest` uses
+node `192.168.10.152` and VIP `192.168.10.170`. CAPMOX rejects a
+`controlPlaneEndpoint` contained in its node-address pool, so these addresses
+cannot be merged. All four addresses must be unused and excluded from DHCP.
+The Talos machine configuration declares each node address and default route
+explicitly, avoiding reliance on NoCloud network-data while CAPMOX still owns
+address allocation and VM lifecycle. It selects the VM's only hardware network
+device by PCI bus path instead of assuming it is named `eth0`; Talos predictable
+interface names can otherwise leave the active VirtIO device running DHCP.
+Then apply:
 
 ```sh
 kubectl apply -f capi/namespace.yaml

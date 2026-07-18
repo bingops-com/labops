@@ -1,0 +1,5 @@
+# Managed by Ansible. Kubernetes VLAN {{ proxmox_kubernetes_vlan_id }} gateway.
+auto {{ proxmox_kubernetes_parent_bridge }}.{{ proxmox_kubernetes_vlan_id }}
+iface {{ proxmox_kubernetes_parent_bridge }}.{{ proxmox_kubernetes_vlan_id }} inet static
+    address {{ proxmox_kubernetes_vlan_address }}
+    vlan-raw-device {{ proxmox_kubernetes_parent_bridge }}

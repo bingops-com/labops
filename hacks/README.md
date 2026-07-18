@@ -1,11 +1,18 @@
 # Helper scripts
 
+The repository lifecycle also uses
+`ansible/proxmox-template-verify.yml` as a read-only gate between the Proxmox
+Terraform apply and CAPI workload creation. It ensures template 1234 retains
+its Talos ISO on `ide2` while `ide0` remains available for CAPMOX NoCloud data.
+
 ## `capi-init.sh`
 
 Loads the ignored CAPI Proxmox credentials, requires the expected management
 cluster context, installs the provider versions pinned in the repository, and
-waits for their deployments. See [`capi/README.md`](../capi/README.md) for the
-token, ACL, and credentials setup that must be completed first.
+waits up to ten minutes for the management Kubernetes API before installing the
+providers, then waits for their deployments. See
+[`capi/README.md`](../capi/README.md) for the token, ACL, and credentials setup
+that must be completed first.
 
 ## `cluster-setup.sh`
 

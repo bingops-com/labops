@@ -1,0 +1,9 @@
+---
+proxmox_kubernetes_vlan_id: 10
+proxmox_kubernetes_vlan_address: 192.168.10.1/24
+proxmox_kubernetes_vlan_subnet: 192.168.10.0/24
+proxmox_kubernetes_parent_bridge: vmbr0
+proxmox_kubernetes_uplink: vmbr0
+proxmox_tailscale_advertised_routes:
+  - 192.168.1.0/24
+  - 192.168.10.0/24
