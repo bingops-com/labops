@@ -9,6 +9,10 @@ cloudflare:
       service: http://portfolio.bingops.svc.cluster.local:80
     - hostname: blog.bingops.com
       service: http://blog.bingops.svc.cluster.local:80
+    - hostname: portfolio.prod.bingops.com
+      service: http://portfolio.portfolio.svc.cluster.local:80
+    - hostname: "*.prod.bingops.com"
+      service: http://traefik.traefik.svc.cluster.local:80
 
 replicaCount: 2
 

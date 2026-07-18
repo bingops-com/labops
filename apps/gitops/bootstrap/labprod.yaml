@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: labops-labprod
+  namespace: argocd-system
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/bingops-com/labops.git
+    targetRevision: master
+    path: apps/gitops/clusters/labprod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
