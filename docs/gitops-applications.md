@@ -20,13 +20,18 @@ Do not create a permanent workload Application under the `labtest` root. The
 current workflow deliberately activates one feature branch at a time with
 `hacks/gitops-preview.sh`. Platform services continue to follow `master`.
 
-Use `<app>.test.bingops.com` on test and `<app>.prod.bingops.com` in production
-unless the application has an explicitly owned top-level name. Test DNS is a
-private wildcard. Production's `*.prod.bingops.com` DNS and Cloudflare Tunnel
-route already forward to Traefik, so ordinary applications need no individual
-DNS record or tunnel rule. A name such as `<app>.bingops.com` is exceptional:
-declare its DNS and tunnel route in the Cloudflare Terraform/application values
-and document the ownership change.
+Use `<app>.test.lab.bingo` on test and `<app>.lab.bingo` in production. Test DNS
+is a private wildcard. Production intentionally has no wildcard: every public
+hostname must be added to `local.lab_tunnel_hostnames` in
+`terraform/cloudflare/locals.tf` and to the cloudflared ingress list in
+`apps/cloudflare/bingops/values.yaml`. This prevents a newly created Ingress,
+especially an administrative one, from becoming public accidentally. The
+portfolio is exceptional because it also owns `bingops.com` and
+`www.bingops.com`.
+
+The base tunnel and its `bingops.com` aliases are declared in the tracked
+`terraform/cloudflare/routes.auto.tfvars`; credentials and identifiers remain
+in ignored tfvars. Do not put hostnames back into a sensitive operator file.
 
 ## 1. Create the workload manifests
 
@@ -37,9 +42,9 @@ such as `<app>.invalid`; each overlay must replace every rule and TLS hostname.
 
 Keep environment differences in the overlays:
 
-- `labtest`: `<app>.test.bingops.com`, issuer `labtest-ca`, and the local/Tailscale
+- `labtest`: `<app>.test.lab.bingo`, issuer `labtest-ca`, and the local/Tailscale
   allowlist when the service is private;
-- `labprod`: `<app>.prod.bingops.com`, issuer `letsencrypt-cloudflare`, and an
+- `labprod`: `<app>.lab.bingo`, issuer `letsencrypt-cloudflare`, and an
   immutable image tag or digest;
 - never use `latest` for a promoted production image;
 - remove a test-only allowlist explicitly in production only when the service
@@ -113,7 +118,7 @@ Application follows the remote feature branch directly and reconciles
 active revision. Only one branch can own the stable test hostname at a time.
 
 Verify in Argo CD that `<app>-preview` is `Synced` and `Healthy`, then test
-`https://<app>.test.bingops.com` from the LAN or Tailscale. The client must trust
+`https://<app>.test.lab.bingo` from the LAN or Tailscale. The client must trust
 the labtest root CA. Verify the certificate hostname without displaying any
 private key or Secret content.
 
@@ -128,6 +133,12 @@ Verify that the Application, Deployment, Service, Ingress, Certificate and
 CertificateRequest are healthy. For a public application, verify HTTPS from
 outside the lab. For a private application, verify that an allowed client can
 connect and a client outside the allowlist cannot.
+
+For a new public production application, the promotion must include both the
+explicit Cloudflare DNS hostname and the matching tunnel ingress rule. For a
+private application such as Argo CD, omit both declarations and add only the
+required exact split-DNS route. Cloudflare and Terraform must never infer
+public exposure from the presence of a Kubernetes Ingress.
 
 After promotion, remove the test preview when it is no longer needed:
 

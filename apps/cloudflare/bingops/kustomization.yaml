@@ -5,6 +5,7 @@ namespace: cloudflare
 
 resources:
   - ../base
+  - cloudflare-tunnel-secret.yaml
 
 helmCharts:
   - name: cloudflare-tunnel
