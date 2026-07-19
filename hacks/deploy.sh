@@ -88,25 +88,40 @@ load_applications() {
 run_diff() {
   local label="$1"
   shift
-  local result
-  echo
-  echo "== ${label} =="
+  local result diff_output
+  diff_output="$(mktemp "${TMPDIR:-/tmp}/labops-diff.XXXXXX")"
   set +e
-  "$@"
+  "$@" >"${diff_output}" 2>&1
   result=$?
   set -e
-  if [[ ${result} -eq 0 ]]; then
-    echo "No changes."
+  if [[ ${result} -ne 0 ]]; then
+    echo
+    echo "== ${label} =="
+    cat "${diff_output}"
   fi
+  rm -f -- "${diff_output}"
   [[ ${result} -le 1 ]] || return "${result}"
 }
 
+run_self_managed_argocd_diff() {
+  local application_path="$1"
+  kubectl kustomize --enable-helm "${application_path}" | KUBECTL_EXTERNAL_DIFF="diff --color=always --unified" kubectl --context "${cluster_context}" diff -f -
+}
+
 show_diffs() {
-  local application
+  local application application_path current_revision
   prepare_argocd_kubeconfig
 
   for application in "${applications[@]}"; do
-    run_diff "${application}" env KUBECONFIG="${argocd_kubeconfig}" KUBECTL_EXTERNAL_DIFF="diff --color=always --unified" argocd --core app diff "${application}" --revision "${revision}"
+    if [[ "${application}" == "argocd-${suffix}" ]]; then
+      current_revision="$(current_branch)"
+      [[ "${revision}" == "${current_revision}" ]] || die "Diffing ${application} requires revision '${current_revision}' to match the local working tree."
+      application_path="$(kubectl --context "${cluster_context}" --namespace argocd-system get application "${application}" -o jsonpath='{.spec.source.path}')"
+      run_diff "${application}" run_self_managed_argocd_diff "${application_path}"
+      continue
+    fi
+
+    run_diff "${application}" env KUBECONFIG="${argocd_kubeconfig}" KUBECTL_EXTERNAL_DIFF="diff --color=always --unified" argocd --core app diff "${application}" --revision "${revision}" --hard-refresh
   done
 }
 
@@ -171,11 +186,10 @@ case "${action}" in
     validate_revision
     show_diffs
     target="${app_name:-all Git-backed applications}"
-    confirmation="deploy ${environment}"
     echo
     echo "Target: ${target} on ${environment}"
-    read -r -p "Type '${confirmation}' to apply the changes: " answer
-    [[ "${answer}" == "${confirmation}" ]] || die "Deployment cancelled."
+    read -r -p "Type 'yes' to apply the changes: " answer
+    [[ "${answer}" == "yes" ]] || die "Deployment cancelled."
     for application in "${applications[@]}"; do
       patch_revision "${application}" "${revision}" "${revision}"
     done

@@ -11,6 +11,7 @@ split across files:
 | `terraform.yml` | `terraform:*` | Terraform-owned `labmgmt` lifecycle |
 | `capi.yml` | `capi:*` | CAPI providers and workload clusters |
 | `clients.yml` | `clients:*` | Kubernetes and Talos client configuration |
+| `hacks.yml` | `hacks:*` | Install project helper commands in the operator PATH |
 | `workstation.yml` | `workstation:*` | Operator reachability checks |
 | `setup.yml` | `setup:*` | Cross-subsystem setup orchestration |
 | `lifecycle.yml` | `lifecycle:*` | Full create, recreate and destroy workflows |

@@ -3,6 +3,7 @@ version: "3"
 includes:
   capi: .taskfiles/capi.yml
   clients: .taskfiles/clients.yml
+  hacks: .taskfiles/hacks.yml
   lifecycle: .taskfiles/lifecycle.yml
   network: .taskfiles/network.yml
   proxmox: .taskfiles/proxmox.yml

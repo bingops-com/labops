@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: authentik-labprod
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-6"
+spec:
+  project: labops-labprod
+  source:
+    repoURL: https://charts.goauthentik.io
+    chart: authentik
+    targetRevision: 2026.5.5
+    helm:
+      valuesObject:
+        authentik:
+          existingSecret:
+            secretName: authentik-secrets
+          error_reporting:
+            enabled: false
+        blueprints:
+          configMaps:
+            - authentik-blueprints
+        server:
+          ingress:
+            enabled: true
+            ingressClassName: traefik
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-cloudflare
+              traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              traefik.ingress.kubernetes.io/router.tls: "true"
+            hosts:
+              - auth.lab.bingo
+            tls:
+              - secretName: authentik-tls
+                hosts:
+                  - auth.lab.bingo
+        postgresql:
+          enabled: true
+          auth:
+            username: authentik
+            database: authentik
+            existingSecret: authentik-secrets
+            secretKeys:
+              adminPasswordKey: postgres-password
+              userPasswordKey: password
+              replicationPasswordKey: replication-password
+          primary:
+            persistence:
+              enabled: true
+              size: 8Gi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: authentik
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

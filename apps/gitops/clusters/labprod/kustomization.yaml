@@ -8,6 +8,8 @@ resources:
   - traefik.yaml
   - cert-manager.yaml
   - certificates.yaml
+  - authentik-config.yaml
+  - authentik.yaml
   - private-dns.yaml
   - argocd-access.yaml
   - cloudflare-tunnel.yaml

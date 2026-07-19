@@ -1,0 +1,74 @@
+version: "3"
+
+tasks:
+  install:
+    desc: Expose executable project helpers in the operator PATH
+    summary: |
+      Creates stable symlinks without the .sh suffix in ~/.local/bin by default.
+      Override the destination with LABOPS_BIN_DIR. Existing unrelated files or
+      symlinks are never replaced.
+    cmds:
+      - |
+        set -eu
+        labops_repo_root="{{.ROOT_DIR}}"
+        labops_bin_dir="${LABOPS_BIN_DIR:-${HOME}/.local/bin}"
+        mkdir -p "${labops_bin_dir}"
+
+        for labops_helper in "${labops_repo_root}"/hacks/*.sh; do
+          [ -x "${labops_helper}" ] || continue
+          labops_command="$(basename "${labops_helper}" .sh)"
+          labops_link="${labops_bin_dir}/${labops_command}"
+
+          if [ -L "${labops_link}" ]; then
+            labops_existing_target="$(readlink "${labops_link}")"
+            if [ "${labops_existing_target}" != "${labops_helper}" ]; then
+              echo "Refusing to replace unrelated symlink ${labops_link} -> ${labops_existing_target}." >&2
+              exit 1
+            fi
+          elif [ -e "${labops_link}" ]; then
+            echo "Refusing to replace existing path ${labops_link}." >&2
+            exit 1
+          fi
+
+          ln -sfn "${labops_helper}" "${labops_link}"
+          echo "Installed ${labops_command} -> ${labops_helper}"
+        done
+
+        case ":${PATH}:" in
+          *:"${labops_bin_dir}":*) ;;
+          *) echo "Add ${labops_bin_dir} to PATH in your shell configuration." >&2 ;;
+        esac
+
+  check:
+    desc: Verify that every executable project helper is available in PATH
+    cmds:
+      - |
+        set -eu
+        labops_repo_root="{{.ROOT_DIR}}"
+
+        for labops_helper in "${labops_repo_root}"/hacks/*.sh; do
+          [ -x "${labops_helper}" ] || continue
+          labops_command="$(basename "${labops_helper}" .sh)"
+          labops_resolved="$(command -v "${labops_command}" || true)"
+          [ -n "${labops_resolved}" ] || { echo "${labops_command} is not in PATH." >&2; exit 1; }
+          [ "$(readlink -f "${labops_resolved}")" = "$(readlink -f "${labops_helper}")" ] || { echo "${labops_command} resolves to ${labops_resolved}, not ${labops_helper}." >&2; exit 1; }
+          echo "${labops_command}: ${labops_resolved}"
+        done
+
+  remove:
+    desc: Remove only PATH symlinks installed for this checkout
+    prompt: Remove LabOps helper symlinks from the configured bin directory?
+    cmds:
+      - |
+        set -eu
+        labops_repo_root="{{.ROOT_DIR}}"
+        labops_bin_dir="${LABOPS_BIN_DIR:-${HOME}/.local/bin}"
+
+        for labops_helper in "${labops_repo_root}"/hacks/*.sh; do
+          labops_command="$(basename "${labops_helper}" .sh)"
+          labops_link="${labops_bin_dir}/${labops_command}"
+          if [ -L "${labops_link}" ] && [ "$(readlink "${labops_link}")" = "${labops_helper}" ]; then
+            rm -- "${labops_link}"
+            echo "Removed ${labops_link}"
+          fi
+        done
