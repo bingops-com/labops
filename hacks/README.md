@@ -1,5 +1,17 @@
 # Helper scripts
 
+Expose every executable `hacks/*.sh` helper as a command without the `.sh`
+suffix. The default destination is `~/.local/bin`; set `LABOPS_BIN_DIR` to use
+another directory. Installation refuses to overwrite unrelated paths.
+
+```sh
+task hacks:install
+task hacks:check
+```
+
+For example, `hacks/deploy.sh` becomes `deploy`. Remove only the symlinks owned
+by the current checkout with `task hacks:remove`.
+
 The repository lifecycle also uses
 `ansible/proxmox-template-verify.yml` as a read-only gate between the Proxmox
 Terraform apply and CAPI workload creation. It ensures template 1234 retains
@@ -11,7 +23,7 @@ Previews the changes that Argo CD would apply to the selected live cluster,
 then temporarily points an existing Application at a pushed revision. Select `test` or `prod`; if
 `--app` is omitted, every Git-backed workload Application in that environment
 is targeted. If `--revision` is omitted, the current Git branch is used.
-Every deployment requires typing an exact confirmation phrase.
+Every deployment requires typing `yes` after reviewing the diff.
 
 ```sh
 ./hacks/deploy.sh diff test --app portfolio
@@ -27,11 +39,17 @@ Every deployment requires typing an exact confirmation phrase.
 Applications. `dev` remains an alias for `test`. `diff` displays one unified
 live-to-desired diff per Application, including the Kubernetes object path;
 additions are green and deletions are red. It does not print the branch name.
-`deploy` shows the same diff before asking for confirmation. `restore` returns
+Applications without changes are omitted entirely. `deploy` shows the same
+diff before asking for `yes`. `restore` returns
 both environments to `master`. Overrides are
 recorded on the child Application; the root ignores only `targetRevision` drift
 and continues to self-heal every other field. Reapply the corresponding root
 bootstrap once after enabling this policy on an existing cluster.
+
+The self-managed `argocd-<cluster>` Application is rendered locally with Helm
+and compared through `kubectl diff`; Argo CD core mode cannot authorize new
+cluster-scoped resources that are not yet tracked by its own Application. For
+that Application, an explicit `--revision` must match the current local branch.
 
 The helper requires `git`, `jq`, `kubectl`, `argocd`, the `labtest` and
 `labprod` kubectl contexts, and a remote branch that has already been pushed.

@@ -51,10 +51,13 @@ its value, Terraform sensitive output, or an unsealed Kubernetes Secret here.
 8. Apply split DNS for `*.test.lab.bingo` through `192.168.10.170` and for the
    exact private name `argocd.lab.bingo` through `192.168.10.160`. Confirm the
    Tailscale subnet route to `192.168.10.0/24`, then apply public Cloudflare
-   DNS/tunnel configuration for `portfolio.lab.bingo`, `bingops.com` and
-   `www.bingops.com`. Production `lab.bingo` routes are explicit; do not add
+   DNS/tunnel configuration for `auth.lab.bingo`, `portfolio.lab.bingo`,
+   `bingops.com` and `www.bingops.com`. Production `lab.bingo` routes are explicit; do not add
    either Argo CD hostname to the Cloudflare tunnel.
-9. Push feature changes, integrate them temporarily into `labtest` with
+9. Recreate Authentik according to [`authentik.md`](authentik.md), restore its
+   PostgreSQL identity backup, and verify both Argo CD OIDC clients. On a new
+   installation, complete the documented one-time administrator bootstrap.
+10. Push feature changes, integrate them temporarily into `labtest` with
    `hacks/deploy.sh`, validate the reconciled revision, restore labtest to its
    `master` baseline, then merge the reviewed feature into `master`.
 
@@ -70,10 +73,11 @@ Do not continue to the next layer until the current gate passes:
 | Argo CD | Controllers are Ready and Applications are Synced/Healthy |
 | Secrets | Sealed Secrets controller is Ready; required generated Secrets exist without printing them |
 | Test DNS | An arbitrary `<app>.test.lab.bingo` resolves privately to the labtest ingress address |
-| Production DNS | `portfolio.lab.bingo`, `bingops.com`, and `www.bingops.com` resolve through Cloudflare |
+| Production DNS | `auth.lab.bingo`, `portfolio.lab.bingo`, `bingops.com`, and `www.bingops.com` resolve through Cloudflare |
 | Private Argo CD DNS | `argocd.test.lab.bingo` resolves to `192.168.10.152` and `argocd.lab.bingo` resolves to `192.168.10.151` only for clients using Tailscale split DNS |
+| Authentik | Both OIDC discovery documents return successfully over trusted HTTPS |
 | TLS and routing | HTTPS validates with the normal public trust store on both clusters; labtest remains unreachable outside LAN/Tailscale |
-| Argo CD access | Both Argo CD hostnames reject sources outside the local lab networks and Tailscale; labprod presents a valid Let's Encrypt certificate without traversing Cloudflare Tunnel |
+| Argo CD access | Test rejects sources outside LAN/Tailscale; production remains unrouted publicly and both require successful Authentik login |
 
 ## Documentation completion criteria
 

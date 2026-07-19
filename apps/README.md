@@ -33,12 +33,14 @@ the labtest control-plane VIP `192.168.10.170`, returns the Traefik node
 address `192.168.10.152`, and `terraform/tailscale-dns`
 sends only `test.lab.bingo` queries to it.
 
-Argo CD is private on both workload clusters. Tailscale split DNS resolves
-`argocd.test.lab.bingo` through the labtest DNS service and resolves only
+Argo CD uses Authentik OIDC on both workload clusters. Tailscale split DNS
+resolves `argocd.test.lab.bingo` through the labtest DNS service and resolves only
 `argocd.lab.bingo` through a dedicated DNS service bound to the labprod VIP
-`192.168.10.160` and returning `192.168.10.151`. Neither hostname is routed through Cloudflare Tunnel or
-published by public DNS. Their Traefik ingresses allow only the local lab
-networks and Tailscale. Both clusters use publicly trusted Let's Encrypt
+`192.168.10.160` and returning `192.168.10.151`. Neither hostname is routed
+through Cloudflare Tunnel or published by public DNS. Their Traefik ingresses allow only the local lab
+networks and Tailscale on test. Production has no IP allowlist and relies on
+Authentik authentication, but its exact hostname remains reachable only through
+LAN/Tailscale routing. Both clusters use publicly trusted Let's Encrypt
 certificates obtained through Cloudflare DNS-01, without sending application
 traffic through Cloudflare. Tailscale clients must have a
 subnet route to `192.168.10.0/24` for the split nameservers and ingresses to be
@@ -52,7 +54,9 @@ controller whenever the tunnel credential or sealing key rotates. The
 portfolio is public at `portfolio.lab.bingo`; `bingops.com` and
 `www.bingops.com` route to the same service. Cloudflare DNS and tunnel routes
 under `lab.bingo` are explicit: no production wildcard is used, and
-`argocd.lab.bingo` remains private to LAN/Tailscale.
+`argocd.lab.bingo` remains private to LAN/Tailscale. Authentik itself is public
+at `auth.lab.bingo` through the tunnel so both browser and server-side OIDC
+flows can reach it. See [`docs/authentik.md`](../docs/authentik.md).
 
 Ingress TLS uses Let's Encrypt DNS-01 on both clusters. The expected Secret is named
 `cloudflare-api-token` in namespace `cert-manager`, with key `api-token`. Create

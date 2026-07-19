@@ -1,6 +1,24 @@
 configs:
   cm:
     kustomize.buildOptions: --enable-helm
+    url: https://argocd.lab.bingo
+    oidc.config: |
+      name: Authentik
+      issuer: https://auth.lab.bingo/application/o/argocd/
+      clientID: argocd
+      clientSecret: $argocd-oidc:oidc.authentik.clientSecret
+      requestedIDTokenClaims:
+        groups:
+          essential: true
+      requestedScopes:
+        - openid
+        - profile
+        - email
+  rbac:
+    policy.default: role:readonly
+    policy.csv: |
+      g, argocd-admins, role:admin
+    scopes: "[groups, email]"
   params:
     server.insecure: true
 
