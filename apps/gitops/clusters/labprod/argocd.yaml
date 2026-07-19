@@ -1,20 +1,22 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: certificates-labtest
+  name: argocd-labprod
   namespace: argocd-system
   annotations:
-    argocd.argoproj.io/sync-wave: "-6"
+    argocd.argoproj.io/sync-wave: "-9"
 spec:
-  project: labops-labtest
+  project: labops-labprod
   source:
     repoURL: https://github.com/bingops-com/labops.git
     targetRevision: master
-    path: apps/platform/certificates/labtest
+    path: apps/argocd/clusters/labprod
   destination:
     server: https://kubernetes.default.svc
-    namespace: cert-manager
+    namespace: argocd-system
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - ServerSideApply=true

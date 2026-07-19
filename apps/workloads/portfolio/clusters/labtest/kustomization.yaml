@@ -18,6 +18,9 @@ patches:
       name: portfolio
     patch: |-
       - op: replace
+        path: /metadata/annotations/cert-manager.io~1cluster-issuer
+        value: labtest-ca
+      - op: replace
         path: /spec/rules/0/host
         value: portfolio.test.bingops.com
       - op: replace

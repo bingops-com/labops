@@ -1,36 +1,27 @@
-# 📘 Documentation Overview
+# LabOps documentation
 
-This space is organized to help you find the right information quickly, whether you're getting started, deploying infrastructure, managing applications, or looking up quick commands.
+## Start here
 
-## 📂 Structure Overview
+- [Full infrastructure rebuild](rebuild.md): ownership, external prerequisites,
+  dependency order and recovery gates.
+- [Cloudflare infrastructure](infrastructure/cloudflare.md): DNS and tunnel
+  configuration.
+- [Talos on Proxmox](../terraform/proxmox/README.md): Terraform-owned management
+  cluster.
+- [Cluster API](../capi/README.md): CAPI-owned workload clusters.
+- [GitOps applications](../apps/README.md): Argo CD, previews, DNS and workloads.
+- [Application delivery workflow](gitops-applications.md): create, preview,
+  promote, roll back and remove workloads through the current GitOps model.
+- [Operator helpers](../hacks/README.md): client configuration and lifecycle
+  scripts.
 
-```
-docs/
-├── getting-started/         # Quick start guides
-├── infrastructure/          # Infrastructure configuration and tools
-├── applications/            # App-specific documentation
-├── operations/              # Operational procedures
-└── cheatsheets/             # Handy technical references
-```
+## Agent instructions
 
-### 🔰 getting-started/
+Repository-wide behavior belongs in [`AGENTS.md`](../AGENTS.md). Add a nested
+`AGENTS.md` only when a subtree needs extra rules; it applies to files below that
+directory. Use the prompt itself for a one-off requirement that should not
+become repository policy.
 
-This section contains beginner-friendly guides to help new team members or contributors get up to speed. Ideal for onboarding and initial setup.
-
-### 🏗️ infrastructure/
-
-Detailed documentation on infrastructure components and configurations. Includes:
-
-* `cloudflare.md`: How to configure Cloudflare tunnels.
-
-### 🚀 applications/
-
-Documentation tailored to specific applications within the system. This is where you'll find how each app is built, configured, and deployed.
-
-### 🕹️ operations/
-
-Step-by-step operational procedures. Useful for maintaining systems in production.
-
-### 📎 cheatsheets/
-
-Quick-reference guides for tools, commands, and workflows — perfect when you need a fast reminder or snippet.
+Do not use chat history as a runbook. When a prompt reveals a reconstruction
+prerequisite, capture it in the owning README and update the rebuild runbook if
+it changes dependency order or cross-system recovery.
