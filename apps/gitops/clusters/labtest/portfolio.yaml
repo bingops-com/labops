@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: private-dns-labtest
+  name: portfolio-labtest
   namespace: argocd-system
   annotations:
-    argocd.argoproj.io/sync-wave: "-7"
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: labops-labtest
   source:
     repoURL: https://github.com/bingops-com/labops.git
     targetRevision: develop
-    path: apps/platform/private-dns/labtest
+    path: apps/workloads/portfolio/clusters/labtest
   destination:
     server: https://kubernetes.default.svc
-    namespace: private-dns
+    namespace: portfolio
   syncPolicy:
     automated:
       prune: true

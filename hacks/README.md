@@ -2,11 +2,13 @@
 
 ## `gitops-preview.sh`
 
-Creates, updates, or deletes the single active feature-branch preview for an
-application on `labtest`. The branch must already exist on `origin`; Argo CD
-cannot reconcile an unpushed local branch. Deleting a preview also prunes the
-resources it owns. See [`apps/README.md`](../apps/README.md) for the promotion
-workflow and hostname convention.
+Creates, updates, or deletes a feature-branch preview only for an isolated
+application that is not registered in the permanent `develop` app-of-apps on
+`labtest`. The helper refuses to overlap a `<app>-labtest` Application because
+two Applications must not own the same resources. Normal delivery uses feature
+branch to `develop`, validation on labtest, then `develop` to `master`. The
+preview branch must already exist on `origin`; deleting a preview also prunes
+its managed resources. See [`apps/README.md`](../apps/README.md).
 
 ## `capi-init.sh`
 

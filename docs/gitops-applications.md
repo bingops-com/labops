@@ -1,9 +1,9 @@
 # Deliver an application through GitOps
 
 This is the operator runbook for adding a workload to `labtest` and `labprod`.
-The workflow keeps one shared base, explicit cluster overlays, an ephemeral
-feature preview on `labtest`, and a permanent production Application following
-`master` on `labprod`.
+The workflow keeps one shared base and explicit cluster overlays. Git-backed
+Applications on `labtest` follow `develop`; production Applications on
+`labprod` follow `master`.
 
 ## Ownership and naming
 
@@ -12,13 +12,14 @@ For an application named `<app>`, Git owns these resources:
 | Path | Purpose |
 | --- | --- |
 | `apps/workloads/<app>/base` | Namespace, Deployment, Service and shared policy |
-| `apps/workloads/<app>/clusters/labtest` | Test hostname, local CA and preview image |
+| `apps/workloads/<app>/clusters/labtest` | Test hostname, local CA and test image |
 | `apps/workloads/<app>/clusters/labprod` | Production hostname, public CA and immutable image |
+| `apps/gitops/clusters/labtest/<app>.yaml` | Permanent test Application following `develop` |
 | `apps/gitops/clusters/labprod/<app>.yaml` | Permanent production Argo CD Application |
 
-Do not create a permanent workload Application under the `labtest` root. The
-current workflow deliberately activates one feature branch at a time with
-`hacks/gitops-preview.sh`. Platform services continue to follow `master`.
+The branch promotion order is `feature/*` to `develop`, validate on `labtest`,
+then `develop` to `master`. Do not point a labtest Application at `master` or a
+labprod Application at `develop`.
 
 Use `<app>.test.lab.bingo` on test and `<app>.lab.bingo` in production. Test DNS
 is a private wildcard. Production intentionally has no wildcard: every public
@@ -54,7 +55,17 @@ Kubernetes Secrets committed to Git must be SealedSecrets. Seal the same input
 independently for each cluster because their sealing keys differ. Plaintext,
 kubeconfigs, Terraform state and generated certificates never belong in Git.
 
-## 2. Add the production Application
+## 2. Add both environment Applications
+
+Copy the structure of `apps/gitops/clusters/labtest/portfolio.yaml`, then set:
+
+- `metadata.name` to `<app>-labtest`;
+- `spec.source.targetRevision` to `develop`;
+- `spec.source.path` to `apps/workloads/<app>/clusters/labtest`;
+- `spec.destination.namespace` to `<app>`;
+- sync wave `0`, automated pruning and self-healing.
+
+Add `<app>.yaml` to `apps/gitops/clusters/labtest/kustomization.yaml`.
 
 Copy the structure of `apps/gitops/clusters/labprod/portfolio.yaml`, then set:
 
@@ -64,8 +75,7 @@ Copy the structure of `apps/gitops/clusters/labprod/portfolio.yaml`, then set:
 - `spec.destination.namespace` to `<app>`;
 - sync wave `0`, automated pruning and self-healing.
 
-Add `<app>.yaml` to `apps/gitops/clusters/labprod/kustomization.yaml`. Do not add
-the workload to the `labtest` kustomization.
+Add `<app>.yaml` to `apps/gitops/clusters/labprod/kustomization.yaml`.
 
 ## 3. Validate locally
 
@@ -99,35 +109,29 @@ Run `yamllint` on the new first-party YAML when it is available. Inspect the
 rendered image, hostname, issuer, namespace and allowlist before committing.
 These checks are offline and do not authorize an apply or synchronization.
 
-## 4. Preview on labtest
+## 4. Promote to develop and validate on labtest
 
-Commit the manifests on a feature branch and push that branch. Then activate
-the preview from the repository root:
+Commit the manifests on a feature branch, push it, and open a reviewed pull
+request targeting `develop`. Merging that PR is the deployment authorization
+for `labtest`: its root and Git-backed child Applications automatically
+reconcile the new `develop` revision.
 
-```sh
-FEATURE_BRANCH=feature/myapp
-```
-
-```sh
-./hacks/gitops-preview.sh up "${APP_NAME}" "${FEATURE_BRANCH}"
-```
-
-The helper creates or updates `<app>-preview` in `argocd-system`. The
-Application follows the remote feature branch directly and reconciles
-`apps/workloads/<app>/clusters/labtest`. Re-running the command switches the
-active revision. Only one branch can own the stable test hostname at a time.
-
-Verify in Argo CD that `<app>-preview` is `Synced` and `Healthy`, then test
+Verify in Argo CD that `<app>-labtest` is `Synced` and `Healthy`, then test
 `https://<app>.test.lab.bingo` from the LAN or Tailscale. The client must trust
 the labtest root CA. Verify the certificate hostname without displaying any
 private key or Secret content.
 
+Platform changes, including DNS, cert-manager, Traefik and Argo CD itself, are
+tested through the same branch. Apply a required Terraform test-side change
+only after reviewing its plan; a Git merge does not authorize Terraform apply.
+
 ## 5. Promote to production
 
-Pin the production overlay to the exact tested image tag or digest. Merge the
-feature branch into `master` through the normal repository review process.
-`<app>-labprod` follows only `master`; automated sync then deploys the committed
-production overlay. A push can trigger deployment, so it must be intentional.
+Pin the production overlay to the exact image tag or digest validated on
+`labtest`. Open a reviewed pull request from `develop` to `master`.
+`<app>-labprod` follows only `master`; merging that PR is the production
+deployment authorization. Direct feature-to-master promotion bypasses the test
+gate and is not part of this workflow.
 
 Verify that the Application, Deployment, Service, Ingress, Certificate and
 CertificateRequest are healthy. For a public application, verify HTTPS from
@@ -140,14 +144,6 @@ private application such as Argo CD, omit both declarations and add only the
 required exact split-DNS route. Cloudflare and Terraform must never infer
 public exposure from the presence of a Kubernetes Ingress.
 
-After promotion, remove the test preview when it is no longer needed:
-
-```sh
-./hacks/gitops-preview.sh down "${APP_NAME}"
-```
-
-This command removes the preview Application and prunes the resources it owns.
-
 ## Rollback
 
 Rollback by reverting the Git commit that changed the production overlay or by
@@ -155,9 +151,10 @@ committing the previously known-good immutable image reference. Do not use an
 ad-hoc `kubectl set image`, Argo CD parameter override or manual Helm upgrade;
 self-healing would overwrite it and Git would no longer describe recovery.
 
-Validate the revert locally, review it, then merge it to `master`. Argo CD
-reconciles the previous declared state. Keep the failed image immutable for
-post-incident analysis.
+For a test failure, revert on `develop` and validate labtest again. For a
+production failure, revert on `master`, then merge the same correction back to
+`develop` if it is not already present. Argo CD reconciles the previous
+declared state. Keep the failed image immutable for post-incident analysis.
 
 ## Remove an application
 
@@ -166,11 +163,12 @@ PVCs, databases, DNS records, tunnel routes, SealedSecrets and external
 credentials owned by the application. Back up data according to its owning
 runbook.
 
-Remove the production Application from the labprod kustomization and delete its
-manifest and workload directory in the same reviewed change. Remove exceptional
-DNS or tunnel declarations only if no other consumer uses them. Argo CD pruning
-removes managed Kubernetes objects after the change reaches `master`; it must
-not be used as an implicit data-retention policy.
+Remove the test Application from the labtest kustomization through `develop`
+first. After validation, promote the removal to `master`, where the production
+Application is removed from the labprod kustomization. Delete the shared
+workload directory only when neither environment still references it. Remove
+exceptional DNS or tunnel declarations only if no other consumer uses them.
+Argo CD pruning must not be used as an implicit data-retention policy.
 
 ## Reconstruction checklist
 
