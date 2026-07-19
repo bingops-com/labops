@@ -29,18 +29,19 @@ The test portfolio ingress allows only the local lab networks
 (`100.64.0.0/10`). Test DNS
 is not published through Cloudflare: a dedicated CoreDNS process resolves the
 wildcard `*.test.lab.bingo` to the labtest node and listens on
-the `labtest` node address `192.168.1.152`, and `terraform/tailscale-dns`
+the labtest control-plane VIP `192.168.10.170`, returns the Traefik node
+address `192.168.10.152`, and `terraform/tailscale-dns`
 sends only `test.lab.bingo` queries to it.
 
 Argo CD is private on both workload clusters. Tailscale split DNS resolves
 `argocd.test.lab.bingo` through the labtest DNS service and resolves only
-`argocd.lab.bingo` through a dedicated DNS service on the labprod node at
-`192.168.1.151`. Neither hostname is routed through Cloudflare Tunnel or
+`argocd.lab.bingo` through a dedicated DNS service bound to the labprod VIP
+`192.168.10.160` and returning `192.168.10.151`. Neither hostname is routed through Cloudflare Tunnel or
 published by public DNS. Their Traefik ingresses allow only the local lab
 networks and Tailscale. Labtest uses the local CA; labprod uses a publicly
 trusted Let's Encrypt certificate obtained through Cloudflare DNS-01, without
 sending application traffic through Cloudflare. Tailscale clients must have a
-subnet route to `192.168.1.0/24` for the split nameservers and ingresses to be
+subnet route to `192.168.10.0/24` for the split nameservers and ingresses to be
 reachable.
 
 Production is published through the Cloudflare tunnel reconciled by the

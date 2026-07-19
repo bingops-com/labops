@@ -49,9 +49,9 @@ its value, Terraform sensitive output, or an unsealed Kubernetes Secret here.
    follows `develop`; labprod follows `master`.
 7. Restore or reseal cluster-specific secrets only after the Sealed Secrets
    controller is healthy. Never reuse ciphertext with a different sealing key.
-8. Apply split DNS for `*.test.lab.bingo` through `192.168.1.152` and for the
-   exact private name `argocd.lab.bingo` through `192.168.1.151`. Confirm the
-   Tailscale subnet route to `192.168.1.0/24`, then apply public Cloudflare
+8. Apply split DNS for `*.test.lab.bingo` through `192.168.10.170` and for the
+   exact private name `argocd.lab.bingo` through `192.168.10.160`. Confirm the
+   Tailscale subnet route to `192.168.10.0/24`, then apply public Cloudflare
    DNS/tunnel configuration for `portfolio.lab.bingo`, `bingops.com` and
    `www.bingops.com`. Production `lab.bingo` routes are explicit; do not add
    either Argo CD hostname to the Cloudflare tunnel.
@@ -72,7 +72,7 @@ Do not continue to the next layer until the current gate passes:
 | Secrets | Sealed Secrets controller is Ready; required generated Secrets exist without printing them |
 | Test DNS | An arbitrary `<app>.test.lab.bingo` resolves privately to the labtest ingress address |
 | Production DNS | `portfolio.lab.bingo`, `bingops.com`, and `www.bingops.com` resolve through Cloudflare |
-| Private Argo CD DNS | `argocd.test.lab.bingo` resolves to `192.168.1.152` and `argocd.lab.bingo` resolves to `192.168.1.151` only for clients using Tailscale split DNS |
+| Private Argo CD DNS | `argocd.test.lab.bingo` resolves to `192.168.10.152` and `argocd.lab.bingo` resolves to `192.168.10.151` only for clients using Tailscale split DNS |
 | TLS and routing | Public HTTPS succeeds in production; labtest HTTPS succeeds from a client trusting the restored local CA and remains unreachable outside LAN/Tailscale |
 | Argo CD access | Both Argo CD hostnames reject sources outside the local lab networks and Tailscale; labprod presents a valid Let's Encrypt certificate without traversing Cloudflare Tunnel |
 
