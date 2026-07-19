@@ -74,11 +74,11 @@ curl --fail --show-error --silent https://portfolio.test.lab.bingo/ >/dev/null
 
 ## Branch promotion workflow
 
-The `labtest` root and every Git-backed Application below it follow the
-permanent `develop` branch. The `labprod` root and production Applications
-follow only `master`. A feature is promoted first into `develop`, validated on
-`labtest`, then promoted from `develop` into `master`. This keeps platform,
-DNS, certificate and workload changes on the same tested revision.
+The `labtest` and `labprod` roots and all Git-backed Applications follow
+`master` as their stable state. A pushed feature branch is integrated
+temporarily into `labtest` with `hacks/deploy.sh`, validated there, then merged
+into `master`. This keeps platform, DNS, certificate and workload changes on
+the same tested revision without a permanent integration branch.
 
 A new application must provide
 `apps/workloads/<app>/clusters/labtest` and
@@ -87,10 +87,20 @@ A new application must provide
 tunnel routes are declared explicitly for each public application. The
 portfolio additionally owns the aliases `bingops.com` and `www.bingops.com`.
 
-The legacy `gitops-preview.sh` helper is not used for Applications already
-owned by the `develop` root because two Argo CD Applications must never manage
-the same namespace resources. It remains available only for an unregistered,
-isolated workload that is not yet listed in the labtest kustomization.
+For the inner development loop, `hacks/deploy.sh` temporarily overrides one
+existing `<app>-labtest` Application, or every Git-backed test Application when
+`--app` is omitted, to follow a pushed feature branch.
+There is still exactly one Application and one owner for the workload. The
+labtest root ignores only child Application `targetRevision` differences, so it
+continues to self-heal every other field. Run `restore test` before final
+validation to restore the declared `master` revision. The active override is
+recorded as an annotation and is visible with the helper's `status` command.
+The same helper can perform a deliberately confirmed production override for
+one or all Git-backed Applications after showing the applicable diff;
+`restore prod` returns it to `master`.
+Existing clusters require a one-time reviewed reapply of
+the matching root bootstrap after enabling this policy; reconstructed clusters
+receive it during their normal bootstrap.
 
 The complete operator procedure and reusable manifest conventions are in
 [`docs/gitops-applications.md`](../docs/gitops-applications.md). That runbook is
@@ -128,5 +138,5 @@ CD, then install exactly one root application from `gitops/bootstrap/`. These
 are the only imperative bootstrap operations. The root creates an
 `argocd-<cluster>` Application which adopts and continuously reconciles the
 matching Argo CD overlay, so later chart values and version changes are GitOps
-managed. The labtest bootstrap follows `develop`; the labprod bootstrap follows
-`master`. Never bootstrap a `labprod` root into `labtest`, or conversely.
+managed. Both bootstraps follow `master`, while retaining distinct cluster
+overlays. Never bootstrap a `labprod` root into `labtest`, or conversely.

@@ -9,7 +9,7 @@ spec:
   project: labops-labtest
   source:
     repoURL: https://github.com/bingops-com/labops.git
-    targetRevision: develop
+    targetRevision: master
     path: apps/platform/private-dns/labtest
   destination:
     server: https://kubernetes.default.svc
