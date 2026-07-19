@@ -1,4 +1,21 @@
-# Tailscale split DNS
+# Retired Tailscale split-DNS stack
+
+This stack is retired because Tailscale exposes one tailnet-wide DNS
+configuration. Managing global DNS in `terraform/network` and split DNS here
+caused the two states to overwrite each other. The authoritative declarations
+now live in `terraform/network/dns.tf`; do not run `plan` or `apply` from this
+directory.
+
+After applying the reviewed `terraform/network` plan that restores both split
+routes, detach the obsolete resources from this state without deleting remote
+DNS settings:
+
+```sh
+terraform -chdir=terraform/tailscale-dns state rm tailscale_dns_split_nameservers.labtest tailscale_dns_split_nameservers.argocd_labprod
+```
+
+Verify first that `test.lab.bingo` and `argocd.lab.bingo` resolve through
+Tailscale. Keep the retired state backup until that verification succeeds.
 
 This stack owns the private DNS routes consumed by Tailscale clients:
 

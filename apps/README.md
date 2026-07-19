@@ -38,9 +38,9 @@ Argo CD is private on both workload clusters. Tailscale split DNS resolves
 `argocd.lab.bingo` through a dedicated DNS service bound to the labprod VIP
 `192.168.10.160` and returning `192.168.10.151`. Neither hostname is routed through Cloudflare Tunnel or
 published by public DNS. Their Traefik ingresses allow only the local lab
-networks and Tailscale. Labtest uses the local CA; labprod uses a publicly
-trusted Let's Encrypt certificate obtained through Cloudflare DNS-01, without
-sending application traffic through Cloudflare. Tailscale clients must have a
+networks and Tailscale. Both clusters use publicly trusted Let's Encrypt
+certificates obtained through Cloudflare DNS-01, without sending application
+traffic through Cloudflare. Tailscale clients must have a
 subnet route to `192.168.10.0/24` for the split nameservers and ingresses to be
 reachable.
 
@@ -54,40 +54,23 @@ portfolio is public at `portfolio.lab.bingo`; `bingops.com` and
 under `lab.bingo` are explicit: no production wildcard is used, and
 `argocd.lab.bingo` remains private to LAN/Tailscale.
 
-Production ingress TLS uses Let's Encrypt DNS-01. The expected Secret is named
+Ingress TLS uses Let's Encrypt DNS-01 on both clusters. The expected Secret is named
 `cloudflare-api-token` in namespace `cert-manager`, with key `api-token`. Create
 a dedicated Cloudflare token with `Zone:DNS:Edit` and `Zone:Zone:Read`, limited
 to `bingops.com` and `lab.bingo`, store it in the ignored credentials directory,
-and seal it for `labprod` using the procedure below. Do not reuse the broader
-Terraform infrastructure token.
+and seal it independently for `labtest` and `labprod` using the procedure below.
+Do not reuse the broader Terraform infrastructure token or ciphertext from the
+other cluster. DNS for `*.test.lab.bingo` remains private; DNS-01 proves domain
+control without publishing the private services or routing traffic through
+Cloudflare.
 
-Labtest uses the private `test.lab.bingo` DNS zone and a cert-manager-managed
-local CA. Its root certificate and key are generated in-cluster in the
-`labtest-root-ca` Secret. Clients must trust the root certificate explicitly;
-back up the Secret in encrypted operator storage so rebuilt clusters can
-preserve client trust. Restore that Secret into `cert-manager` before Argo CD
-reconciles the labtest certificate resources. Rotate the CA by replacing the
-Secret through the same protected recovery workflow, then redistribute its
-public `ca.crt` to clients; never print or commit `tls.key`. Verify without
-exposing key material by checking that the portfolio certificate chains to the
-trusted CA and is valid for `portfolio.test.lab.bingo`.
-
-On a Debian-derived client such as Kali, export only the public CA certificate,
-inspect its fingerprint, then install it in the system trust store. The
-JSONPath selects `ca.crt` explicitly; never export `tls.key`:
+Verify both private test endpoints with the normal system trust store; `-k` is
+not an acceptable operational check:
 
 ```sh
-kubectl --context labtest --namespace cert-manager get secret labtest-root-ca -o jsonpath='{.data.ca\.crt}' | base64 --decode > /tmp/labtest-root-ca.crt
-openssl x509 -in /tmp/labtest-root-ca.crt -noout -subject -issuer -fingerprint -sha256
-sudo install -m 0644 /tmp/labtest-root-ca.crt /usr/local/share/ca-certificates/labtest-root-ca.crt
-sudo update-ca-certificates
 curl --fail --show-error --silent https://argocd.test.lab.bingo/ >/dev/null
 curl --fail --show-error --silent https://portfolio.test.lab.bingo/ >/dev/null
 ```
-
-Confirm the displayed fingerprint through the encrypted CA backup or another
-trusted operator channel before installation. Repeat the export and trust-store
-update after rotating or replacing `labtest-root-ca`.
 
 ## Branch promotion workflow
 
@@ -124,18 +107,19 @@ credentials during cluster recreation.
 
 Store the dedicated cert-manager token as
 `terraform/cloudflare/credentials/cert-manager-api-token` with mode `0600`.
-That directory is ignored. Generate the labprod manifest without printing the
-token:
+That directory is ignored. Generate each cluster-specific manifest without
+printing the token:
 
 ```sh
 kubectl create secret generic cloudflare-api-token --namespace cert-manager --from-file=api-token=terraform/cloudflare/credentials/cert-manager-api-token --dry-run=client -o json | kubeseal --context labprod --controller-name sealed-secrets-controller --controller-namespace kube-system --scope strict --format yaml > apps/platform/certificates/cloudflare-api-token.yaml
+kubectl create secret generic cloudflare-api-token --namespace cert-manager --from-file=api-token=terraform/cloudflare/credentials/cert-manager-api-token --dry-run=client -o json | kubeseal --context labtest --controller-name sealed-secrets-controller --controller-namespace kube-system --scope strict --format yaml > apps/platform/certificates/labtest/cloudflare-api-token.yaml
 ```
 
 Add `cloudflare-api-token.yaml` to
 `apps/platform/certificates/kustomization.yaml`, validate it with `kubeseal
 --validate`, then commit it. Repeat the sealing operation after either the
-Cloudflare token or the labprod sealing key rotates; ciphertext from another
-cluster cannot be reused.
+Cloudflare token or either cluster's sealing key rotates; ciphertext from
+another cluster cannot be reused.
 
 ## Bootstrap
 

@@ -12,7 +12,7 @@ For an application named `<app>`, Git owns these resources:
 | Path | Purpose |
 | --- | --- |
 | `apps/workloads/<app>/base` | Namespace, Deployment, Service and shared policy |
-| `apps/workloads/<app>/clusters/labtest` | Test hostname, local CA and test image |
+| `apps/workloads/<app>/clusters/labtest` | Test hostname, public DNS-01 certificate and test image |
 | `apps/workloads/<app>/clusters/labprod` | Production hostname, public CA and immutable image |
 | `apps/gitops/clusters/labtest/<app>.yaml` | Permanent test Application following `develop` |
 | `apps/gitops/clusters/labprod/<app>.yaml` | Permanent production Argo CD Application |
@@ -43,7 +43,7 @@ such as `<app>.invalid`; each overlay must replace every rule and TLS hostname.
 
 Keep environment differences in the overlays:
 
-- `labtest`: `<app>.test.lab.bingo`, issuer `labtest-ca`, and the local/Tailscale
+- `labtest`: `<app>.test.lab.bingo`, issuer `letsencrypt-cloudflare`, and the local/Tailscale
   allowlist when the service is private;
 - `labprod`: `<app>.lab.bingo`, issuer `letsencrypt-cloudflare`, and an
   immutable image tag or digest;
@@ -117,9 +117,10 @@ for `labtest`: its root and Git-backed child Applications automatically
 reconcile the new `develop` revision.
 
 Verify in Argo CD that `<app>-labtest` is `Synced` and `Healthy`, then test
-`https://<app>.test.lab.bingo` from the LAN or Tailscale. The client must trust
-the labtest root CA. Verify the certificate hostname without displaying any
-private key or Secret content.
+`https://<app>.test.lab.bingo` from the LAN or Tailscale. Verify it with the
+normal system trust store and without `-k`; DNS-01 certificates do not make the
+private hostname publicly reachable. Do not display any private key or Secret
+content.
 
 Platform changes, including DNS, cert-manager, Traefik and Argo CD itself, are
 tested through the same branch. Apply a required Terraform test-side change

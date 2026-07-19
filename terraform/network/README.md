@@ -25,4 +25,14 @@ task network:apply
 
 The plan runs no provisioner. Applying it may run the Proxmox Ansible playbook when its tracked role, inventory, or playbook hash has changed, and then enables the advertised Tailscale routes. Keep the saved state encrypted and locked because Terraform state contains infrastructure identifiers and the OAuth client is used during refresh/apply.
 
-The stack also enables MagicDNS, configures Cloudflare (`1.1.1.1`) and Quad9 (`9.9.9.9`) as global resolvers, and overrides local DNS. This ensures the Proxmox subnet router can resolve public download endpoints even when Tailscale owns `/etc/resolv.conf`.
+The stack also enables MagicDNS, configures Cloudflare (`1.1.1.1`) and Quad9
+(`9.9.9.9`) as global resolvers, and overrides local DNS. It is the sole owner
+of the tailnet DNS configuration, including split DNS for `test.lab.bingo`
+through `192.168.10.170` and `argocd.lab.bingo` through `192.168.10.160`.
+Keeping global and split DNS in the same `tailscale_dns_configuration` resource
+prevents a later network apply from deleting the private application routes.
+
+The former `terraform/tailscale-dns` state must not be applied again. After a
+reviewed network apply has restored both routes, remove only its obsolete state
+ownership using the migration commands in that stack's README. State removal
+does not delete the remote split-DNS configuration now owned here.
