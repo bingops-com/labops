@@ -3,8 +3,10 @@ kind: Kustomization
 
 resources:
   - project.yaml
+  - argocd.yaml
   - sealed-secrets.yaml
   - traefik.yaml
   - cert-manager.yaml
   - certificates.yaml
   - private-dns.yaml
+  - argocd-access.yaml

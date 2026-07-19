@@ -4,12 +4,12 @@ cloudflare:
 
   ingress:
     - hostname: www.bingops.com
-      service: http://portfolio.bingops.svc.cluster.local:80
+      service: http://portfolio.portfolio.svc.cluster.local:80
     - hostname: bingops.com
-      service: http://portfolio.bingops.svc.cluster.local:80
+      service: http://portfolio.portfolio.svc.cluster.local:80
     - hostname: blog.bingops.com
       service: http://blog.bingops.svc.cluster.local:80
-    - hostname: portfolio.prod.bingops.com
+    - hostname: portfolio.bingops.com
       service: http://portfolio.portfolio.svc.cluster.local:80
     - hostname: "*.prod.bingops.com"
       service: http://traefik.traefik.svc.cluster.local:80
