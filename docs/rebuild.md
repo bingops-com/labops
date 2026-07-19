@@ -54,10 +54,11 @@ its value, Terraform sensitive output, or an unsealed Kubernetes Secret here.
    DNS/tunnel configuration for `auth.lab.bingo`, `portfolio.lab.bingo`,
    `bingops.com` and `www.bingops.com`. Production `lab.bingo` routes are explicit; do not add
    either Argo CD hostname to the Cloudflare tunnel.
-9. Recreate Authentik according to [`authentik.md`](authentik.md), restore its
-   PostgreSQL identity backup, and verify both Argo CD OIDC clients. On a new
-   database, the sealed administrator bootstrap and group membership reconcile
-   automatically.
+9. Reconcile the pinned local-path provisioner and verify its default
+   `local-path` StorageClass before recreating Authentik according to
+   [`authentik.md`](authentik.md). Restore the PostgreSQL identity backup and
+   verify both Argo CD OIDC clients. On a new database, the sealed administrator
+   bootstrap and group membership reconcile automatically.
 10. Push feature changes, integrate them temporarily into `labtest` with
    `hacks/deploy.sh`, validate the reconciled revision, restore labtest to its
    `master` baseline, then merge the reviewed feature into `master`.
@@ -73,6 +74,7 @@ Do not continue to the next layer until the current gate passes:
 | CAPI workloads | `labtest` and `labprod` report Available and their nodes are Ready |
 | Argo CD | Controllers are Ready and Applications are Synced/Healthy |
 | Secrets | Sealed Secrets controller is Ready; required generated Secrets exist without printing them |
+| Storage | `local-path-storage-labprod` is Healthy and the Authentik PostgreSQL PVC is Bound |
 | Test DNS | An arbitrary `<app>.test.lab.bingo` resolves privately to the labtest ingress address |
 | Production DNS | `auth.lab.bingo`, `portfolio.lab.bingo`, `bingops.com`, and `www.bingops.com` resolve through Cloudflare |
 | Private Argo CD DNS | `argocd.test.lab.bingo` resolves to `192.168.10.152` and `argocd.lab.bingo` resolves to `192.168.10.151` only for clients using Tailscale split DNS |

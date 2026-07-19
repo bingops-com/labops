@@ -8,6 +8,7 @@ resources:
   - traefik.yaml
   - cert-manager.yaml
   - certificates.yaml
+  - local-path-storage.yaml
   - authentik-config.yaml
   - authentik.yaml
   - private-dns.yaml

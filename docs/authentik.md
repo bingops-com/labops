@@ -5,6 +5,14 @@ and the production tunnel publish this hostname; TLS terminates at the Traefik
 Ingress with a Let's Encrypt DNS-01 certificate. PostgreSQL uses an 8 Gi
 persistent volume in namespace `authentik`.
 
+The `local-path-storage-labprod` Argo CD Application installs Rancher's
+local-path provisioner, pinned to `v0.0.36`, before Authentik. Its default
+`local-path` StorageClass stores volumes below
+`/var/mnt/local-path-provisioner` on the Talos node selected for the workload.
+This is node-local storage: it survives pod restarts, but it is neither shared
+nor replicated and does not replace the PostgreSQL backup required for node or
+cluster replacement.
+
 The file-based Authentik blueprint declaratively owns two confidential OIDC
 providers:
 
@@ -44,8 +52,9 @@ manager; never record the replacement in this repository.
 ## Delivery order
 
 1. Review and apply the Cloudflare Terraform change for `auth.lab.bingo`.
-2. Reconcile the labprod app-of-apps so the Authentik configuration, chart,
-   PostgreSQL, Ingress and tunnel route are created.
+2. Reconcile the labprod app-of-apps. Wait for `local-path-storage-labprod` to
+   become Healthy and for the PostgreSQL PVC to become Bound before Authentik,
+   its Ingress and the tunnel route are considered ready.
 3. Wait for the bootstrap blueprint to create both providers and group
    membership, then reconcile the Argo CD overlays on labprod and labtest.
 4. Validate OIDC discovery and both browser callbacks. The built-in Argo CD
@@ -55,6 +64,8 @@ manager; never record the replacement in this repository.
 Non-sensitive verification commands:
 
 ```sh
+kubectl --context labprod get storageclass local-path
+kubectl --context labprod -n authentik get pvc,pod
 curl --fail --show-error --silent https://auth.lab.bingo/application/o/argocd/.well-known/openid-configuration >/dev/null
 curl --fail --show-error --silent https://auth.lab.bingo/application/o/argocd-test/.well-known/openid-configuration >/dev/null
 ```
