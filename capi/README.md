@@ -126,17 +126,27 @@ unset PROXMOX_URL PROXMOX_TOKEN PROXMOX_SECRET CLUSTERCTL_CONFIG
 
 ## 3. Create workload clusters
 
-Each cluster uses a dedicated node address and a separate Kubernetes API VIP.
-`labprod` uses node `192.168.10.151` and VIP `192.168.10.160`; `labtest` uses
-node `192.168.10.152` and VIP `192.168.10.170`. CAPMOX rejects a
-`controlPlaneEndpoint` contained in its node-address pool, so these addresses
-cannot be merged. All four addresses must be unused and excluded from DHCP.
-The Talos machine configuration declares each node address and default route
-explicitly, avoiding reliance on NoCloud network-data while CAPMOX still owns
-address allocation and VM lifecycle. It selects the VM's only hardware network
-device by PCI bus path instead of assuming it is named `eth0`; Talos predictable
-interface names can otherwise leave the active VirtIO device running DHCP.
-Then apply:
+Ensure the following dedicated VM IDs and addresses are free before applying.
+All node and VIP addresses must be excluded from DHCP:
+
+| Cluster | Proxmox VM ID | Node address | Control-plane VIP | Proxmox pool |
+| --- | ---: | --- | --- | --- |
+| `labprod` | `151` | `192.168.10.151` | `192.168.10.160` | `Kubernetes` |
+| `labtest` | `152` | `192.168.10.152` | `192.168.10.170` | `Kubernetes` |
+
+Each cluster currently has one control-plane replica and exactly one available
+node address. The manifests constrain CAPMOX with a single-value `vmIDRange`
+(`151-151` and `152-152`); `virtualMachineID` is controller-managed and must not
+be used to request an ID. Add another unique VM ID range and address allocation
+before increasing the replica count.
+
+CAPMOX rejects a `controlPlaneEndpoint` contained in its node-address pool, so
+the node address and Kubernetes API VIP cannot be merged. The Talos machine
+configuration declares each node address and default route explicitly, avoiding
+reliance on NoCloud network-data while CAPMOX still owns address allocation and
+VM lifecycle. It selects the VM's only hardware network device by PCI bus path
+instead of assuming it is named `eth0`; Talos predictable interface names can
+otherwise leave the active VirtIO device running DHCP. Then apply:
 
 ```sh
 kubectl apply -f capi/namespace.yaml
