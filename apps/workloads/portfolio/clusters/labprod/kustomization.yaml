@@ -30,9 +30,9 @@ patches:
     patch: |-
       - op: replace
         path: /spec/rules/0/host
-        value: portfolio.bingops.com
+        value: portfolio.lab.bingo
       - op: replace
         path: /spec/tls/0/hosts/0
-        value: portfolio.bingops.com
+        value: portfolio.lab.bingo
       - op: remove
         path: /metadata/annotations/traefik.ingress.kubernetes.io~1router.middlewares

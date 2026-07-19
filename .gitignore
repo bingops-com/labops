@@ -9,6 +9,8 @@ terraform/**/.terraform/
 terraform/**/terraform.tfstate*
 terraform/**/credentials.auto.tfvars
 terraform/**/credentials*.tfvars
+terraform/**/*.tfvars
+!terraform/**/routes.auto.tfvars
 /terraform.tfstate*
 
 ## Cloudflare credentials file

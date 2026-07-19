@@ -21,6 +21,12 @@ variable "cloudflare_lab_zone_id" {
   sensitive   = true
 }
 
+variable "lab_tunnel_name" {
+  description = "Cloudflare tunnel serving explicit public lab.bingo hostnames."
+  type        = string
+  default     = "bingops-tunnel"
+}
+
 variable "tunnels" {
   description = "Tunnels configuration and their routes for Cloudflare"
   type = list(object({
