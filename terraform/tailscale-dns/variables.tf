@@ -12,6 +12,7 @@ variable "tailscale_oauth_client_secret" {
 
 variable "tailscale_tailnet" {
   type        = string
-  description = "Tailnet organization name."
-  default     = "bingops.com"
+  description = "Optional Tailscale tailnet ID. Leave null to use the tailnet that owns the OAuth client."
+  default     = null
+  nullable    = true
 }
