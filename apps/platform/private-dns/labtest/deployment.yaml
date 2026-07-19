@@ -24,10 +24,12 @@ spec:
           ports:
             - name: dns-udp
               containerPort: 53
+              hostIP: 192.168.10.170
               hostPort: 53
               protocol: UDP
             - name: dns-tcp
               containerPort: 53
+              hostIP: 192.168.10.170
               hostPort: 53
               protocol: TCP
           securityContext:
