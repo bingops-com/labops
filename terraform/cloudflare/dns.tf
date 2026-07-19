@@ -12,9 +12,19 @@ resource "cloudflare_record" "tunnel_routes" {
     ]) : "${pair.tunnel_name}-${trimsuffix(pair.hostname, ".${local.zone_domains[local.tunnels_with_secrets[pair.tunnel_name].zone_name]}") == "" ? "@" : trimsuffix(pair.hostname, ".${local.zone_domains[local.tunnels_with_secrets[pair.tunnel_name].zone_name]}")}" => pair
   }
 
-  zone_id  = each.value.zone_id
-  name     = trimsuffix(each.value.hostname, ".${local.zone_domains[local.tunnels_with_secrets[each.value.tunnel_name].zone_name]}") == "" ? "@" : trimsuffix(each.value.hostname, ".${local.zone_domains[local.tunnels_with_secrets[each.value.tunnel_name].zone_name]}")
-  content  = "${cloudflare_zero_trust_tunnel_cloudflared.tunnels[each.value.tunnel_name].id}.cfargotunnel.com"
-  type     = "CNAME"
-  proxied  = true
+  zone_id = each.value.zone_id
+  name    = trimsuffix(each.value.hostname, ".${local.zone_domains[local.tunnels_with_secrets[each.value.tunnel_name].zone_name]}") == "" ? "@" : trimsuffix(each.value.hostname, ".${local.zone_domains[local.tunnels_with_secrets[each.value.tunnel_name].zone_name]}")
+  content = "${cloudflare_zero_trust_tunnel_cloudflared.tunnels[each.value.tunnel_name].id}.cfargotunnel.com"
+  type    = "CNAME"
+  proxied = true
+}
+
+resource "cloudflare_record" "lab_tunnel_routes" {
+  for_each = local.lab_tunnel_hostnames
+
+  zone_id = var.cloudflare_lab_zone_id
+  name    = trimsuffix(each.value, ".lab.bingo")
+  content = "${cloudflare_zero_trust_tunnel_cloudflared.tunnels[var.lab_tunnel_name].id}.cfargotunnel.com"
+  type    = "CNAME"
+  proxied = true
 }

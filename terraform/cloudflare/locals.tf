@@ -9,6 +9,10 @@ locals {
     "lab"     = "lab.bingo"
   }
 
+  lab_tunnel_hostnames = toset([
+    "portfolio.lab.bingo",
+  ])
+
   tunnels_with_secrets = {
     for idx, tunnel in var.tunnels : tunnel.name => {
       name      = tunnel.name

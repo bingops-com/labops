@@ -11,7 +11,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: argocd.bingops.com
+    - host: argocd.lab.bingo
       http:
         paths:
           - path: /
@@ -23,5 +23,5 @@ spec:
                   name: http
   tls:
     - hosts:
-        - argocd.bingops.com
+        - argocd.lab.bingo
       secretName: argocd-ingress-tls

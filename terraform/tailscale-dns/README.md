@@ -4,11 +4,11 @@ This stack owns the private DNS routes consumed by Tailscale clients:
 
 | DNS suffix | Nameserver | Owner |
 | --- | --- | --- |
-| `test.bingops.com` | `192.168.1.152` | CoreDNS on `labtest` |
-| `argocd.bingops.com` | `192.168.1.151` | CoreDNS on `labprod` |
+| `test.lab.bingo` | `192.168.1.152` | CoreDNS on `labtest` |
+| `argocd.lab.bingo` | `192.168.1.151` | CoreDNS on `labprod` |
 
-The `argocd.bingops.com` route is intentionally an exact-name split route. It
-must not replace DNS for the rest of `bingops.com`. Neither Argo CD hostname is
+The `argocd.lab.bingo` route is intentionally an exact-name split route. It
+must not replace DNS for the rest of `lab.bingo`. Neither Argo CD hostname is
 served through Cloudflare Tunnel.
 
 The OAuth client is an external prerequisite. It requires Tailscale DNS write
