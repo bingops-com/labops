@@ -19,6 +19,7 @@ terraform/cloudflare/credentials
 # Kubernetes
 apps/**/charts
 /kubeconfig
+/apps/platform/authentik/credentials/
 
 # Cluster API provider credentials
 capi/credentials.env

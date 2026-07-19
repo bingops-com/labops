@@ -56,7 +56,8 @@ its value, Terraform sensitive output, or an unsealed Kubernetes Secret here.
    either Argo CD hostname to the Cloudflare tunnel.
 9. Recreate Authentik according to [`authentik.md`](authentik.md), restore its
    PostgreSQL identity backup, and verify both Argo CD OIDC clients. On a new
-   installation, complete the documented one-time administrator bootstrap.
+   database, the sealed administrator bootstrap and group membership reconcile
+   automatically.
 10. Push feature changes, integrate them temporarily into `labtest` with
    `hacks/deploy.sh`, validate the reconciled revision, restore labtest to its
    `master` baseline, then merge the reviewed feature into `master`.
