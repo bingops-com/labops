@@ -4,8 +4,8 @@ The active environments map directly to the CAPI workload clusters:
 
 | Environment | Cluster | Purpose | Portfolio hostname |
 | --- | --- | --- | --- |
-| test | `labtest` | private validation | `portfolio.test.bingops.com` |
-| production | `labprod` | production workloads | `portfolio.bingops.com` (also `bingops.com` and `www.bingops.com`) |
+| test | `labtest` | private validation | `portfolio.test.lab.bingo` |
+| production | `labprod` | production workloads | `portfolio.lab.bingo` (also `bingops.com` and `www.bingops.com`) |
 
 The repository is split by ownership:
 
@@ -28,13 +28,13 @@ The test portfolio ingress allows only the local lab networks
 (`192.168.1.0/24` and `192.168.10.0/24`) and the Tailscale CGNAT range
 (`100.64.0.0/10`). Test DNS
 is not published through Cloudflare: a dedicated CoreDNS process resolves the
-wildcard `*.test.bingops.com` to the labtest node and listens on
+wildcard `*.test.lab.bingo` to the labtest node and listens on
 the `labtest` node address `192.168.1.152`, and `terraform/tailscale-dns`
-sends only `test.bingops.com` queries to it.
+sends only `test.lab.bingo` queries to it.
 
 Argo CD is private on both workload clusters. Tailscale split DNS resolves
-`argocd.test.bingops.com` through the labtest DNS service and resolves only
-`argocd.bingops.com` through a dedicated DNS service on the labprod node at
+`argocd.test.lab.bingo` through the labtest DNS service and resolves only
+`argocd.lab.bingo` through a dedicated DNS service on the labprod node at
 `192.168.1.151`. Neither hostname is routed through Cloudflare Tunnel or
 published by public DNS. Their Traefik ingresses allow only the local lab
 networks and Tailscale. Labtest uses the local CA; labprod uses a publicly
@@ -44,21 +44,23 @@ subnet route to `192.168.1.0/24` for the split nameservers and ingresses to be
 reachable.
 
 Production is published through the Cloudflare tunnel reconciled by the
-`labprod` app-of-apps. Before its first synchronization, create the expected
-`cloudflare-tunnel-secret` Secret in namespace `cloudflare`; the legacy
-cluster-bound SealedSecret is deliberately not referenced. The portfolio is
-public at `portfolio.bingops.com`; `bingops.com` and `www.bingops.com` route to
-the same service. The Cloudflare wildcard
-`*.prod.bingops.com` forwards to Traefik, which selects the application from
-its hostname; no Cloudflare Access policy or source-IP allowlist is attached.
+`labprod` app-of-apps. Its cluster-specific `cloudflare-tunnel-secret`
+SealedSecret is committed with the Cloudflare application and produces the
+Secret in namespace `cloudflare`. Reseal it for the current `labprod`
+controller whenever the tunnel credential or sealing key rotates. The
+portfolio is public at `portfolio.lab.bingo`; `bingops.com` and
+`www.bingops.com` route to the same service. Cloudflare DNS and tunnel routes
+under `lab.bingo` are explicit: no production wildcard is used, and
+`argocd.lab.bingo` remains private to LAN/Tailscale.
 
-Production ingress TLS uses Let's Encrypt DNS-01. Before synchronizing
-`certificates` on `labprod`, create a
-Secret named `cloudflare-api-token` in namespace `cert-manager`, with key
-`api-token`, using a Cloudflare token scoped to DNS edit on `bingops.com`. Keep
-that Secret outside plaintext Git and seal or encrypt it for `labprod`.
+Production ingress TLS uses Let's Encrypt DNS-01. The expected Secret is named
+`cloudflare-api-token` in namespace `cert-manager`, with key `api-token`. Create
+a dedicated Cloudflare token with `Zone:DNS:Edit` and `Zone:Zone:Read`, limited
+to `bingops.com` and `lab.bingo`, store it in the ignored credentials directory,
+and seal it for `labprod` using the procedure below. Do not reuse the broader
+Terraform infrastructure token.
 
-Labtest uses the private `test.bingops.com` DNS zone and a cert-manager-managed
+Labtest uses the private `test.lab.bingo` DNS zone and a cert-manager-managed
 local CA. Its root certificate and key are generated in-cluster in the
 `labtest-root-ca` Secret. Clients must trust the root certificate explicitly;
 back up the Secret in encrypted operator storage so rebuilt clusters can
@@ -67,7 +69,7 @@ reconciles the labtest certificate resources. Rotate the CA by replacing the
 Secret through the same protected recovery workflow, then redistribute its
 public `ca.crt` to clients; never print or commit `tls.key`. Verify without
 exposing key material by checking that the portfolio certificate chains to the
-trusted CA and is valid for `portfolio.test.bingops.com`.
+trusted CA and is valid for `portfolio.test.lab.bingo`.
 
 ## Feature previews on labtest
 
@@ -79,12 +81,12 @@ same preview switches its revision. Removing it also removes its managed
 resources through the Argo CD resources finalizer.
 
 Only one feature branch per application is active at a time because the stable
-test hostname is `<app>.test.bingops.com`. A new application must provide
+test hostname is `<app>.test.lab.bingo`. A new application must provide
 `apps/workloads/<app>/clusters/labtest` and
 `apps/workloads/<app>/clusters/labprod`, using respectively
-`<app>.test.bingops.com`; production names are explicit because the portfolio
-uses `portfolio.bingops.com` while legacy applications may still use
-`<app>.prod.bingops.com`.
+`<app>.test.lab.bingo` and `<app>.lab.bingo`. Production Cloudflare DNS and
+tunnel routes are declared explicitly for each public application. The
+portfolio additionally owns the aliases `bingops.com` and `www.bingops.com`.
 
 From the repository root, after pushing the feature branch:
 
@@ -109,6 +111,21 @@ Both clusters run the official Sealed Secrets chart with controller name
 for `labtest` and `labprod`: their private sealing keys are intentionally
 different. Back up those controller keys outside Git before relying on sealed
 credentials during cluster recreation.
+
+Store the dedicated cert-manager token as
+`terraform/cloudflare/credentials/cert-manager-api-token` with mode `0600`.
+That directory is ignored. Generate the labprod manifest without printing the
+token:
+
+```sh
+kubectl create secret generic cloudflare-api-token --namespace cert-manager --from-file=api-token=terraform/cloudflare/credentials/cert-manager-api-token --dry-run=client -o json | kubeseal --context labprod --controller-name sealed-secrets-controller --controller-namespace kube-system --scope strict --format yaml > apps/platform/certificates/cloudflare-api-token.yaml
+```
+
+Add `cloudflare-api-token.yaml` to
+`apps/platform/certificates/kustomization.yaml`, validate it with `kubeseal
+--validate`, then commit it. Repeat the sealing operation after either the
+Cloudflare token or the labprod sealing key rotates; ciphertext from another
+cluster cannot be reused.
 
 ## Bootstrap
 

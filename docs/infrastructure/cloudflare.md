@@ -42,46 +42,27 @@ This will create credentials of each tunnel inside `terraform/cloudflare/credent
 
 ---
 
-## 🛡️ Create a Sealed Secret for Kubernetes
+## Seal the tunnel credential for labprod
 
-Replace `<tunnel-name>` and `<your-app>` with the right values for your setup:
+The tunnel credential is recoverable from the Cloudflare Terraform stack and
+stored only under the ignored `terraform/cloudflare/credentials` directory.
+The labprod Sealed Secrets controller is named `sealed-secrets-controller` in
+`kube-system`. Regenerate the committed ciphertext after a tunnel credential or
+controller-key rotation without displaying plaintext:
 
-```bash
-export PROJECT_PATH="/opt/homeops/labops"
-
-export SEALED_NAMESPACE="tools"
-export SEALED_CONTROLLER_NAME="sealed-secrets"
-
-export CLOUDFLARE_NAMESPACE="cloudflare"
-export TUNNEL_NAME="<tunnel_name>"
-export APP_NAME="<your-app>"
-
-
-kubectl create secret generic cloudflare-tunnel-secret \
-  --namespace=$CLOUDFLARE_NAMESPACE \
-  --from-file=credentials.json=$PROJECT_PATH/terraform/cloudflare/credentials/$TUNNEL_NAME.json \
-  --dry-run=client -o yaml | \
-  kubeseal \
-    --controller-name=$SEALED_CONTROLLER_NAME \
-    --controller-namespace=$SEALED_NAMESPACE \
-    --format yaml \
-  > apps/$CLOUDFLARE_NAMESPACE/$APP_NAME/cloudflare-tunnel-secret.yaml
+```sh
+kubectl create secret generic cloudflare-tunnel-secret --namespace cloudflare --from-file=credentials.json=terraform/cloudflare/credentials/bingops-tunnel.json --dry-run=client -o json | kubeseal --context labprod --controller-name sealed-secrets-controller --controller-namespace kube-system --scope strict --format yaml > apps/cloudflare/bingops/cloudflare-tunnel-secret.yaml
 ```
 
----
+Validate the generated manifest against the current controller:
 
-## 📦 Usage in Your App
-
-Reference the secret in the cloudflare-tunnel Helm Chart values:
-
-values.yaml :
-```yaml
-cloudflare:
-  ...
-  secretName: "cloudflare-tunnel-secret"
+```sh
+kubeseal --context labprod --controller-name sealed-secrets-controller --controller-namespace kube-system --validate < apps/cloudflare/bingops/cloudflare-tunnel-secret.yaml
 ```
 
-it will be mounted as a file in your pod, typically at `/etc/cloudflare/creds/credentials.json`.
+The Cloudflare Kustomization owns the SealedSecret. The generated Secret is
+mounted by the chart through `cloudflare.secretName`; never create a competing
+plaintext Secret manually.
 
 ---
 

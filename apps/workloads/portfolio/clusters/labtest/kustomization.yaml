@@ -22,7 +22,7 @@ patches:
         value: labtest-ca
       - op: replace
         path: /spec/rules/0/host
-        value: portfolio.test.bingops.com
+        value: portfolio.test.lab.bingo
       - op: replace
         path: /spec/tls/0/hosts/0
-        value: portfolio.test.bingops.com
+        value: portfolio.test.lab.bingo
