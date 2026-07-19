@@ -28,6 +28,47 @@ Read the closest relevant README before changing a subsystem. In particular,
 read `terraform/proxmox/README.md`, `capi/README.md`, and `hacks/README.md`
 before work involving their respective lifecycles.
 
+## Reproducibility contract
+
+Treat full reconstruction from an empty Proxmox environment as an architectural
+requirement, not a documentation exercise performed afterward.
+
+For every change that introduces or discovers an address, resource ID, external
+credential, console setting, bootstrap action, generated artifact, dependency,
+or recovery step:
+
+1. Classify it as declarative configuration, generated state, sensitive input,
+   or an unavoidable external/manual prerequisite.
+2. Challenge whether the manual step can be removed, generated, imported, or
+   managed declaratively by Terraform, CAPI, Argo CD, Sealed Secrets, or an
+   idempotent helper.
+3. Prefer the smallest declarative refactor that keeps this repository as the
+   source of truth. Do not automate secret disclosure or commit generated state.
+4. If a manual prerequisite is unavoidable, document its purpose, owner,
+   minimum permissions, safe storage location, creation/rotation procedure,
+   consumers, recovery source, and a non-sensitive verification method. Never
+   document the secret value.
+5. Update the closest subsystem README and, when reconstruction order or a
+   cross-system dependency changes, update `docs/rebuild.md` in the same change.
+6. Remove stale or duplicate instructions instead of appending a second source
+   of truth. Link to the owning runbook rather than copying long procedures.
+
+Before completing infrastructure work, answer these questions explicitly:
+
+- Could a new operator rebuild this component without relying on chat history?
+- Which inputs cannot be recovered from Git, and where is their recovery process
+  documented?
+- Is the operation idempotent after partial failure or an already-absent resource?
+- Are lifecycle ownership and dependency order unambiguous?
+- Is there a safe verification step that does not reveal sensitive output?
+
+If the answer to any question is no, either refactor within the requested scope
+or report the precise reproducibility gap and update the runbook. Runtime output,
+Terraform state, shell history, and chat messages are never documentation.
+
+Use a nested `AGENTS.md` only for additional subsystem-specific rules. Do not
+duplicate or weaken this repository-wide reproducibility contract there.
+
 ## Safety boundary
 
 - Treat production, preproduction, management clusters, Proxmox, Cloudflare,

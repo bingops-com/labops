@@ -1,0 +1,26 @@
+version: "3"
+
+vars:
+  NETWORK_TERRAFORM_DIR: terraform/network
+
+tasks:
+  init:
+    desc: Initialize the persistent network Terraform stack
+    cmds:
+      - terraform -chdir={{.NETWORK_TERRAFORM_DIR}} init
+
+  plan:
+    desc: Build and save the Proxmox VLAN and Tailscale network plan
+    prompt: This reads live Tailscale state and plans Proxmox host networking. Continue?
+    cmds:
+      - task: init
+      - terraform -chdir={{.NETWORK_TERRAFORM_DIR}} plan -out=network.tfplan
+
+  apply:
+    desc: Apply the reviewed persistent network plan
+    prompt: This configures the Proxmox VLAN router and enables Tailscale subnet routes. Continue?
+    preconditions:
+      - sh: test -f {{.NETWORK_TERRAFORM_DIR}}/network.tfplan
+        msg: Run task network:plan and review the saved plan first.
+    cmds:
+      - terraform -chdir={{.NETWORK_TERRAFORM_DIR}} apply network.tfplan

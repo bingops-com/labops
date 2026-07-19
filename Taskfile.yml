@@ -1,0 +1,18 @@
+version: "3"
+
+includes:
+  capi: .taskfiles/capi.yml
+  clients: .taskfiles/clients.yml
+  lifecycle: .taskfiles/lifecycle.yml
+  network: .taskfiles/network.yml
+  proxmox: .taskfiles/proxmox.yml
+  setup: .taskfiles/setup.yml
+  terraform: .taskfiles/terraform.yml
+  workstation: .taskfiles/workstation.yml
+
+tasks:
+  default:
+    desc: List available LabOps tasks
+    cmds:
+      - task --list
+    silent: true
