@@ -1,0 +1,25 @@
+version: "3"
+
+tasks:
+  route:
+    desc: Wait for the labmgmt Talos API through the Kubernetes VLAN
+    cmds:
+      - |
+        set -eu
+        timeout_seconds=600
+        retry_seconds=10
+        deadline=$(( $(date +%s) + timeout_seconds ))
+
+        echo "Waiting up to ${timeout_seconds}s for the labmgmt Talos API through Tailscale..."
+        while ! nc -z -w 5 192.168.10.150 50000 >/dev/null 2>&1; do
+          if [ "$(date +%s)" -ge "${deadline}" ]; then
+            echo "labmgmt Talos API 192.168.10.150:50000 is still unreachable after ${timeout_seconds}s." >&2
+            echo "Check VM 150 power, console, ide2 Talos ISO, sata0 NoCloud seed, VLAN tag 10, and the Tailscale route." >&2
+            exit 1
+          fi
+
+          echo "labmgmt Talos API is not ready; retrying in ${retry_seconds}s..."
+          sleep "${retry_seconds}"
+        done
+
+        echo "labmgmt Talos API is ready."

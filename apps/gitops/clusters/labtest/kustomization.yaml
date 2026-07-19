@@ -10,3 +10,4 @@ resources:
   - certificates.yaml
   - private-dns.yaml
   - argocd-access.yaml
+  - portfolio.yaml

@@ -1,0 +1,13 @@
+version: "3"
+
+tasks:
+  management:
+    desc: Install the Terraform-managed labmgmt kubeconfig and talosconfig
+    cmds:
+      - ./hacks/cluster-setup.sh --management-only
+      - kubectl config use-context labmgmt
+
+  workloads:
+    desc: Install kubeconfig and talosconfig for labprod and labtest
+    cmds:
+      - ./hacks/cluster-setup.sh --workload labprod --workload labtest

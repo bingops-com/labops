@@ -43,8 +43,10 @@ its value, Terraform sensitive output, or an unsealed Kubernetes Secret here.
    `labtest` and `labprod` according to [`capi/README.md`](../capi/README.md).
 5. Rebuild local Kubernetes and Talos client configuration using
    [`hacks/README.md`](../hacks/README.md).
-6. Bootstrap Argo CD once on each workload cluster, then install the matching
-   root Application described by [`apps/README.md`](../apps/README.md).
+6. Confirm that both `develop` and `master` exist on the Git remote. Bootstrap
+   Argo CD once on each workload cluster, then install the matching root
+   Application described by [`apps/README.md`](../apps/README.md). Labtest
+   follows `develop`; labprod follows `master`.
 7. Restore or reseal cluster-specific secrets only after the Sealed Secrets
    controller is healthy. Never reuse ciphertext with a different sealing key.
 8. Apply split DNS for `*.test.lab.bingo` through `192.168.1.152` and for the
@@ -53,8 +55,9 @@ its value, Terraform sensitive output, or an unsealed Kubernetes Secret here.
    DNS/tunnel configuration for `portfolio.lab.bingo`, `bingops.com` and
    `www.bingops.com`. Production `lab.bingo` routes are explicit; do not add
    either Argo CD hostname to the Cloudflare tunnel.
-9. Activate a feature preview on `labtest`; promote the same revision through
-   `master` only after validation. `labprod` follows `master` exclusively.
+9. Merge feature changes into `develop`, validate the reconciled revision on
+   `labtest`, then promote `develop` into `master`. `labprod` follows `master`
+   exclusively.
 
 ## Recovery gates
 
