@@ -5,15 +5,40 @@ The repository lifecycle also uses
 Terraform apply and CAPI workload creation. It ensures template 1234 retains
 its Talos ISO on `ide2` while `ide0` remains available for CAPMOX NoCloud data.
 
-## `gitops-preview.sh`
+## `deploy.sh`
 
-Creates, updates, or deletes a feature-branch preview only for an isolated
-application that is not registered in the permanent `develop` app-of-apps on
-`labtest`. The helper refuses to overlap a `<app>-labtest` Application because
-two Applications must not own the same resources. Normal delivery uses feature
-branch to `develop`, validation on labtest, then `develop` to `master`. The
-preview branch must already exist on `origin`; deleting a preview also prunes
-its managed resources. See [`apps/README.md`](../apps/README.md).
+Previews the changes that Argo CD would apply to the selected live cluster,
+then temporarily points an existing Application at a pushed revision. Select `test` or `prod`; if
+`--app` is omitted, every Git-backed workload Application in that environment
+is targeted. If `--revision` is omitted, the current Git branch is used.
+Every deployment requires typing an exact confirmation phrase.
+
+```sh
+./hacks/deploy.sh diff test --app portfolio
+./hacks/deploy.sh deploy test --app portfolio
+./hacks/deploy.sh status test
+./hacks/deploy.sh restore test
+./hacks/deploy.sh diff prod --revision feature/my-change
+./hacks/deploy.sh deploy prod --app portfolio --revision feature/my-change
+./hacks/deploy.sh restore prod --app portfolio
+```
+
+`--app` is optional for every subcommand; omitting it operates on all matching
+Applications. `dev` remains an alias for `test`. `diff` displays one unified
+live-to-desired diff per Application, including the Kubernetes object path;
+additions are green and deletions are red. It does not print the branch name.
+`deploy` shows the same diff before asking for confirmation. `restore` returns
+both environments to `master`. Overrides are
+recorded on the child Application; the root ignores only `targetRevision` drift
+and continues to self-heal every other field. Reapply the corresponding root
+bootstrap once after enabling this policy on an existing cluster.
+
+The helper requires `git`, `jq`, `kubectl`, `argocd`, the `labtest` and
+`labprod` kubectl contexts, and a remote branch that has already been pushed.
+Override context names with `LABTEST_CONTEXT` and `LABPROD_CONTEXT`. For core
+mode, it creates a mode-0600 temporary kubeconfig scoped to the selected context
+and `argocd-system` namespace, then removes it automatically; the operator's
+kubeconfig is never modified.
 
 ## `capi-init.sh`
 
