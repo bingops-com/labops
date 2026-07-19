@@ -9,7 +9,12 @@
 - [Kubeconfig helper scripts](hacks/README.md)
 - [GitOps application architecture](apps/README.md)
 - [Deploying applications through GitOps](docs/gitops-applications.md)
+- [Task command organization](.taskfiles/README.md)
 
 ## Project Overview
 
 This mono-repo contains infrastructure as code for my Gitops lab using Terraform and Kubernetes. It includes configurations for deploying applications, managing infrastructure, and automating workflows.
+
+Run `task` or `task --list` from the repository root to discover operator
+commands. The root `Taskfile.yml` is intentionally only an index; implementation
+tasks are grouped by subsystem under `.taskfiles/`.
