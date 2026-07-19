@@ -7,15 +7,15 @@ spec:
   allowedNodes:
     - homelab
   controlPlaneEndpoint:
-    host: 192.168.1.160
+    host: 192.168.10.160
     port: 6443
   dnsServers:
     - 1.1.1.1
     - 9.9.9.9
   ipv4Config:
     addresses:
-      - 192.168.1.151
-    gateway: 192.168.1.1
+      - 192.168.10.151
+    gateway: 192.168.10.1
     prefix: 24
   schedulerHints:
     memoryAdjustment: 0
@@ -102,7 +102,7 @@ spec:
                 - interface: eth0
                   dhcp: false
                   vip:
-                    ip: 192.168.1.160
+                    ip: 192.168.10.160
             kubelet:
               extraArgs:
                 cloud-provider: external

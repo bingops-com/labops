@@ -4,8 +4,8 @@ This stack owns the private DNS routes consumed by Tailscale clients:
 
 | DNS suffix | Nameserver | Owner |
 | --- | --- | --- |
-| `test.lab.bingo` | `192.168.1.152` | CoreDNS on `labtest` |
-| `argocd.lab.bingo` | `192.168.1.151` | CoreDNS on `labprod` |
+| `test.lab.bingo` | `192.168.10.170` | CoreDNS on `labtest`; answers with `192.168.10.152` |
+| `argocd.lab.bingo` | `192.168.10.160` | CoreDNS on `labprod`; answers with `192.168.10.151` |
 
 The `argocd.lab.bingo` route is intentionally an exact-name split route. It
 must not replace DNS for the rest of `lab.bingo`. Neither Argo CD hostname is
@@ -23,7 +23,7 @@ provider derives the tailnet from the OAuth client, which is the preferred
 configuration. Set `tailscale_tailnet` only when an explicit Tailnet ID is
 required; copy that ID from the Tailscale admin console rather than guessing it.
 
-Clients must be able to reach `192.168.1.0/24` through an approved Tailscale
+Clients must be able to reach `192.168.10.0/24` through an approved Tailscale
 subnet router. Validate without exposing credentials by resolving both names
 while connected to Tailscale and confirming that HTTPS is unreachable after
 disconnecting from both Tailscale and the local network.

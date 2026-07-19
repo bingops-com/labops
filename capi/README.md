@@ -113,8 +113,8 @@ The node addresses must be excluded from DHCP:
 
 | Cluster | Proxmox VM ID | Node address | Control-plane VIP | Proxmox pool |
 | --- | ---: | --- | --- | --- |
-| `labprod` | `151` | `192.168.1.151` | `192.168.1.160` | `Kubernetes` |
-| `labtest` | `152` | `192.168.1.152` | `192.168.1.170` | `Kubernetes` |
+| `labprod` | `151` | `192.168.10.151` | `192.168.10.160` | `Kubernetes` |
+| `labtest` | `152` | `192.168.10.152` | `192.168.10.170` | `Kubernetes` |
 
 Each cluster currently has one control-plane replica and exactly one available
 node address. The manifests constrain CAPMOX with a single-value `vmIDRange`
