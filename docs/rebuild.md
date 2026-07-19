@@ -54,8 +54,9 @@ its value, Terraform sensitive output, or an unsealed Kubernetes Secret here.
    DNS/tunnel configuration for `auth.lab.bingo`, `portfolio.lab.bingo`,
    `bingops.com` and `www.bingops.com`. Production `lab.bingo` routes are explicit; do not add
    either Argo CD hostname to the Cloudflare tunnel.
-9. Reconcile the pinned local-path provisioner and verify its default
-   `local-path` StorageClass before recreating Authentik according to
+9. Reconcile the pinned local-path provisioner, verify its namespace enforces
+   the `privileged` Pod Security level required by its host-path helper, and
+   verify its default `local-path` StorageClass before recreating Authentik according to
    [`authentik.md`](authentik.md). Restore the PostgreSQL identity backup and
    verify both Argo CD OIDC clients. On a new database, the sealed administrator
    bootstrap and group membership reconcile automatically.
