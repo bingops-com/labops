@@ -37,6 +37,11 @@ case "${action}" in
       exit 1
     fi
 
+    if KUBECONFIG="${kubeconfig}" kubectl get application "${app_name}-labtest" --namespace argocd-system >/dev/null 2>&1; then
+      echo "Application ${app_name}-labtest already owns this workload; promote the feature branch to develop instead." >&2
+      exit 1
+    fi
+
     KUBECONFIG="${kubeconfig}" kubectl apply -f - <<EOF
 apiVersion: argoproj.io/v1alpha1
 kind: Application

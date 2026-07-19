@@ -1,0 +1,16 @@
+version: "3"
+
+tasks:
+  vlan:
+    desc: Apply the network stack, then plan and apply labmgmt
+    summary: |
+      End-to-end VLAN 10 setup for Proxmox and the Terraform-managed labmgmt VM.
+      This does not delete or recreate CAPI workload clusters.
+    prompt: This will apply the network and labmgmt Terraform stacks. Continue?
+    cmds:
+      - task: :network:plan
+      - task: :network:apply
+      - task: :terraform:plan
+      - task: :terraform:apply
+      - task: :proxmox:template:verify
+      - task: :workstation:route

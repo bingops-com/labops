@@ -71,37 +71,29 @@ public `ca.crt` to clients; never print or commit `tls.key`. Verify without
 exposing key material by checking that the portfolio certificate chains to the
 trusted CA and is valid for `portfolio.test.lab.bingo`.
 
-## Feature previews on labtest
+## Branch promotion workflow
 
-The permanent `labtest` root follows `master` only for its platform services.
-Application workloads are not part of that root. A feature branch is activated
-explicitly with `hacks/gitops-preview.sh`; the resulting Argo CD Application
-follows the pushed branch directly and is named `<app>-preview`. Updating the
-same preview switches its revision. Removing it also removes its managed
-resources through the Argo CD resources finalizer.
+The `labtest` root and every Git-backed Application below it follow the
+permanent `develop` branch. The `labprod` root and production Applications
+follow only `master`. A feature is promoted first into `develop`, validated on
+`labtest`, then promoted from `develop` into `master`. This keeps platform,
+DNS, certificate and workload changes on the same tested revision.
 
-Only one feature branch per application is active at a time because the stable
-test hostname is `<app>.test.lab.bingo`. A new application must provide
+A new application must provide
 `apps/workloads/<app>/clusters/labtest` and
 `apps/workloads/<app>/clusters/labprod`, using respectively
 `<app>.test.lab.bingo` and `<app>.lab.bingo`. Production Cloudflare DNS and
 tunnel routes are declared explicitly for each public application. The
 portfolio additionally owns the aliases `bingops.com` and `www.bingops.com`.
 
-From the repository root, after pushing the feature branch:
-
-```sh
-./hacks/gitops-preview.sh up portfolio feature/my-branch
-./hacks/gitops-preview.sh down portfolio
-```
-
-Production Applications always follow `master`. Promotion therefore consists
-of merging the tested feature branch into `master`; Argo CD never deploys a
-feature revision to `labprod`.
+The legacy `gitops-preview.sh` helper is not used for Applications already
+owned by the `develop` root because two Argo CD Applications must never manage
+the same namespace resources. It remains available only for an unregistered,
+isolated workload that is not yet listed in the labtest kustomization.
 
 The complete operator procedure and reusable manifest conventions are in
 [`docs/gitops-applications.md`](../docs/gitops-applications.md). That runbook is
-the source of truth for adding, previewing, promoting, rolling back and removing
+the source of truth for adding, testing, promoting, rolling back and removing
 a workload.
 
 ## Sealed Secrets
@@ -134,4 +126,5 @@ CD, then install exactly one root application from `gitops/bootstrap/`. These
 are the only imperative bootstrap operations. The root creates an
 `argocd-<cluster>` Application which adopts and continuously reconciles the
 matching Argo CD overlay, so later chart values and version changes are GitOps
-managed. Never bootstrap a `labprod` root into `labtest`, or conversely.
+managed. The labtest bootstrap follows `develop`; the labprod bootstrap follows
+`master`. Never bootstrap a `labprod` root into `labtest`, or conversely.

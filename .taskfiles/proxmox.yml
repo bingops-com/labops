@@ -1,0 +1,27 @@
+version: "3"
+
+vars:
+  ANSIBLE_INVENTORY: ansible/inventories/main/hosts
+  PROXMOX_PLAYBOOK: ansible/proxmox-router.yml
+
+tasks:
+  ping:
+    desc: Test Ansible access to the Proxmox host
+    cmds:
+      - ansible -i {{.ANSIBLE_INVENTORY}} proxmox -m ping
+
+  vlan:check:
+    desc: Preview the Proxmox VLAN 10 router configuration
+    cmds:
+      - ansible-playbook -i {{.ANSIBLE_INVENTORY}} {{.PROXMOX_PLAYBOOK}} --check --diff
+
+  vlan:apply:
+    desc: Configure VLAN 10 routing and NAT on Proxmox
+    prompt: This will change networking, sysctl and nftables on Proxmox 192.168.1.100. Continue?
+    cmds:
+      - ansible-playbook -i {{.ANSIBLE_INVENTORY}} {{.PROXMOX_PLAYBOOK}} --diff
+
+  template:verify:
+    desc: Verify that template 1234 remains bootable when CAPMOX adds NoCloud
+    cmds:
+      - ansible-playbook -i {{.ANSIBLE_INVENTORY}} ansible/proxmox-template-verify.yml

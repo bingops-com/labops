@@ -1,0 +1,47 @@
+version: "3"
+
+vars:
+  PROXMOX_TERRAFORM_DIR: terraform/proxmox
+
+tasks:
+  fmt:
+    desc: Check formatting of the Proxmox Terraform stack
+    cmds:
+      - terraform fmt -check terraform/proxmox/*.tf terraform/proxmox/terraform.tfvars
+
+  validate:
+    desc: Validate the initialized Proxmox Terraform stack offline
+    cmds:
+      - terraform -chdir={{.PROXMOX_TERRAFORM_DIR}} validate
+
+  plan:
+    desc: Build and save the Proxmox Terraform plan
+    prompt: This reads live Proxmox state and may expose sensitive plan output. Continue?
+    cmds:
+      - terraform -chdir={{.PROXMOX_TERRAFORM_DIR}} plan -out=vlan10.tfplan
+
+  apply:
+    desc: Apply the previously reviewed Proxmox Terraform plan
+    prompt: This will apply terraform/proxmox/vlan10.tfplan to Proxmox. Continue?
+    preconditions:
+      - sh: test -f {{.PROXMOX_TERRAFORM_DIR}}/vlan10.tfplan
+        msg: Run task terraform:plan and review the saved plan first.
+      - sh: nc -z -w 5 192.168.10.1 22
+        msg: The Proxmox VLAN gateway SSH endpoint is unreachable. Run task network:plan and task network:apply first.
+    cmds:
+      - terraform -chdir={{.PROXMOX_TERRAFORM_DIR}} apply vlan10.tfplan
+
+  destroy:plan:
+    desc: Build and save a destruction plan for the Proxmox Terraform stack
+    prompt: This plans destruction of labmgmt, VM 150, template 1234, and Terraform-managed Talos assets. Continue?
+    cmds:
+      - terraform -chdir={{.PROXMOX_TERRAFORM_DIR}} plan -destroy -out=destroy.tfplan
+
+  destroy:apply:
+    desc: Apply the previously reviewed Proxmox destruction plan
+    prompt: This will permanently apply terraform/proxmox/destroy.tfplan.
+    preconditions:
+      - sh: test -f {{.PROXMOX_TERRAFORM_DIR}}/destroy.tfplan
+        msg: Run task terraform:destroy:plan and review the saved plan first.
+    cmds:
+      - terraform -chdir={{.PROXMOX_TERRAFORM_DIR}} apply destroy.tfplan
