@@ -49,6 +49,7 @@ spec:
             persistence:
               enabled: true
               size: 8Gi
+              storageClass: local-path
   destination:
     server: https://kubernetes.default.svc
     namespace: authentik
