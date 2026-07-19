@@ -4,6 +4,8 @@ metadata:
   name: coredns-private
   namespace: private-dns
 spec:
+  strategy:
+    type: Recreate
   replicas: 1
   selector:
     matchLabels:

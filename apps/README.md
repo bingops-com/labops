@@ -72,6 +72,23 @@ public `ca.crt` to clients; never print or commit `tls.key`. Verify without
 exposing key material by checking that the portfolio certificate chains to the
 trusted CA and is valid for `portfolio.test.lab.bingo`.
 
+On a Debian-derived client such as Kali, export only the public CA certificate,
+inspect its fingerprint, then install it in the system trust store. The
+JSONPath selects `ca.crt` explicitly; never export `tls.key`:
+
+```sh
+kubectl --context labtest --namespace cert-manager get secret labtest-root-ca -o jsonpath='{.data.ca\.crt}' | base64 --decode > /tmp/labtest-root-ca.crt
+openssl x509 -in /tmp/labtest-root-ca.crt -noout -subject -issuer -fingerprint -sha256
+sudo install -m 0644 /tmp/labtest-root-ca.crt /usr/local/share/ca-certificates/labtest-root-ca.crt
+sudo update-ca-certificates
+curl --fail --show-error --silent https://argocd.test.lab.bingo/ >/dev/null
+curl --fail --show-error --silent https://portfolio.test.lab.bingo/ >/dev/null
+```
+
+Confirm the displayed fingerprint through the encrypted CA backup or another
+trusted operator channel before installation. Repeat the export and trust-store
+update after rotating or replacing `labtest-root-ca`.
+
 ## Branch promotion workflow
 
 The `labtest` root and every Git-backed Application below it follow the
