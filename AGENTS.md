@@ -115,6 +115,12 @@ duplicate or weaken this repository-wide reproducibility contract there.
 
 - Start with `git status --short`. The worktree may contain user changes; keep
   them intact and do not revert, overwrite, reformat, or include unrelated work.
+- Every persistent configuration change made directly to a live cluster must be
+  represented declaratively in this repository during the same intervention.
+  Treat direct cluster mutations only as rollout or recovery actions for the
+  corresponding committed configuration; never leave a live-only fix as the
+  source of truth. Before completion, compare live mutations with the local diff
+  and report any intentional transient action that has no persistent state.
 - Inspect before editing and keep changes narrowly scoped to the request.
 - Preserve existing names, directory layout, cluster/environment separation,
   and pinned versions unless the task requires a change.

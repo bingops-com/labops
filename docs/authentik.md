@@ -8,7 +8,12 @@ persistent volume in namespace `authentik`.
 The `local-path-storage-labprod` Argo CD Application installs Rancher's
 local-path provisioner, pinned to `v0.0.36`, before Authentik. Its default
 `local-path` StorageClass stores volumes below
-`/var/mnt/local-path-provisioner` on the Talos node selected for the workload.
+`/var/lib/kubelet/local-path-provisioner` on the Talos node selected for the
+workload. The path is below Talos' existing writable kubelet data mount; do not
+move it below an unmounted `/var/mnt` path, which remains read-only.
+The provisioner namespace explicitly permits privileged workloads because its
+short-lived volume helper mounts that host path. Without this Pod Security
+exception, PostgreSQL remains Pending and Cloudflare returns 502 for Authentik.
 This is node-local storage: it survives pod restarts, but it is neither shared
 nor replicated and does not replace the PostgreSQL backup required for node or
 cluster replacement.
@@ -66,6 +71,7 @@ Non-sensitive verification commands:
 ```sh
 kubectl --context labprod get storageclass local-path
 kubectl --context labprod -n authentik get pvc,pod
+kubectl --context labprod get namespace local-path-storage -o jsonpath='{.metadata.labels.pod-security\.kubernetes\.io/enforce}{"\n"}'
 curl --fail --show-error --silent https://auth.lab.bingo/application/o/argocd/.well-known/openid-configuration >/dev/null
 curl --fail --show-error --silent https://auth.lab.bingo/application/o/argocd-test/.well-known/openid-configuration >/dev/null
 ```

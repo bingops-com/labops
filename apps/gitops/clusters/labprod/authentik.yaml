@@ -16,6 +16,8 @@ spec:
         authentik:
           existingSecret:
             secretName: authentik-secrets
+          postgresql:
+            host: authentik-labprod-postgresql
           error_reporting:
             enabled: false
         blueprints:
