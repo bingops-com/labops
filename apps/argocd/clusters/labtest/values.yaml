@@ -1,5 +1,6 @@
 configs:
   cm:
+    admin.enabled: false
     kustomize.buildOptions: --enable-helm
     url: https://argocd.test.lab.bingo
     oidc.config: |

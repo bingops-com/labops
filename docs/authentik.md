@@ -22,28 +22,35 @@ published through the Cloudflare tunnel.
 ## Secrets and recovery
 
 Three strict-scope SealedSecrets contain the Authentik application key,
-PostgreSQL passwords and the two distinct OIDC client secrets. Plaintext values
-must never be recovered into Git or logs. They are recoverable only with the
-backed-up private sealing keys for their owning cluster. Back up the Authentik
-PostgreSQL volume as identity data; users, memberships and credentials are
-generated state and are not reconstructed by the blueprint.
+PostgreSQL passwords, bootstrap administrator credentials and the two distinct
+OIDC client secrets. Plaintext values must never be recovered into Git or logs.
+They are recoverable only with the backed-up private sealing keys for their
+owning cluster. Back up the Authentik PostgreSQL volume as identity data;
+additional users and credentials remain generated state.
 
-After a fresh installation, an operator must visit
-`https://auth.lab.bingo/if/flow/initial-setup/` once, set the `akadmin` password,
-create the required users and add administrators to `argocd-admins`. This is an
-unavoidable identity bootstrap owned by the Authentik administrator. Store the
-administrator credential in the team password manager and rotate it in
-Authentik; never record it in this repository.
+Local bootstrap inputs are staged only under the ignored
+`apps/platform/authentik/credentials/` directory. Never commit this directory;
+store the administrator password in the team password manager and use the local
+file only while generating its strict-scope SealedSecret. Delete the staging
+file immediately after `kubeseal --validate` succeeds.
+
+On a fresh database, Authentik consumes the sealed `AUTHENTIK_BOOTSTRAP_EMAIL`
+and `AUTHENTIK_BOOTSTRAP_PASSWORD` values automatically. Its blueprint creates
+`argocd-admins` and adds `akadmin`, so `/if/flow/initial-setup/` is not required.
+The bootstrap variables do not reset an existing database. Rotate the exposed
+initial password after the first successful login and update the password
+manager; never record the replacement in this repository.
 
 ## Delivery order
 
 1. Review and apply the Cloudflare Terraform change for `auth.lab.bingo`.
 2. Reconcile the labprod app-of-apps so the Authentik configuration, chart,
    PostgreSQL, Ingress and tunnel route are created.
-3. Complete the one-time Authentik administrator setup and group membership.
-4. Reconcile the Argo CD overlays on labprod and labtest.
-5. Validate OIDC discovery and both browser callbacks before disabling the
-   built-in Argo CD administrator account in a later reviewed change.
+3. Wait for the bootstrap blueprint to create both providers and group
+   membership, then reconcile the Argo CD overlays on labprod and labtest.
+4. Validate OIDC discovery and both browser callbacks. The built-in Argo CD
+   administrator is disabled declaratively on both clusters; recovery uses a
+   reviewed Git revert and Kubernetes core access.
 
 Non-sensitive verification commands:
 
