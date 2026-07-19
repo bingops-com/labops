@@ -5,11 +5,11 @@ metadata:
   namespace: private-dns
 data:
   Corefile: |
-    test.bingops.com:53 {
+    test.lab.bingo:53 {
         errors
         log
         template IN A {
-            match ^[a-z0-9-]+[.]test[.]bingops[.]com[.]$
+            match ^[a-z0-9-]+[.]test[.]lab[.]bingo[.]$
             answer "{{ .Name }} 30 IN A 192.168.1.152"
         }
         cache 30
