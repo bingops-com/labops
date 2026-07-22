@@ -3,10 +3,14 @@
 if [[ "${GITHUB_EVENT_NAME}" == "repository_dispatch" ]]; then
   echo "::notice:: Triggered by repository_dispatch. Using image from payload."
   echo "{\"include\":[{\"image\":\"${IMAGE_NAME}\",\"is_pr\":\"${IS_PR}\"}]}" > matrix.json
+  echo "has_changes=true" >> "$GITHUB_OUTPUT"
 else
   echo "::notice:: Triggered by push/PR. Detecting modified docker contexts..."
 
-  BEFORE_SHA="${GITHUB_EVENT_BEFORE}"
+  BEFORE_SHA="${GITHUB_EVENT_BEFORE:-}"
+  if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+    BEFORE_SHA="${GITHUB_BASE_SHA:-}"
+  fi
   if [ -z "$BEFORE_SHA" ] || ! git cat-file -e "$BEFORE_SHA^{commit}" 2>/dev/null; then
     BEFORE_SHA=$(git rev-parse HEAD~1)
   fi
@@ -17,6 +21,7 @@ else
   if [ -z "$modified_dirs" ]; then
     echo "::warning:: No modified Docker contexts detected."
     echo '{"include":[]}' > matrix.json
+    echo "has_changes=false" >> "$GITHUB_OUTPUT"
   else
     if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
       IS_PR_FLAG=true
@@ -35,6 +40,7 @@ else
     done
     json_output+="]}"
     echo "$json_output" > matrix.json
+    echo "has_changes=true" >> "$GITHUB_OUTPUT"
   fi
 fi
 

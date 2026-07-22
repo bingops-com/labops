@@ -33,6 +33,9 @@ jobs:
       - name: Show TFLint version
         run: tflint --version
 
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive terraform
+
       - name: Run TFLint in all terraform subdirectories
         run: |
           find terraform -type f -name "*.tf" -exec dirname {} \; | sort -u | while read dir; do

@@ -1,26 +1,58 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "enabledManagers": ["dockerfile", "github-actions", "regex"],
-  "docker": {
-    "enabled": true,
-    "pinDigests": true,
-    "digest": {
-      "enabled": true
-    }
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommitTypeAll(bump)"
+  ],
+  "timezone": "Europe/Paris",
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "enabledManagers": [
+    "ansible-galaxy",
+    "argocd",
+    "custom.regex",
+    "dockerfile",
+    "github-actions",
+    "kubernetes",
+    "kustomize",
+    "terraform"
+  ],
+  "argocd": {
+    "managerFilePatterns": ["/^apps/gitops/clusters/.+\\.yaml$/"]
   },
-  "github-actions": {
-    "enabled": true
+  "kubernetes": {
+    "managerFilePatterns": [
+      "/^apps/(argocd|bingops|cloudflare|platform|workloads)/.+\\.yaml$/",
+      "/^capi/.+\\.yaml$/"
+    ]
   },
-  "regexManagers": [
+  "customManagers": [
     {
-      "fileMatch": ["^Dockerfile$"],
+      "customType": "regex",
+      "description": "Update tool versions declared in Dockerfile environment variables",
+      "managerFilePatterns": ["/(^|/)Dockerfile$/"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>.*?)\\s+depName=(?<depName>.*?)\\s+versioning=(?<versioning>.*?)\\s*\\nENV (?<packageName>.*?)=(?<currentValue>.*)"
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[a-z-]+))?\\s+ENV [A-Z0-9_]+=(?<currentValue>[^\\s]+)"
       ]
     }
   ],
-  "extends": [
-    "config:recommended",
-    ":semanticCommitTypeAll(bump)"
+  "packageRules": [
+    {
+      "description": "Keep container references reproducible",
+      "matchDatasources": ["docker"],
+      "pinDigests": true
+    },
+    {
+      "description": "Group GitHub Actions maintenance",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions"
+    },
+    {
+      "description": "Require manual review for infrastructure major updates",
+      "matchManagers": ["argocd", "kustomize", "terraform"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    }
   ]
 }

@@ -37,7 +37,7 @@ resource "local_file" "tunnel_credentials" {
 
 resource "null_resource" "create_credentials_directory" {
   provisioner "local-exec" {
-    command = "mkdir -p ${path.module}/credentials"
+    command     = "mkdir -p ${path.module}/credentials"
     interpreter = ["bash", "-c"]
   }
 }
