@@ -34,7 +34,7 @@ spec:
                   - namespace
                   - alertname
             route:
-              receiver: discord
+              receiver: discord-applications
               group_by:
                 - namespace
                 - alertname
@@ -44,14 +44,33 @@ spec:
               routes:
                 - receiver: "null"
                   matchers:
-                    - alertname = Watchdog
+                    - alertname =~ "Watchdog|InfoInhibitor"
+                - receiver: discord-critical
+                  matchers:
+                    - severity = critical
+                - receiver: discord-infrastructure
+                  matchers:
+                    - namespace =~ "kube-system|monitoring|logging|argocd-system|cert-manager|traefik|local-path-storage|cnpg-system|private-dns"
+                - receiver: discord-infrastructure
+                  matchers:
+                    - alertname =~ "Kube.*|Node.*|Host.*|Machine.*|Etcd.*|Prometheus.*|Alertmanager.*|Grafana.*|Elasticsearch.*|FluentBit.*|ArgoCD.*|CertManager.*|Traefik.*"
             receivers:
               - name: "null"
-              - name: discord
+              - name: discord-critical
                 discord_configs:
-                  - webhook_url_file: /etc/alertmanager/secrets/observability-discord/url
+                  - webhook_url_file: /etc/alertmanager/secrets/observability-discord/critical-url
                     send_resolved: true
-                    username: LabOps labtest
+                    username: LabOps labtest · critical
+              - name: discord-infrastructure
+                discord_configs:
+                  - webhook_url_file: /etc/alertmanager/secrets/observability-discord/infrastructure-url
+                    send_resolved: true
+                    username: LabOps labtest · infrastructure
+              - name: discord-applications
+                discord_configs:
+                  - webhook_url_file: /etc/alertmanager/secrets/observability-discord/applications-url
+                    send_resolved: true
+                    username: LabOps labtest · applications
           alertmanagerSpec:
             secrets:
               - observability-discord
