@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: github-actions-runner-controller-labprod
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-7"
+spec:
+  project: labops-labprod
+  source:
+    repoURL: ghcr.io/actions/actions-runner-controller-charts
+    chart: gha-runner-scale-set-controller
+    targetRevision: 0.14.2
+    helm:
+      releaseName: arc-controller
+      valuesObject:
+        fullnameOverride: arc-controller
+        serviceAccount:
+          create: true
+          name: arc-controller
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arc-systems
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

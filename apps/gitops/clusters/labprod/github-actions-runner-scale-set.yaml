@@ -1,0 +1,54 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: github-actions-runner-scale-set-labprod
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+spec:
+  project: labops-labprod
+  source:
+    repoURL: ghcr.io/actions/actions-runner-controller-charts
+    chart: gha-runner-scale-set
+    targetRevision: 0.14.2
+    helm:
+      releaseName: labops
+      valuesObject:
+        githubConfigUrl: https://github.com/bingops-com/labops
+        githubConfigSecret: arc-github-app
+        runnerScaleSetName: labops
+        minRunners: 0
+        maxRunners: 1
+        controllerServiceAccount:
+          namespace: arc-systems
+          name: arc-controller
+        template:
+          spec:
+            containers:
+              - name: runner
+                image: ghcr.io/bingops-com/labops-runner:0.1.0
+                imagePullPolicy: IfNotPresent
+                command:
+                  - /home/runner/run.sh
+                env:
+                  - name: KUBECONFIG
+                    value: /home/runner/.kube/config
+                volumeMounts:
+                  - name: labtest-kubeconfig
+                    mountPath: /home/runner/.kube
+                    readOnly: true
+            volumes:
+              - name: labtest-kubeconfig
+                secret:
+                  secretName: arc-labtest-kubeconfig
+                  defaultMode: 0400
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arc-runners
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

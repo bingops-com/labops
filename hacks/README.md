@@ -36,11 +36,31 @@ a time:
 ```
 
 The required namespaces are `argocd-system`, `cert-manager`, and `postgresql`
-on `labtest`, and `argocd-system`, `authentik`, `cert-manager`, and `cloudflare`
-on `labprod`.
+on `labtest`, and `argocd-system`, `arc-runners`, `authentik`, `cert-manager`,
+and `cloudflare` on `labprod`.
 Re-run the same command after token rotation or partial failure. Verify without
 revealing the token with `kubectl --context <cluster> --namespace <namespace>
 get secret bw-auth-token`; never use `-o yaml` or decode its data.
+
+## `create-arc-labtest-kubeconfig.sh`
+
+Creates the replaceable, least-privilege kubeconfig used by the ARC runner in
+`labprod` to patch only Argo CD Applications in `labtest`. Git declares the
+ServiceAccount, token metadata and RBAC; Kubernetes generates the bearer token.
+Run this helper only after the `argocd-access-labtest` Application has reconciled:
+
+```sh
+./hacks/create-arc-labtest-kubeconfig.sh
+```
+
+The helper verifies that the resulting identity can patch Applications and
+cannot read Secrets. It writes mode `0600` to
+`~/.config/labops/arc-labtest-kubeconfig` by default; an explicit output path
+may be passed as its only argument. Store the complete file as
+`arc-labtest-kubeconfig` in the Bitwarden `labprod` project, map it to the
+Kubernetes Secret key `config`, then securely remove the local copy. Rotation
+is idempotent: delete the generated `labtest-pr-deployer-token` Secret, let
+Argo CD recreate it, regenerate the kubeconfig and replace the Bitwarden value.
 
 ## `deploy.sh`
 

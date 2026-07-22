@@ -152,6 +152,69 @@ kubectl --context labtest apply -f apps/gitops/bootstrap/labtest.yaml
 This updates only the root Application policy; subsequent feature overrides use
 the helper and do not require another bootstrap apply.
 
+### Automatic shared labtest slot
+
+Pull requests from same-repository `feat/*` and `fix/*` branches can reserve the
+whole shared labtest environment with the `deploy/labtest` label. The workflow
+deploys the pull request's immutable head SHA, first on the root Application and
+then on every Git-backed child Application. New children introduced by the pull
+request are therefore created by the root before receiving the same SHA.
+
+The most recent qualifying label, reopen or push event owns the single slot.
+The workflow records the PR number and SHA as Application annotations and
+comments the deployed revision on the PR. Removing the label, closing or
+merging the owning PR restores `master`; an older PR cannot restore a slot that
+has since been reassigned. Fork pull requests and branches outside `feat/*` and
+`fix/*` are rejected. The workflow checks out its deployment script from
+trusted `master`, never from the pull request.
+
+Manual `deploy.sh` remains available for targeted or interactive tests. Do not
+combine a manual override with an active `deploy/labtest` reservation.
+
+#### Ephemeral runner in labprod
+
+GitHub cannot reach the private Kubernetes API from a hosted runner. Actions
+Runner Controller (ARC) therefore creates an ephemeral `labops` runner Pod in
+`labprod` for each deployment job. Git pins both ARC charts to `0.14.2`, limits
+the scale set to one runner and keeps zero idle runners. The runner image is
+versioned from `docker/labops-runner/VERSION` and contains only the pinned
+Actions runner, `gh`, `jq`, and `kubectl` clients. No credential is baked into
+the image.
+
+ARC authenticates to `bingops-com/labops` with a repository-installed GitHub
+App. Its App ID, installation ID and PEM private key are stored as the
+`arc-github-app-id`, `arc-github-app-installation`, and
+`arc-github-private-key` secrets in the Bitwarden `labprod` project. Git stores
+only their non-sensitive UUID mappings. The App needs repository Actions
+read/write and metadata read permissions; a webhook is not required for ARC.
+Rotate the private key in GitHub, replace the Bitwarden value, verify the
+generated Kubernetes Secret keys, then revoke the previous key.
+
+Git declares the `labtest-pr-deployer` ServiceAccount, Role, and RoleBinding in
+`argocd-system`. Its Kubernetes permissions are limited to reading and patching
+Argo CD Applications; it cannot read Secrets or mutate workloads directly.
+After that RBAC reconciles, run `hacks/create-arc-labtest-kubeconfig.sh`. Store
+the resulting file as `arc-labtest-kubeconfig` in the Bitwarden `labprod`
+project; the committed BitwardenSecret maps it to the `config` key of the
+`arc-labtest-kubeconfig` Kubernetes Secret mounted read-only in runner Pods.
+The bearer token is sensitive and replaceable: never put it in Git, Actions
+variables or logs. Rotation deletes only the generated token Secret, lets Argo
+CD recreate it, regenerates the kubeconfig, replaces the Bitwarden value and
+then securely removes the local file.
+
+Verify least privilege without revealing the token:
+
+```sh
+kubectl --context labtest --namespace argocd-system auth can-i patch applications.argoproj.io --as system:serviceaccount:argocd-system:labtest-pr-deployer
+kubectl --context labtest --namespace argocd-system auth can-i get secrets --as system:serviceaccount:argocd-system:labtest-pr-deployer
+```
+
+The expected answers are `yes` and `no`. The repository label
+`deploy/labtest` and GitHub Environment `labtest` are one-time external
+metadata prerequisites. After merging the workflow itself, test enrollment
+with a harmless documentation PR, confirm the exact SHA in both root and
+children, then remove the label and verify automatic restoration to `master`.
+
 ## 5. Validate on labtest and merge to master
 
 Commit and push the feature branch, use `deploy.sh` to integrate it temporarily

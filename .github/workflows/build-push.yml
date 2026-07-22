@@ -88,6 +88,16 @@ jobs:
         env:
           IS_PR: ${{ matrix.is_pr }}
 
+      - name: Read immutable image version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ matrix.is_pr }}" != "true" && -f "$BUILD_CONTEXT/VERSION" ]]; then
+            version=$(<"$BUILD_CONTEXT/VERSION")
+            [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid VERSION: $version" >&2; exit 1; }
+            echo "tag=$version" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -95,6 +105,7 @@ jobs:
           images: ghcr.io/bingops-com/${{ env.IMAGE_NAME }}
           tags: |
             ${{ matrix.is_pr != 'true' && 'type=raw,value=latest' || '' }}
+            ${{ steps.version.outputs.tag != '' && format('type=raw,value={0}', steps.version.outputs.tag) || '' }}
             type=sha
             type=raw,value=${{ steps.tagprefix.outputs.prefix }}{{date 'YYYYMMDD-HHmmss'}}
 
