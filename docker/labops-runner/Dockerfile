@@ -1,5 +1,5 @@
 FROM registry.k8s.io/kubectl:v1.36.1 AS kubectl
-FROM ghcr.io/cli/cli:2.94.0 AS github-cli
+FROM ghcr.io/cli/cli:2.93.0 AS github-cli
 FROM ghcr.io/jqlang/jq:1.8.1 AS jq
 
 FROM ghcr.io/actions/actions-runner:2.334.0
