@@ -16,6 +16,13 @@ data:
           is_superuser: false
           users:
             - !Find [authentik_core.user, [username, akadmin]]
+      - model: authentik_core.group
+        identifiers:
+          name: grafana-admins
+        attrs:
+          is_superuser: false
+          users:
+            - !Find [authentik_core.user, [username, akadmin]]
       - model: authentik_providers_oauth2.oauth2provider
         id: argocd-provider
         identifiers:
@@ -76,3 +83,61 @@ data:
           name: Argo CD test
           provider: !KeyOf argocd-test-provider
           meta_launch_url: https://argocd.test.lab.bingo
+      - model: authentik_providers_oauth2.oauth2provider
+        id: grafana-provider
+        identifiers:
+          name: Grafana production
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: public
+          client_id: grafana
+          grant_types:
+            - authorization_code
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, profile]]
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, email]]
+          redirect_uris:
+            - matching_mode: strict
+              url: https://grafana.lab.bingo/login/generic_oauth
+      - model: authentik_core.application
+        identifiers:
+          slug: grafana
+        attrs:
+          name: Grafana production
+          provider: !KeyOf grafana-provider
+          meta_launch_url: https://grafana.lab.bingo
+      - model: authentik_providers_oauth2.oauth2provider
+        id: grafana-test-provider
+        identifiers:
+          name: Grafana test
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: public
+          client_id: grafana-test
+          grant_types:
+            - authorization_code
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, profile]]
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, email]]
+          redirect_uris:
+            - matching_mode: strict
+              url: https://grafana.test.lab.bingo/login/generic_oauth
+      - model: authentik_core.application
+        identifiers:
+          slug: grafana-test
+        attrs:
+          name: Grafana test
+          provider: !KeyOf grafana-test-provider
+          meta_launch_url: https://grafana.test.lab.bingo

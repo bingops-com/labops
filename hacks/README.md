@@ -35,7 +35,8 @@ a time:
 ./hacks/bootstrap-bitwarden.sh labprod
 ```
 
-The required namespaces are `argocd-system`, `cert-manager`, and `postgresql`
+The required namespaces include `logging` and `monitoring` on both clusters, in
+addition to each environment's existing secret-consuming namespaces.
 on `labtest`, and `argocd-system`, `arc-runners`, `authentik`, `cert-manager`,
 and `cloudflare` on `labprod`.
 Re-run the same command after token rotation or partial failure. Verify without

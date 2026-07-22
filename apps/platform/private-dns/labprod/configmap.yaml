@@ -15,3 +15,13 @@ data:
         }
         cache 30
     }
+    grafana.lab.bingo:53 {
+        errors
+        log
+        bind 192.168.10.160
+        template IN A {
+            match ^grafana[.]lab[.]bingo[.]$
+            answer "{{ .Name }} 30 IN A 192.168.10.151"
+        }
+        cache 30
+    }

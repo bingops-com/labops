@@ -29,6 +29,7 @@ subsystem READMEs own their detailed commands.
 | ARC GitHub App | Repository Administration read/write and Metadata read-only; installed only on `bingops-com/labops` | GitHub App settings; store App ID, installation ID and PEM key in Bitwarden `labprod`; accept permission changes on the installation after edits | ARC in `labprod` |
 | Labtest runner kubeconfig | Get/list/watch/patch only Argo CD Applications in `argocd-system` | Reissue with `hacks/create-arc-labtest-kubeconfig.sh`; store as `arc-labtest-kubeconfig` in Bitwarden `labprod` | Ephemeral ARC runners in `labprod` |
 | Bitwarden machine token for each cluster | Read access only to the matching `labtest` or `labprod` project | Bitwarden US organization recovery process or a newly generated token | Namespace-local `bw-auth-token` Secrets used by the operator |
+| Observability credentials | Three dedicated Discord channel webhooks plus unique Grafana datasource and Fluent Bit passwords per environment | Discord channel integrations and the matching Bitwarden project; see the observability runbook | Alertmanager, Grafana and Elasticsearch clients |
 
 Record only where each secret can be recovered and how to rotate it. Never copy
 its value, Terraform sensitive output, or an unsealed Kubernetes Secret here.
@@ -58,7 +59,8 @@ its value, Terraform sensitive output, or an unsealed Kubernetes Secret here.
    and negative authorization checks in
    [`gitops-applications.md`](gitops-applications.md).
 9. Apply split DNS for `*.test.lab.bingo` through `192.168.10.170` and for the
-   exact private name `argocd.lab.bingo` through `192.168.10.160`. Confirm the
+   exact private names `argocd.lab.bingo` and `grafana.lab.bingo` through
+   `192.168.10.160`. Confirm the
    Tailscale subnet route to `192.168.10.0/24`, then apply public Cloudflare
    DNS/tunnel configuration for `auth.lab.bingo`, `portfolio.lab.bingo`,
    `bingops.com` and `www.bingops.com`. Production `lab.bingo` routes are explicit; do not add
@@ -74,7 +76,11 @@ its value, Terraform sensitive output, or an unsealed Kubernetes Secret here.
    database, is intended and verify both Argo CD OIDC clients. On a new
    database, the synchronized administrator bootstrap and group membership
    reconcile automatically.
-12. Push feature changes and reserve the shared environment with the
+12. Reconcile ECK, Elasticsearch, kube-prometheus-stack and Fluent Bit after
+   restoring the observability Bitwarden mappings. Verify private Grafana DNS,
+   both datasources, log ingestion and Discord firing/resolved notifications as
+   described in [`infrastructure/observability.md`](infrastructure/observability.md).
+13. Push feature changes and reserve the shared environment with the
    `deploy/labtest` PR label, or use `hacks/deploy.sh` interactively. Validate
    the exact reconciled SHA, release the slot back to `master`, then merge the
    reviewed feature into `master`.
@@ -94,10 +100,11 @@ Do not continue to the next layer until the current gate passes:
 | PostgreSQL backup | Test WAL archiving is healthy, a daily R2 backup completed, and a disposable restore reached Ready without exposing data |
 | Test DNS | An arbitrary `<app>.test.lab.bingo` resolves privately to the labtest ingress address |
 | Production DNS | `auth.lab.bingo`, `portfolio.lab.bingo`, `bingops.com`, and `www.bingops.com` resolve through Cloudflare |
-| Private Argo CD DNS | `argocd.test.lab.bingo` resolves to `192.168.10.152` and `argocd.lab.bingo` resolves to `192.168.10.151` only for clients using Tailscale split DNS |
+| Private dashboards | `argocd.test.lab.bingo` and `grafana.test.lab.bingo` resolve to `192.168.10.152`; their exact labprod names resolve to `192.168.10.151` only for clients using Tailscale split DNS |
 | Authentik | Both OIDC discovery documents return successfully over trusted HTTPS |
 | TLS and routing | HTTPS validates with the normal public trust store on both clusters; labtest remains unreachable outside LAN/Tailscale |
 | Argo CD access | Test rejects sources outside LAN/Tailscale; production remains unrouted publicly and both require successful Authentik login |
+| Observability | Grafana has healthy Prometheus and Elasticsearch datasources, recent cluster logs are searchable, and Discord receives firing and resolved test alerts |
 
 ## Documentation completion criteria
 

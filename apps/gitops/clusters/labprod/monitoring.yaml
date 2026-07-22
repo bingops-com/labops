@@ -1,0 +1,221 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-labprod
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+spec:
+  project: labops-labprod
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 87.19.0
+    helm:
+      releaseName: monitoring
+      valuesObject:
+        alertmanager:
+          config:
+            global:
+              resolve_timeout: 5m
+            inhibit_rules:
+              - source_matchers:
+                  - severity = critical
+                target_matchers:
+                  - severity =~ warning|info
+                equal:
+                  - namespace
+                  - alertname
+              - source_matchers:
+                  - severity = warning
+                target_matchers:
+                  - severity = info
+                equal:
+                  - namespace
+                  - alertname
+            route:
+              receiver: discord-applications
+              group_by:
+                - namespace
+                - alertname
+              group_wait: 30s
+              group_interval: 5m
+              repeat_interval: 6h
+              routes:
+                - receiver: "null"
+                  matchers:
+                    - alertname =~ "Watchdog|InfoInhibitor"
+                - receiver: discord-critical
+                  matchers:
+                    - severity = critical
+                - receiver: discord-infrastructure
+                  matchers:
+                    - namespace =~ "kube-system|monitoring|logging|argocd-system|cert-manager|traefik|local-path-storage|cnpg-system|private-dns"
+                - receiver: discord-infrastructure
+                  matchers:
+                    - alertname =~ "Kube.*|Node.*|Host.*|Machine.*|Etcd.*|Prometheus.*|Alertmanager.*|Grafana.*|Elasticsearch.*|FluentBit.*|ArgoCD.*|CertManager.*|Traefik.*"
+            receivers:
+              - name: "null"
+              - name: discord-critical
+                discord_configs:
+                  - webhook_url_file: /etc/alertmanager/secrets/observability-discord/critical-url
+                    send_resolved: true
+                    username: LabOps labprod · critical
+              - name: discord-infrastructure
+                discord_configs:
+                  - webhook_url_file: /etc/alertmanager/secrets/observability-discord/infrastructure-url
+                    send_resolved: true
+                    username: LabOps labprod · infrastructure
+              - name: discord-applications
+                discord_configs:
+                  - webhook_url_file: /etc/alertmanager/secrets/observability-discord/applications-url
+                    send_resolved: true
+                    username: LabOps labprod · applications
+          alertmanagerSpec:
+            secrets:
+              - observability-discord
+            resources:
+              requests:
+                cpu: 30m
+                memory: 64Mi
+              limits:
+                cpu: 150m
+                memory: 192Mi
+            storage:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: local-path
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: 1Gi
+        grafana:
+          grafana.ini:
+            server:
+              root_url: https://grafana.lab.bingo
+            security:
+              disable_initial_admin_creation: true
+            auth:
+              disable_login_form: true
+              oauth_auto_login: true
+            auth.generic_oauth:
+              enabled: true
+              name: Authentik
+              allow_sign_up: true
+              client_id: grafana
+              scopes: openid profile email
+              auth_url: https://auth.lab.bingo/application/o/authorize/
+              token_url: https://auth.lab.bingo/application/o/token/
+              api_url: https://auth.lab.bingo/application/o/userinfo/
+              use_pkce: true
+              role_attribute_path: contains(groups[*], 'grafana-admins') && 'GrafanaAdmin' || 'Viewer'
+              allow_assign_grafana_admin: true
+          envValueFrom:
+            ELASTICSEARCH_PASSWORD:
+              secretKeyRef:
+                name: observability-grafana-datasource
+                key: elasticsearch-password
+          additionalDataSources:
+            - name: Elasticsearch
+              uid: elasticsearch
+              type: elasticsearch
+              access: proxy
+              url: https://observability-es-http.logging.svc:9200
+              basicAuth: true
+              basicAuthUser: grafana
+              jsonData:
+                database: logs-labprod-*
+                index: logs-labprod-*
+                interval: Daily
+                timeField: "@timestamp"
+                tlsSkipVerify: true
+              secureJsonData:
+                basicAuthPassword: $ELASTICSEARCH_PASSWORD
+          ingress:
+            enabled: true
+            ingressClassName: traefik
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-cloudflare
+              traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              traefik.ingress.kubernetes.io/router.middlewares: monitoring-grafana-allowlist@kubernetescrd
+              traefik.ingress.kubernetes.io/router.tls: "true"
+            hosts:
+              - grafana.lab.bingo
+            tls:
+              - secretName: grafana-ingress-tls
+                hosts:
+                  - grafana.lab.bingo
+          persistence:
+            enabled: true
+            storageClassName: local-path
+            accessModes:
+              - ReadWriteOnce
+            size: 2Gi
+          resources:
+            requests:
+              cpu: 75m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 384Mi
+        prometheus:
+          prometheusSpec:
+            externalLabels:
+              cluster: labprod
+              environment: production
+            retention: 7d
+            retentionSize: 8GB
+            resources:
+              requests:
+                cpu: 200m
+                memory: 512Mi
+              limits:
+                cpu: "1"
+                memory: 1536Mi
+            serviceMonitorSelectorNilUsesHelmValues: false
+            podMonitorSelectorNilUsesHelmValues: false
+            ruleSelectorNilUsesHelmValues: false
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: local-path
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: 10Gi
+        prometheusOperator:
+          resources:
+            requests:
+              cpu: 75m
+              memory: 96Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+        kube-state-metrics:
+          resources:
+            requests:
+              cpu: 30m
+              memory: 48Mi
+            limits:
+              cpu: 150m
+              memory: 128Mi
+        prometheus-node-exporter:
+          resources:
+            requests:
+              cpu: 20m
+              memory: 24Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

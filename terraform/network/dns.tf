@@ -23,6 +23,14 @@ resource "tailscale_dns_configuration" "tailnet" {
     }
   }
 
+  split_dns {
+    domain = "grafana.lab.bingo"
+
+    nameservers {
+      address = "192.168.10.160"
+    }
+  }
+
   magic_dns          = true
   override_local_dns = true
 }
