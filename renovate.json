@@ -33,7 +33,7 @@
       "description": "Update tool versions declared in Dockerfile environment variables",
       "managerFilePatterns": ["/(^|/)Dockerfile$/"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[a-z-]+))?\\s+ENV [A-Z0-9_]+=(?<currentValue>[^\\s]+)"
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[a-z-]+))?\\s+(?:ENV|ARG) [A-Z0-9_]+=(?<currentValue>[^\\s]+)"
       ]
     }
   ],
