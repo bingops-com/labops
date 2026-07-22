@@ -202,6 +202,9 @@ spec:
               cpu: 150m
               memory: 128Mi
         prometheus-node-exporter:
+          # Traefik already binds host port 9100 on the single-node cluster.
+          # The ClusterIP Service can scrape node-exporter without hostNetwork.
+          hostNetwork: false
           resources:
             requests:
               cpu: 20m

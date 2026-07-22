@@ -19,6 +19,11 @@ Elasticsearch log stream. The Grafana sidecar discovers it from the
 `grafana-dashboard-labops-operations` ConfigMap; no dashboard is imported from
 an unpinned external URL or maintained manually in Grafana.
 
+Node exporter runs in the Pod network rather than with `hostNetwork`. Traefik
+already binds host port 9100 on each single-node cluster, while Prometheus can
+scrape node exporter through its ClusterIP Service without reserving that host
+port.
+
 Argo CD owns the ECK operator, Elasticsearch resource,
 `kube-prometheus-stack`, Fluent Bit, ingress, RBAC and all configuration.
 Local-path PVCs contain generated operational history rather than source data.
