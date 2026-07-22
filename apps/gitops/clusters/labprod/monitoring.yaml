@@ -5,6 +5,7 @@ metadata:
   namespace: argocd-system
   annotations:
     argocd.argoproj.io/sync-wave: "-5"
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
 spec:
   project: labops-labprod
   ignoreDifferences:
