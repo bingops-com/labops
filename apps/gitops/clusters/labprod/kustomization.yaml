@@ -5,7 +5,6 @@ resources:
   - project.yaml
   - argocd.yaml
   - bitwarden-secrets-manager.yaml
-  - sealed-secrets.yaml
   - traefik.yaml
   - cert-manager.yaml
   - certificates.yaml
