@@ -12,7 +12,6 @@ spec:
     - https://traefik.github.io/charts
     - https://charts.jetstack.io
     - https://charts.bitwarden.com
-    - https://bitnami.github.io/sealed-secrets
   destinations:
     - server: https://kubernetes.default.svc
       namespace: "*"
