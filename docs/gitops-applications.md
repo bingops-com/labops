@@ -198,7 +198,10 @@ Argo CD Applications; it cannot read Secrets or mutate workloads directly.
 After that RBAC reconciles, run `hacks/create-arc-labtest-kubeconfig.sh`. Store
 the resulting file as `arc-labtest-kubeconfig` in the Bitwarden `labprod`
 project; the committed BitwardenSecret maps it to the `config` key of the
-`arc-labtest-kubeconfig` Kubernetes Secret mounted read-only in runner Pods.
+`arc-labtest-kubeconfig` Kubernetes Secret. Runner Pods mount only that key as
+a read-only file. The Pod supplemental group can read it, while other users
+cannot; the runner containers otherwise use the restricted Pod Security
+profile and run without privilege escalation or Linux capabilities.
 The bearer token is sensitive and replaceable: never put it in Git, Actions
 variables or logs. Rotation deletes only the generated token Secret, lets Argo
 CD recreate it, regenerates the kubeconfig, replaces the Bitwarden value and
