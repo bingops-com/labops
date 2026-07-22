@@ -36,7 +36,8 @@ the labtest control-plane VIP `192.168.10.170`, returns the Traefik node
 address `192.168.10.152`, and `terraform/tailscale-dns`
 sends only `test.lab.bingo` queries to it.
 
-Argo CD uses Authentik OIDC on both workload clusters. Tailscale split DNS
+Argo CD and Grafana use Authentik OIDC on both workload clusters. Grafana uses
+public clients with PKCE and requires no client secret. Tailscale split DNS
 resolves `argocd.test.lab.bingo` and `grafana.test.lab.bingo` through the labtest
 DNS service and resolves the exact `argocd.lab.bingo` and `grafana.lab.bingo`
 names through a dedicated DNS service bound to the labprod VIP

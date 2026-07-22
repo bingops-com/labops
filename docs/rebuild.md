@@ -29,7 +29,7 @@ subsystem READMEs own their detailed commands.
 | ARC GitHub App | Repository Administration read/write and Metadata read-only; installed only on `bingops-com/labops` | GitHub App settings; store App ID, installation ID and PEM key in Bitwarden `labprod`; accept permission changes on the installation after edits | ARC in `labprod` |
 | Labtest runner kubeconfig | Get/list/watch/patch only Argo CD Applications in `argocd-system` | Reissue with `hacks/create-arc-labtest-kubeconfig.sh`; store as `arc-labtest-kubeconfig` in Bitwarden `labprod` | Ephemeral ARC runners in `labprod` |
 | Bitwarden machine token for each cluster | Read access only to the matching `labtest` or `labprod` project | Bitwarden US organization recovery process or a newly generated token | Namespace-local `bw-auth-token` Secrets used by the operator |
-| Observability credentials | Three dedicated Discord channel webhooks plus unique Grafana admin, Grafana datasource and Fluent Bit passwords per environment | Discord channel integrations and the matching Bitwarden project; see the observability runbook | Alertmanager, Grafana and Elasticsearch clients |
+| Observability credentials | Three dedicated Discord channel webhooks plus unique Grafana datasource and Fluent Bit passwords per environment | Discord channel integrations and the matching Bitwarden project; see the observability runbook | Alertmanager, Grafana and Elasticsearch clients |
 
 Record only where each secret can be recovered and how to rotate it. Never copy
 its value, Terraform sensitive output, or an unsealed Kubernetes Secret here.

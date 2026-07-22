@@ -1,4 +1,4 @@
-# Authentik and Argo CD OIDC
+# Authentik application OIDC
 
 Authentik runs only on `labprod` at `https://auth.lab.bingo`. Cloudflare DNS
 and the production tunnel publish this hostname; TLS terminates at the Traefik
@@ -20,16 +20,20 @@ This is node-local storage: it survives pod restarts, but it is neither shared
 nor replicated and does not replace the PostgreSQL backup required for node or
 cluster replacement.
 
-The file-based Authentik blueprint declaratively owns two confidential OIDC
+The file-based Authentik blueprint declaratively owns the application OIDC
 providers:
 
-| Client | Issuer | Redirect URI |
-| --- | --- | --- |
-| `argocd` | `https://auth.lab.bingo/application/o/argocd/` | `https://argocd.lab.bingo/auth/callback` |
-| `argocd-test` | `https://auth.lab.bingo/application/o/argocd-test/` | `https://argocd.test.lab.bingo/auth/callback` |
+| Client | Type | Issuer | Redirect URI |
+| --- | --- | --- | --- |
+| `argocd` | Confidential | `https://auth.lab.bingo/application/o/argocd/` | `https://argocd.lab.bingo/auth/callback` |
+| `argocd-test` | Confidential | `https://auth.lab.bingo/application/o/argocd-test/` | `https://argocd.test.lab.bingo/auth/callback` |
+| `grafana` | Public with PKCE | `https://auth.lab.bingo/application/o/grafana/` | `https://grafana.lab.bingo/login/generic_oauth` |
+| `grafana-test` | Public with PKCE | `https://auth.lab.bingo/application/o/grafana-test/` | `https://grafana.test.lab.bingo/login/generic_oauth` |
 
-The blueprint also owns the `argocd-admins` group. Authenticated users default
-to Argo CD read-only access; members of that group inherit `role:admin`.
+The blueprint also owns the `argocd-admins` and `grafana-admins` groups.
+Authenticated users default to read-only access in both applications; members
+of the matching group inherit administrator access. Grafana's public clients
+use Authorization Code with PKCE and deliberately have no client secret.
 Production Argo CD has no Traefik IP allowlist, while test retains its
 LAN/Tailscale allowlist. `argocd.lab.bingo` remains private split DNS and is not
 published through the Cloudflare tunnel.
@@ -38,7 +42,8 @@ published through the Cloudflare tunnel.
 
 BitwardenSecret mappings deliver the Authentik application key, PostgreSQL
 passwords, bootstrap administrator credentials, R2 credentials and the two
-distinct OIDC client secrets from the `labprod` Bitwarden project. Plaintext
+distinct Argo CD OIDC client secrets from the `labprod` Bitwarden project.
+Grafana has no OIDC or local administrator secret. Plaintext
 values must never be recovered into Git or logs. Continuous WAL archiving and
 daily base backups under the dedicated production R2 prefix are the durable
 recovery source; additional users and credentials remain generated state.
@@ -66,9 +71,9 @@ manager; never record the replacement in this repository.
    connects to the CNPG read-write service. Keep the retained PVC from the old
    StatefulSet until login and OIDC validation pass; the accepted migration is
    a new empty Authentik database rather than an in-place data conversion.
-4. Wait for the bootstrap blueprint to create both providers and group
-   membership, then reconcile the Argo CD overlays on labprod and labtest.
-5. Validate OIDC discovery and both browser callbacks. The built-in Argo CD
+4. Wait for the bootstrap blueprint to create all four providers and group
+   memberships, then reconcile the Argo CD and monitoring Applications.
+5. Validate OIDC discovery and all four browser callbacks. The built-in Argo CD
    administrator is disabled declaratively on both clusters; recovery uses a
    reviewed Git revert and Kubernetes core access.
 
@@ -81,8 +86,12 @@ kubectl --context labprod -n authentik get objectstores.barmancloud.cnpg.io,sche
 kubectl --context labprod get namespace local-path-storage -o jsonpath='{.metadata.labels.pod-security\.kubernetes\.io/enforce}{"\n"}'
 curl --fail --show-error --silent https://auth.lab.bingo/application/o/argocd/.well-known/openid-configuration >/dev/null
 curl --fail --show-error --silent https://auth.lab.bingo/application/o/argocd-test/.well-known/openid-configuration >/dev/null
+curl --fail --show-error --silent https://auth.lab.bingo/application/o/grafana/.well-known/openid-configuration >/dev/null
+curl --fail --show-error --silent https://auth.lab.bingo/application/o/grafana-test/.well-known/openid-configuration >/dev/null
 ```
 
 Open both Argo CD URLs in a private browser session and select **Log in via
 Authentik**. Verify an ordinary user is read-only and an `argocd-admins` member
-has administrator permissions. Do not use `curl -k`.
+has administrator permissions. Open both Grafana URLs and verify automatic
+Authentik redirection, Viewer access by default and administrator access for a
+`grafana-admins` member. Do not use `curl -k`.

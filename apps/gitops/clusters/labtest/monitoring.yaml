@@ -91,14 +91,30 @@ spec:
                     requests:
                       storage: 512Mi
         grafana:
-          admin:
-            existingSecret: observability-grafana
-            userKey: admin-user
-            passwordKey: admin-password
+          grafana.ini:
+            server:
+              root_url: https://grafana.test.lab.bingo
+            security:
+              disable_initial_admin_creation: true
+            auth:
+              disable_login_form: true
+              oauth_auto_login: true
+            auth.generic_oauth:
+              enabled: true
+              name: Authentik
+              allow_sign_up: true
+              client_id: grafana-test
+              scopes: openid profile email
+              auth_url: https://auth.lab.bingo/application/o/authorize/
+              token_url: https://auth.lab.bingo/application/o/token/
+              api_url: https://auth.lab.bingo/application/o/userinfo/
+              use_pkce: true
+              role_attribute_path: contains(groups[*], 'grafana-admins') && 'GrafanaAdmin' || 'Viewer'
+              allow_assign_grafana_admin: true
           envValueFrom:
             ELASTICSEARCH_PASSWORD:
               secretKeyRef:
-                name: observability-grafana
+                name: observability-grafana-datasource
                 key: elasticsearch-password
           additionalDataSources:
             - name: Elasticsearch
