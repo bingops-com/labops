@@ -4,7 +4,7 @@ metadata:
   name: authentik-labprod
   namespace: argocd-system
   annotations:
-    argocd.argoproj.io/sync-wave: "-6"
+    argocd.argoproj.io/sync-wave: "-4"
 spec:
   project: labops-labprod
   source:
@@ -16,12 +16,12 @@ spec:
         global:
           env:
             - name: AUTHENTIK_POSTGRESQL__HOST
-              value: authentik-labprod-postgresql
+              value: authentik-labprod-postgresql-rw
         authentik:
           existingSecret:
             secretName: authentik-secrets
           postgresql:
-            host: authentik-labprod-postgresql
+            host: authentik-labprod-postgresql-rw
           error_reporting:
             enabled: false
         blueprints:
@@ -42,20 +42,7 @@ spec:
                 hosts:
                   - auth.lab.bingo
         postgresql:
-          enabled: true
-          auth:
-            username: authentik
-            database: authentik
-            existingSecret: authentik-secrets
-            secretKeys:
-              adminPasswordKey: postgres-password
-              userPasswordKey: password
-              replicationPasswordKey: replication-password
-          primary:
-            persistence:
-              enabled: true
-              size: 8Gi
-              storageClass: local-path
+          enabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: authentik

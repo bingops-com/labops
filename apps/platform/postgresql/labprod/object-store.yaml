@@ -1,0 +1,21 @@
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: authentik-labprod-postgresql
+  namespace: authentik
+spec:
+  configuration:
+    destinationPath: s3://bingops-cnpg-labprod/authentik
+    endpointURL: https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com
+    s3Credentials:
+      accessKeyId:
+        name: cnpg-r2-credentials
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: cnpg-r2-credentials
+        key: ACCESS_SECRET_KEY
+    wal:
+      compression: gzip
+    data:
+      compression: gzip
+  retentionPolicy: 14d

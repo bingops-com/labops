@@ -7,6 +7,10 @@ resources:
   - bitwarden-secrets-manager.yaml
   - traefik.yaml
   - cert-manager.yaml
+  - local-path-storage.yaml
+  - cloudnative-pg.yaml
+  - barman-cloud.yaml
+  - postgresql.yaml
   - certificates.yaml
   - private-dns.yaml
   - argocd-access.yaml

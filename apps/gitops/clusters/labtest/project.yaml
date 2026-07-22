@@ -12,6 +12,8 @@ spec:
     - https://traefik.github.io/charts
     - https://charts.jetstack.io
     - https://charts.bitwarden.com
+    - https://cloudnative-pg.github.io/charts
+    - https://github.com/rancher/local-path-provisioner.git
   destinations:
     - server: https://kubernetes.default.svc
       namespace: "*"

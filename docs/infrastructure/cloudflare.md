@@ -2,7 +2,9 @@
 
 ## ✅ Prerequisites
 
-* Cloudflare **API token** with necessary permissions
+* Cloudflare **API token** with the permissions required by the selected
+  resources. R2 bucket creation requires `Workers R2 Storage Write` at account
+  scope in addition to the tunnel and DNS permissions.
 * Cloudflare **Account ID**
 * Domain managed by Cloudflare
 * **Terraform** installed
@@ -64,6 +66,30 @@ operator refreshes the Kubernetes Secret automatically.
 | Tunnel not connecting | Verify the secret is mounted correctly |
 | DNS doesn’t resolve   | Confirm DNS records in Cloudflare      |
 | Credential error      | Re-export credentials from Terraform   |
+
+## CloudNativePG backup buckets
+
+Terraform owns the `bingops-cnpg-labtest` and `bingops-cnpg-labprod` R2
+buckets. They use the `WEUR` location hint and remain separate so each
+environment can have an independently scoped credential and retention policy.
+The pinned Cloudflare provider does not support R2 jurisdiction locks; `WEUR`
+is a placement hint, not a regulatory EU residency guarantee.
+
+R2 S3 credentials are an unavoidable external prerequisite because their
+secret access key is disclosed only when the token is created. In the
+Cloudflare dashboard, create one Object Read & Write token limited to each
+matching bucket. Store its Access Key ID and Secret Access Key directly in the
+matching Bitwarden Secrets Manager project. Normal cluster machine accounts
+need read-only access to those Bitwarden values. Rotate by creating a new
+bucket-scoped token, updating the same Bitwarden entries, verifying a new backup,
+then revoking the old token. Neither Git nor Terraform state is a recovery
+source for these S3 credentials.
+
+The non-sensitive R2 endpoint is
+`https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com`.
+CloudNativePG uses the Barman Cloud plugin for continuous WAL archiving, daily
+base backups and point-in-time recovery. See
+[`cloudnative-pg.md`](cloudnative-pg.md) for lifecycle and recovery procedures.
 
 ---
 

@@ -35,8 +35,9 @@ a time:
 ./hacks/bootstrap-bitwarden.sh labprod
 ```
 
-The required namespaces are `argocd-system` and `cert-manager` on `labtest`, and
-`argocd-system`, `authentik`, `cert-manager`, and `cloudflare` on `labprod`.
+The required namespaces are `argocd-system`, `cert-manager`, and `postgresql`
+on `labtest`, and `argocd-system`, `authentik`, `cert-manager`, and `cloudflare`
+on `labprod`.
 Re-run the same command after token rotation or partial failure. Verify without
 revealing the token with `kubectl --context <cluster> --namespace <namespace>
 get secret bw-auth-token`; never use `-o yaml` or decode its data.
