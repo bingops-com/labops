@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      has_changes: ${{ steps.set-matrix.outputs.has_changes }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,6 +29,7 @@ jobs:
 
   publish:
     needs: get-modified
+    if: ${{ needs.get-modified.outputs.has_changes == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{ fromJson(needs.get-modified.outputs.matrix) }}
@@ -46,9 +48,10 @@ jobs:
           helm package charts/${{ matrix.chart }} --destination output
 
       - name: Push to GHCR
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "${{ secrets.GHCR_TOKEN }}" | helm registry login ghcr.io -u bingops --password-stdin
-          VERSION=$(yq '.version' charts/${{ matrix.chart }}/Chart.yaml)
-          CHART_NAME=$(yq '.name' charts/${{ matrix.chart }}/Chart.yaml)
-          helm push output/${CHART_NAME}-${VERSION}.tgz oci://ghcr.io/bingops-com/helm
-
+          echo "$GH_TOKEN" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
+          VERSION=$(yq '.version' "charts/${{ matrix.chart }}/Chart.yaml")
+          CHART_NAME=$(yq '.name' "charts/${{ matrix.chart }}/Chart.yaml")
+          helm push "output/${CHART_NAME}-${VERSION}.tgz" oci://ghcr.io/bingops-com/helm

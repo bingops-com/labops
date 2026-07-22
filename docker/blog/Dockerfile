@@ -1,6 +1,6 @@
 FROM docker.io/debian:trixie-slim@sha256:2a68788db17e6f845263ea011a249de9d78394607da22836f107fa033b70882c
 
-# renovate: datasource=node versioning=semver
+# renovate: datasource=node depName=node versioning=semver
 ENV NODE_VERSION=23.0.0
 
 # renovate: datasource=github-releases depName=caddyserver/caddy versioning=semver

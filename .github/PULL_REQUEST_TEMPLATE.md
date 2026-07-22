@@ -1,82 +1,63 @@
-# 📡 Labops Pull Request Description
+## Outcome
 
-## 📋 Description
+<!-- State the operator-visible result, not a list of edited files. -->
 
-**Briefly describe the purpose of this PR**:
+## Scope discovered from the change
 
----
+<!-- Keep only the rows that apply. Use the PR Files tab as the source. -->
 
-## ⚠️ Points of Attention
+| Area | Changed ownership or behavior |
+| --- | --- |
+| Terraform (`terraform/`) | |
+| CAPI / Talos (`capi/`, `terraform/proxmox/`) | |
+| Ansible (`ansible/`) | |
+| GitOps / Argo CD (`apps/gitops/`) | |
+| Platform (`apps/platform/`) | |
+| Workloads / charts / images | |
+| CI, helpers, documentation | |
 
-Are there any specific aspects that need extra attention?
-- **Potential impacts on other features or services**: 
-- **Breaking changes or migrations required**: 
-- **Dependencies or external services involved**: 
+## Environment and operational impact
 
----
+- Environments: <!-- labmgmt / labtest / labprod / external service / none -->
+- Lifecycle owner: <!-- Terraform / CAPI / Argo CD / external prerequisite -->
+- Persistent data affected: <!-- PVC, PostgreSQL, R2, Terraform state, none -->
+- External systems affected: <!-- Proxmox, Cloudflare, GitHub, Bitwarden, none -->
+- Expected reconciliation after merge: <!-- Describe GitOps/CI consequence or none. -->
+- Rollback: <!-- Revert, restore revision, documented recovery procedure. -->
 
-## 🧪 How to Test
+## Validation evidence
 
-Procedure to test this PR:
-1. Clone the branch and navigate to the project folder.
-2. Run the following commands:
-    ```sh
-    export PROJECT_PATH="/opt/homeops/labops"
-   
-   # Deploy Terraform
-    cd $PROJECT_PATH/terraform/xxx \
-      && terraform init \
-      && terraform plan
-   
-    # Deploy Ansible
-    cd $PROJECT_PATH/ansible \
-      && ansible-playbook site.yml --tags preprod -i inventories/main/hosts
-    
-   # Deploy Kustomize
-    kubectl kustomize --enable-helm apps/xxx/clusters/preprod | kubectl apply -f -
-    ```
-3. Check if the new feature/fix works as expected.
-4. Confirm that existing features are not impacted.
+<!-- Record commands/checks actually run and their result. Do not paste secrets or sensitive output. -->
 
----
+| Check | Result |
+| --- | --- |
+| Offline render, lint, format or syntax checks | |
+| `labtest` validation and exact revision | |
+| Health or non-sensitive functional verification | |
+| Checks intentionally not run | |
 
-## 🚀 Deployment
+## Reproducibility and secrets
 
-Procedure to deploy this PR to production:
-1. Merge this PR into the `master` branch.
-2. Ensure the CI/CD pipeline completes successfully.
-3. Deploy using the following command:
-    ```sh
-   # Update the master branch
-    git checkout master \
-      && git pull origin master
+- [ ] A new operator can rebuild this change without chat history or shell history.
+- [ ] Every non-Git input is classified and its recovery/rotation procedure is documented.
+- [ ] Secret values, kubeconfigs, Terraform state and generated credentials are absent from the diff.
+- [ ] The operation is idempotent after partial failure or an already-existing resource.
+- [ ] Lifecycle ownership and dependency order remain unambiguous.
+- [ ] Verification does not disclose sensitive output.
 
-    export PROJECT_PATH="/opt/homeops/labops"
-   
-   # Deploy Terraform
-    cd $PROJECT_PATH/terraform/xxx \
-      && terraform init \
-      && terraform apply
+Unrecoverable or manual prerequisites: <!-- Name purpose, owner, minimum permissions, storage, rotation, consumers and verification; otherwise "none". -->
 
-   # Deploy Ansible
-    cd $PROJECT_PATH/ansible \
-      && ansible-playbook site.yml --tags production -i inventories/main/hosts
-   
-   # Deploy Kustomize
-    kubectl kustomize --enable-helm apps/xxx/clusters/production | kubectl apply -f -
-    ```
-4. Monitor logs and metrics for any issues.
+Documentation updated: <!-- Link the owning README/runbook, or explain why no documentation change is required. -->
 
----
+## Delivery authorization
 
-## 🔗 Related Issues
+<!-- Checking a box records what happened; it does not authorize a future live operation. -->
 
-- Closes issue : [#XX](https://github.com/bingops-com/labops/issues/XX)
-- Related to issue : [#XX](https://github.com/bingops-com/labops/issues/XX)
+- [ ] No live infrastructure or cluster state was changed.
+- [ ] Any temporary live `labtest` change is described above and restored or intentionally retained until merge.
+- [ ] Nothing was applied to `labprod` or `labmgmt` outside normal post-merge GitOps reconciliation.
+- [ ] This PR is ready for the `deploy/labtest` shared-slot label when applicable.
 
----
+## Related work
 
-## 🙏 Additional Notes
-
-- **Anything else the reviewers should know**: 
-- **Screenshots or GIFs to demonstrate the change**:
+<!-- Use "Closes #123", "Relates to #123", or "None". -->

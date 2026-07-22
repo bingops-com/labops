@@ -5,6 +5,9 @@ resources:
   - project.yaml
   - argocd.yaml
   - bitwarden-secrets-manager.yaml
+  - github-actions-runner-controller.yaml
+  - github-actions-runner-config.yaml
+  - github-actions-runner-scale-set.yaml
   - traefik.yaml
   - cert-manager.yaml
   - certificates.yaml

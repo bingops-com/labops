@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: github-actions-runner-config-labprod
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-6"
+spec:
+  project: labops-labprod
+  source:
+    repoURL: https://github.com/bingops-com/labops.git
+    targetRevision: master
+    path: apps/platform/github-actions-runner/labprod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arc-runners
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

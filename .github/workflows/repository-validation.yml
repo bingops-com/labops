@@ -1,0 +1,44 @@
+name: Repository validation
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  scripts:
+    name: Shell and workflow linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run ShellCheck
+        run: find .github/scripts hacks -type f -name '*.sh' -print0 | sort -z | xargs -0 shellcheck
+      - name: Run actionlint
+        uses: docker://rhysd/actionlint:1.7.7
+
+  kustomize:
+    name: Render Kustomize overlays
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: v1.36.1
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.19.4
+      - run: bash .github/scripts/validate-kustomize.sh
+
+  renovate:
+    name: Validate Renovate configuration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npx --yes --package renovate@43.272.8 renovate-config-validator renovate.json

@@ -6,3 +6,4 @@ resources:
   - middleware.yaml
   - oidc-secret.yaml
   - oidc-secret-metadata.yaml
+  - pr-deployer-rbac.yaml

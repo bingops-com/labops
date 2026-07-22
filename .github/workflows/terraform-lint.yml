@@ -19,6 +19,9 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
       - name: Cache TFLint plugin directory
         uses: actions/cache@v4
         with:
@@ -33,9 +36,12 @@ jobs:
       - name: Show TFLint version
         run: tflint --version
 
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive terraform
+
       - name: Run TFLint in all terraform subdirectories
         run: |
-          find terraform -type f -name "*.tf" -exec dirname {} \; | sort -u | while read dir; do
+          find terraform -type f -name "*.tf" -exec dirname {} \; | sort -u | while read -r dir; do
             echo "Running TFLint in $dir"
             tflint --init --chdir="$dir"
             tflint -f compact --chdir="$dir"

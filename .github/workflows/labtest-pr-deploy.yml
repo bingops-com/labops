@@ -1,0 +1,61 @@
+name: Deploy PR to labtest
+
+on:
+  pull_request_target:
+    branches: [master]
+    types: [labeled, unlabeled, synchronize, reopened, closed]
+
+concurrency:
+  group: labtest-pr-slot
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  deploy:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (startsWith(github.event.pull_request.head.ref, 'feat/') ||
+       startsWith(github.event.pull_request.head.ref, 'fix/')) &&
+      github.event.action != 'closed' &&
+      !(github.event.action == 'unlabeled' && github.event.label.name == 'deploy/labtest') &&
+      contains(github.event.pull_request.labels.*.name, 'deploy/labtest')
+    runs-on: labops
+    environment: labtest
+    steps:
+      - name: Checkout trusted deployment tooling
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Deploy immutable PR revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LABTEST_PR_NUMBER: ${{ github.event.pull_request.number }}
+          LABTEST_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          LABTEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: .github/scripts/deploy-labtest-pr.sh deploy
+
+  restore:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (github.event.action == 'closed' ||
+       (github.event.action == 'unlabeled' && github.event.label.name == 'deploy/labtest'))
+    runs-on: labops
+    environment: labtest
+    steps:
+      - name: Checkout trusted deployment tooling
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Restore master when this PR owns the slot
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LABTEST_PR_NUMBER: ${{ github.event.pull_request.number }}
+          LABTEST_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          LABTEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: .github/scripts/deploy-labtest-pr.sh restore

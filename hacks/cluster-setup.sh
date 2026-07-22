@@ -225,8 +225,6 @@ for cluster in "${WORKLOAD_CLUSTERS[@]}"; do
   fi
 done
 
-KUBECONFIG_VALUE="$(IFS=:; printf '%s' "${CONFIG_PATHS[*]}")"
-
 # Preserve unrelated contexts while replacing LabOps contexts with fresh data.
 KUBE_DEFAULT="${CONFIG_DIR}/config"
 KUBE_MERGED="${TMP_DIR}/kubeconfig"
