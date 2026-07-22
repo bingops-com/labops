@@ -192,6 +192,11 @@ Administration. A webhook is not required for ARC.
 Rotate the private key in GitHub, replace the Bitwarden value, verify the
 generated Kubernetes Secret keys, then revoke the previous key.
 
+The scale-set chart marks ARC-generated listeners, their support RBAC and
+ephemeral runner resources with Argo CD's `IgnoreExtraneous` comparison option.
+These runtime resources inherit the parent Application tracking label but are
+owned by ARC rather than Helm; Argo CD must neither report nor prune them.
+
 Git declares the `labtest-pr-deployer` ServiceAccount, Role, and RoleBinding in
 `argocd-system`. Its Kubernetes permissions are limited to reading and patching
 Argo CD Applications; it cannot read Secrets or mutate workloads directly.
