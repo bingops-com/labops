@@ -79,8 +79,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: bingops
-          password: ${{ secrets.GHCR_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
 
       - name: Determine tag prefix
         id: tagprefix
