@@ -11,6 +11,7 @@ spec:
     - https://github.com/bingops-com/labops.git
     - https://traefik.github.io/charts
     - https://charts.jetstack.io
+    - https://charts.bitwarden.com
     - https://bitnami.github.io/sealed-secrets
     - https://charts.goauthentik.io
     - https://github.com/rancher/local-path-provisioner.git

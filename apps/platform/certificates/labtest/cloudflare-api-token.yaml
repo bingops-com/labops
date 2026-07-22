@@ -1,16 +1,15 @@
----
-apiVersion: bitnami.com/v1alpha1
-kind: SealedSecret
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
 metadata:
-  creationTimestamp: null
   name: cloudflare-api-token
   namespace: cert-manager
 spec:
-  encryptedData:
-    api-token: AgB1VJT5zkr4bYjvsSalgTeKoiqUxf8olcOt28SKJCccjX++M5cIz/Wz7unLzB49zSLgSWPCcebBIuLJlxw08KOcC9Hvj0DHtf9oo6W1cXz21E1khJ6HUXi6CjmqMADQOmyX4DbCtgs0163U9MflqyK/0f+hrDTPSF7oL7yuWdLZ1Jhb6qEPU59PCnhKRzCW5qLBLsdjtY0ooZI33V4hqnqVLNeT6ifSmkpQ/F9auQbzRa6gbhBu5JQdOTE0pcVQ9MF+qGyV2njN10gaxPuQ2P6V6mOKhEPAzPPAeQev4NUZ6zQMZn+WPy8kK+c6L03XofV5Fy+lr8HvU2CQoXUu1SKMJpXjRKHebklIpqMaX1lN3ZTWutPf4yDJpkeUjQe3HDmyu/U6lI+rE54mAh7TtzICiYG1pXhxDWTAYxq6o3uzmE4O270xTdio1OthK42TOCfpxcUXf/Smz7gCK8AI/jZ+wCiiD4aAT7uxxWJgyN1cjCMu4g03PwRLUO7zSQ0wt9tNXZztiJQb7rjMMzcJLZsPQ+y5R8AvGPNWtgvz+us3k4BSb3unq+q1XrDa3OJkt4OX2Y6S9aUqcf/g1fiMD/e3JhLFEn5CmaDEQrE86bruIwKrt08kwmh3WRwVX3c374REXMqnMNkqrtcww/b7V7b5e8aRB6npn+Nc7jEfINTx952cGJCLtN7zEOzBC/P0ljpgAzaXukbS7HWbyTHmlqJB1wns087pbI//sp/qPxOMGMukAoRSJ9Yr6uAB/P4aEX6qdOfl1A==
-  template:
-    metadata:
-      creationTimestamp: null
-      name: cloudflare-api-token
-      namespace: cert-manager
-
+  organizationId: 38fd86e7-06ee-4ee3-b013-b48f00d76a9e
+  secretName: cloudflare-api-token
+  onlyMappedSecrets: true
+  map:
+    - bwSecretId: 5d1eeb7d-be26-40e2-aa03-b48f00e09a18
+      secretKeyName: api-token
+  authToken:
+    secretName: bw-auth-token
+    secretKey: token

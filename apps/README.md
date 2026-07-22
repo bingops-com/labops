@@ -15,8 +15,8 @@ The repository is split by ownership:
 - `platform/`: cluster services such as issuers and private DNS;
 - `workloads/`: personal applications with shared bases and explicit cluster overlays.
 
-Argo CD installs platform dependencies before workloads. Sealed Secrets uses
-sync wave `-9`, Traefik and
+Argo CD installs platform dependencies before workloads. Bitwarden Secrets
+Manager and the transitional Sealed Secrets controller use sync wave `-9`, Traefik and
 cert-manager use sync wave `-8`, the ACME issuer uses `-6`, and applications use
 wave `0`. Traefik is pinned to chart `40.2.0`; the retired Ingress-NGINX project
 is deliberately not used. Automated sync, pruning and self-healing are enabled
@@ -62,9 +62,9 @@ Ingress TLS uses Let's Encrypt DNS-01 on both clusters. The expected Secret is n
 `cloudflare-api-token` in namespace `cert-manager`, with key `api-token`. Create
 a dedicated Cloudflare token with `Zone:DNS:Edit` and `Zone:Zone:Read`, limited
 to `bingops.com` and `lab.bingo`, store it in the ignored credentials directory,
-and seal it independently for `labtest` and `labprod` using the procedure below.
-Do not reuse the broader Terraform infrastructure token or ciphertext from the
-other cluster. DNS for `*.test.lab.bingo` remains private; DNS-01 proves domain
+store the `labtest` value in its Bitwarden project, and seal the `labprod` value
+using the transitional procedure below. Do not reuse the broader Terraform
+infrastructure token. DNS for `*.test.lab.bingo` remains private; DNS-01 proves domain
 control without publishing the private services or routing traffic through
 Cloudflare.
 
@@ -111,29 +111,31 @@ The complete operator procedure and reusable manifest conventions are in
 the source of truth for adding, testing, promoting, rolling back and removing
 a workload.
 
-## Sealed Secrets
+## Secret delivery
 
-Both clusters run the official Sealed Secrets chart with controller name
-`sealed-secrets-controller` in `kube-system`. Seal every secret independently
-for `labtest` and `labprod`: their private sealing keys are intentionally
-different. Back up those controller keys outside Git before relying on sealed
-credentials during cluster recreation.
+`labtest` uses the Bitwarden Secrets Manager operator and the dedicated
+Bitwarden US `labtest` project. Its machine token is injected with
+`hacks/bootstrap-bitwarden.sh`; Git contains only the operator configuration and
+secret UUID mappings. See
+[`docs/infrastructure/bitwarden-secrets-manager.md`](../docs/infrastructure/bitwarden-secrets-manager.md).
+
+`labprod` remains temporarily on Sealed Secrets. Its controller is named
+`sealed-secrets-controller` in `kube-system`; retain an encrypted backup of its
+private sealing key until production migration is complete.
 
 Store the dedicated cert-manager token as
 `terraform/cloudflare/credentials/cert-manager-api-token` with mode `0600`.
-That directory is ignored. Generate each cluster-specific manifest without
+That directory is ignored. Generate the transitional `labprod` manifest without
 printing the token:
 
 ```sh
 kubectl create secret generic cloudflare-api-token --namespace cert-manager --from-file=api-token=terraform/cloudflare/credentials/cert-manager-api-token --dry-run=client -o json | kubeseal --context labprod --controller-name sealed-secrets-controller --controller-namespace kube-system --scope strict --format yaml > apps/platform/certificates/cloudflare-api-token.yaml
-kubectl create secret generic cloudflare-api-token --namespace cert-manager --from-file=api-token=terraform/cloudflare/credentials/cert-manager-api-token --dry-run=client -o json | kubeseal --context labtest --controller-name sealed-secrets-controller --controller-namespace kube-system --scope strict --format yaml > apps/platform/certificates/labtest/cloudflare-api-token.yaml
 ```
 
 Add `cloudflare-api-token.yaml` to
 `apps/platform/certificates/kustomization.yaml`, validate it with `kubeseal
 --validate`, then commit it. Repeat the sealing operation after either the
-Cloudflare token or either cluster's sealing key rotates; ciphertext from
-another cluster cannot be reused.
+Cloudflare token or the production sealing key rotates.
 
 ## Bootstrap
 
