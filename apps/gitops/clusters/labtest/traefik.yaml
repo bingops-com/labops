@@ -22,6 +22,13 @@ spec:
           kind: DaemonSet
           dnsPolicy: ClusterFirstWithHostNet
         hostNetwork: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
         podSecurityContext:
           runAsGroup: 0
           runAsNonRoot: false

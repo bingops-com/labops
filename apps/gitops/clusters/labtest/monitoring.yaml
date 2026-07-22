@@ -161,10 +161,10 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 96Mi
+              memory: 64Mi
             limits:
               cpu: 250m
-              memory: 256Mi
+              memory: 192Mi
         prometheus:
           prometheusSpec:
             externalLabels:
@@ -175,10 +175,10 @@ spec:
             resources:
               requests:
                 cpu: 100m
-                memory: 256Mi
+                memory: 128Mi
               limits:
                 cpu: 500m
-                memory: 768Mi
+                memory: 512Mi
             serviceMonitorSelectorNilUsesHelmValues: false
             podMonitorSelectorNilUsesHelmValues: false
             ruleSelectorNilUsesHelmValues: false
