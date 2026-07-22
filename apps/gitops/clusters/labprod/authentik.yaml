@@ -13,6 +13,10 @@ spec:
     targetRevision: 2026.5.5
     helm:
       valuesObject:
+        global:
+          env:
+            - name: AUTHENTIK_POSTGRESQL__HOST
+              value: authentik-labprod-postgresql
         authentik:
           existingSecret:
             secretName: authentik-secrets
