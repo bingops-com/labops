@@ -4,4 +4,4 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - blueprint.yaml
-  - sealed-secret.yaml
+  - bitwarden-secret.yaml

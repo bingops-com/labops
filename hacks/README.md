@@ -17,6 +17,30 @@ The repository lifecycle also uses
 Terraform apply and CAPI workload creation. It ensures template 1234 retains
 its Talos ISO on `ide2` while `ide0` remains available for CAPMOX NoCloud data.
 
+## `bootstrap-bitwarden.sh`
+
+Injects or rotates the Bitwarden Secrets Manager machine-account token in every
+namespace that consumes external secrets. The helper reads
+`BWS_LABTEST_ACCESS_TOKEN` or `BWS_LABPROD_ACCESS_TOKEN` from its process
+environment, validates the selected kubectl context and all target namespaces,
+then reconciles `bw-auth-token` idempotently. The token is never stored in Git or
+placed literally in the command line.
+
+Generate a project-scoped access token from the matching Bitwarden US machine
+account, export it in the shell that runs the helper, then execute one cluster at
+a time:
+
+```sh
+./hacks/bootstrap-bitwarden.sh labtest
+./hacks/bootstrap-bitwarden.sh labprod
+```
+
+The required namespaces are `argocd-system` and `cert-manager` on `labtest`, and
+`argocd-system`, `authentik`, `cert-manager`, and `cloudflare` on `labprod`.
+Re-run the same command after token rotation or partial failure. Verify without
+revealing the token with `kubectl --context <cluster> --namespace <namespace>
+get secret bw-auth-token`; never use `-o yaml` or decode its data.
+
 ## `deploy.sh`
 
 Previews the changes that Argo CD would apply to the selected live cluster,

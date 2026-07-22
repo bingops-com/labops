@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - ingress.yaml
   - oidc-secret.yaml
+  - oidc-secret-metadata.yaml

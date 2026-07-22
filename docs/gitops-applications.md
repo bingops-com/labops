@@ -51,9 +51,11 @@ Keep environment differences in the overlays:
 - remove a test-only allowlist explicitly in production only when the service
   is intended to be public.
 
-Kubernetes Secrets committed to Git must be SealedSecrets. Seal the same input
-independently for each cluster because their sealing keys differ. Plaintext,
-kubeconfigs, Terraform state and generated certificates never belong in Git.
+Kubernetes secret values never belong in Git. Declare `labtest` credentials as
+BitwardenSecret UUID mappings and keep their values in the Bitwarden `labtest`
+project; use the equivalent dedicated project for `labprod`. Plaintext, machine
+tokens, kubeconfigs, Terraform state and generated
+certificates never belong in Git.
 
 ## 2. Add both environment Applications
 
@@ -220,7 +222,7 @@ failed image immutable for post-incident analysis.
 ## Remove an application
 
 Removal is destructive and must be reviewed for persistent data first. Identify
-PVCs, databases, DNS records, tunnel routes, SealedSecrets and external
+PVCs, databases, DNS records, tunnel routes, BitwardenSecret mappings and external
 credentials owned by the application. Back up data according to its owning
 runbook.
 
