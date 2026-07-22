@@ -13,6 +13,7 @@ spec:
     - https://charts.jetstack.io
     - https://charts.bitwarden.com
     - https://charts.goauthentik.io
+    - https://cloudnative-pg.github.io/charts
     - https://github.com/rancher/local-path-provisioner.git
   destinations:
     - server: https://kubernetes.default.svc

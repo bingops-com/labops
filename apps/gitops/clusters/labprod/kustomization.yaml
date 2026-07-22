@@ -9,6 +9,9 @@ resources:
   - cert-manager.yaml
   - certificates.yaml
   - local-path-storage.yaml
+  - cloudnative-pg.yaml
+  - barman-cloud.yaml
+  - postgresql.yaml
   - authentik-config.yaml
   - authentik.yaml
   - private-dns.yaml

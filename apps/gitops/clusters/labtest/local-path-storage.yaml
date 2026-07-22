@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: local-path-storage-labtest
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-8"
+spec:
+  project: labops-labtest
+  source:
+    repoURL: https://github.com/rancher/local-path-provisioner.git
+    targetRevision: v0.0.36
+    path: deploy
+    kustomize:
+      patches:
+        - target:
+            kind: Namespace
+            name: local-path-storage
+          patch: |-
+            - op: add
+              path: /metadata/labels
+              value:
+                pod-security.kubernetes.io/enforce: privileged
+                pod-security.kubernetes.io/audit: baseline
+                pod-security.kubernetes.io/warn: restricted
+        - target:
+            kind: StorageClass
+            name: local-path
+          patch: |-
+            - op: add
+              path: /metadata/annotations
+              value:
+                storageclass.kubernetes.io/is-default-class: "true"
+        - target:
+            kind: ConfigMap
+            name: local-path-config
+          patch: |-
+            - op: replace
+              path: /data/config.json
+              value: |-
+                {
+                  "nodePathMap": [
+                    {
+                      "node": "DEFAULT_PATH_FOR_NON_LISTED_NODES",
+                      "paths": ["/var/lib/kubelet/local-path-provisioner"]
+                    }
+                  ]
+                }
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: local-path-storage
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

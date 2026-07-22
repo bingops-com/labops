@@ -16,9 +16,10 @@ The repository is split by ownership:
 - `workloads/`: personal applications with shared bases and explicit cluster overlays.
 
 Argo CD installs platform dependencies before workloads. Bitwarden Secrets
-Manager uses sync wave `-9`, Traefik and
-cert-manager use sync wave `-8`, the ACME issuer uses `-6`, and applications use
-wave `0`. Traefik is pinned to chart `40.2.0`; the retired Ingress-NGINX project
+Manager uses sync wave `-9`; Traefik, cert-manager and local-path storage use
+sync wave `-8`; CloudNativePG uses `-7`; Barman Cloud and the ACME issuer use
+`-6`; PostgreSQL resources use `-5`; Authentik starts at `-4`; and regular
+workloads use wave `0`. Traefik is pinned to chart `40.2.0`; the retired Ingress-NGINX project
 is deliberately not used. Automated sync, pruning and self-healing are enabled
 only after the root application has been installed intentionally.
 
@@ -117,6 +118,14 @@ Bitwarden US projects. Their machine tokens are injected with
 `hacks/bootstrap-bitwarden.sh`; Git contains only operator configuration and
 secret UUID mappings. See
 [`docs/infrastructure/bitwarden-secrets-manager.md`](../docs/infrastructure/bitwarden-secrets-manager.md).
+
+## PostgreSQL
+
+CloudNativePG is the PostgreSQL lifecycle owner. Barman Cloud continuously
+archives WAL and writes daily base backups to separate Terraform-owned
+Cloudflare R2 buckets. Database and R2 credentials are delivered from the
+environment's Bitwarden project. See
+[`docs/infrastructure/cloudnative-pg.md`](../docs/infrastructure/cloudnative-pg.md).
 
 ## Bootstrap
 

@@ -15,7 +15,7 @@ cluster=$1
 case "$cluster" in
   labtest)
     token_variable=BWS_LABTEST_ACCESS_TOKEN
-    namespaces=(argocd-system cert-manager)
+    namespaces=(argocd-system cert-manager postgresql)
     ;;
   labprod)
     token_variable=BWS_LABPROD_ACCESS_TOKEN
