@@ -4,7 +4,7 @@ cloudflare:
 
   ingress:
     - hostname: auth.lab.bingo
-      service: http://authentik-server.authentik.svc.cluster.local:80
+      service: http://authentik-labprod-server.authentik.svc.cluster.local:80
     - hostname: www.bingops.com
       service: http://portfolio.portfolio.svc.cluster.local:80
     - hostname: bingops.com
