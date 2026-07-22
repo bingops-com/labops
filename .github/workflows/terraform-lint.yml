@@ -19,6 +19,9 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
       - name: Cache TFLint plugin directory
         uses: actions/cache@v4
         with:

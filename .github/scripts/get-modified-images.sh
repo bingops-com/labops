@@ -45,4 +45,4 @@ else
 fi
 
 cat matrix.json
-echo "matrix=$(cat matrix.json)" >> $GITHUB_OUTPUT
+echo "matrix=$(cat matrix.json)" >> "$GITHUB_OUTPUT"
