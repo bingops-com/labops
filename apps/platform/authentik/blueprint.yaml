@@ -27,6 +27,8 @@ data:
           client_type: confidential
           client_id: argocd
           client_secret: !Env AUTHENTIK_ARGOCD_PROD_CLIENT_SECRET
+          grant_types:
+            - authorization_code
           include_claims_in_id_token: true
           issuer_mode: per_provider
           property_mappings:
@@ -54,6 +56,8 @@ data:
           client_type: confidential
           client_id: argocd-test
           client_secret: !Env AUTHENTIK_ARGOCD_TEST_CLIENT_SECRET
+          grant_types:
+            - authorization_code
           include_claims_in_id_token: true
           issuer_mode: per_provider
           property_mappings:
