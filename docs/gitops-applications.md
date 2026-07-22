@@ -201,7 +201,8 @@ project; the committed BitwardenSecret maps it to the `config` key of the
 `arc-labtest-kubeconfig` Kubernetes Secret. Runner Pods mount only that key as
 a read-only file. The Pod supplemental group can read it, while other users
 cannot; the runner containers otherwise use the restricted Pod Security
-profile and run without privilege escalation or Linux capabilities.
+profile as the image's numeric `runner` user and group (`1001:123`), without
+privilege escalation or Linux capabilities.
 The bearer token is sensitive and replaceable: never put it in Git, Actions
 variables or logs. Rotation deletes only the generated token Secret, lets Argo
 CD recreate it, regenerates the kubeconfig, replaces the Bitwarden value and
