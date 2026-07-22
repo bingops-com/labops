@@ -41,7 +41,7 @@ jobs:
 
       - name: Run TFLint in all terraform subdirectories
         run: |
-          find terraform -type f -name "*.tf" -exec dirname {} \; | sort -u | while read dir; do
+          find terraform -type f -name "*.tf" -exec dirname {} \; | sort -u | while read -r dir; do
             echo "Running TFLint in $dir"
             tflint --init --chdir="$dir"
             tflint -f compact --chdir="$dir"

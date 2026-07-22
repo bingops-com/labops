@@ -52,6 +52,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo "$GH_TOKEN" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
-          VERSION=$(yq '.version' charts/${{ matrix.chart }}/Chart.yaml)
-          CHART_NAME=$(yq '.name' charts/${{ matrix.chart }}/Chart.yaml)
-          helm push output/${CHART_NAME}-${VERSION}.tgz oci://ghcr.io/bingops-com/helm
+          VERSION=$(yq '.version' "charts/${{ matrix.chart }}/Chart.yaml")
+          CHART_NAME=$(yq '.name' "charts/${{ matrix.chart }}/Chart.yaml")
+          helm push "output/${CHART_NAME}-${VERSION}.tgz" oci://ghcr.io/bingops-com/helm
