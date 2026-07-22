@@ -13,6 +13,9 @@ spec:
     - https://charts.jetstack.io
     - https://charts.bitwarden.com
     - https://cloudnative-pg.github.io/charts
+    - https://prometheus-community.github.io/helm-charts
+    - https://helm.elastic.co
+    - https://fluent.github.io/helm-charts
     - https://github.com/rancher/local-path-provisioner.git
   destinations:
     - server: https://kubernetes.default.svc

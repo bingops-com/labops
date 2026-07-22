@@ -29,6 +29,9 @@ The stack also enables MagicDNS, configures Cloudflare (`1.1.1.1`) and Quad9
 (`9.9.9.9`) as global resolvers, and overrides local DNS. It is the sole owner
 of the tailnet DNS configuration, including split DNS for `test.lab.bingo`
 through `192.168.10.170` and `argocd.lab.bingo` through `192.168.10.160`.
+The exact private name `grafana.lab.bingo` also uses `192.168.10.160`; neither
+production hostname changes resolution for the rest of the public
+`lab.bingo` zone.
 Keeping global and split DNS in the same `tailscale_dns_configuration` resource
 prevents a later network apply from deleting the private application routes.
 

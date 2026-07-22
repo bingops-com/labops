@@ -9,6 +9,10 @@ resources:
   - cert-manager.yaml
   - local-path-storage.yaml
   - cloudnative-pg.yaml
+  - eck-operator.yaml
+  - observability-config.yaml
+  - monitoring.yaml
+  - fluent-bit.yaml
   - barman-cloud.yaml
   - postgresql.yaml
   - certificates.yaml

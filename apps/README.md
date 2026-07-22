@@ -19,7 +19,9 @@ Argo CD installs platform dependencies before workloads. Bitwarden Secrets
 Manager uses sync wave `-9`; Traefik, cert-manager and local-path storage use
 sync wave `-8`; CloudNativePG uses `-7`; Barman Cloud and the ACME issuer use
 `-6`; PostgreSQL resources use `-5`; Authentik starts at `-4`; and regular
-workloads use wave `0`. Traefik is pinned to chart `40.2.0`; the retired Ingress-NGINX project
+workloads use wave `0`. ECK installs at wave `-7`, observability configuration
+at `-6`, kube-prometheus-stack at `-5`, and Fluent Bit at `-4`. Traefik is pinned
+to chart `40.2.0`; the retired Ingress-NGINX project
 is deliberately not used. Automated sync, pruning and self-healing are enabled
 only after the root application has been installed intentionally.
 
@@ -35,9 +37,10 @@ address `192.168.10.152`, and `terraform/tailscale-dns`
 sends only `test.lab.bingo` queries to it.
 
 Argo CD uses Authentik OIDC on both workload clusters. Tailscale split DNS
-resolves `argocd.test.lab.bingo` through the labtest DNS service and resolves only
-`argocd.lab.bingo` through a dedicated DNS service bound to the labprod VIP
-`192.168.10.160` and returning `192.168.10.151`. Neither hostname is routed
+resolves `argocd.test.lab.bingo` and `grafana.test.lab.bingo` through the labtest
+DNS service and resolves the exact `argocd.lab.bingo` and `grafana.lab.bingo`
+names through a dedicated DNS service bound to the labprod VIP
+`192.168.10.160` and returning `192.168.10.151`. None of these hostnames is routed
 through Cloudflare Tunnel or published by public DNS. Their Traefik ingresses allow only the local lab
 networks and Tailscale on test. Production has no IP allowlist and relies on
 Authentik authentication, but its exact hostname remains reachable only through
@@ -126,6 +129,14 @@ archives WAL and writes daily base backups to separate Terraform-owned
 Cloudflare R2 buckets. Database and R2 credentials are delivered from the
 environment's Bitwarden project. See
 [`docs/infrastructure/cloudnative-pg.md`](../docs/infrastructure/cloudnative-pg.md).
+
+## Monitoring and logging
+
+Both clusters use kube-prometheus-stack, ECK-managed Elasticsearch and Fluent
+Bit, with smaller retention on labtest. Grafana is private to LAN/Tailscale and
+Alertmanager sends firing and resolved alerts to a Discord webhook delivered
+from Bitwarden. See
+[`docs/infrastructure/observability.md`](../docs/infrastructure/observability.md).
 
 ## Bootstrap
 

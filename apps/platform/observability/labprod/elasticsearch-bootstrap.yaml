@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: observability-elasticsearch-bootstrap
+  namespace: logging
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: 4
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: observability-elasticsearch-bootstrap
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: bootstrap
+          image: curlimages/curl:8.16.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          env:
+            - name: ELASTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: observability-es-elastic-user
+                  key: elastic
+            - name: GRAFANA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: observability-elasticsearch-clients
+                  key: grafana-password
+            - name: FLUENT_BIT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: observability-elasticsearch-clients
+                  key: fluent-bit-password
+          command:
+            - /bin/sh
+            - -eu
+            - -c
+            - |
+              case "${GRAFANA_PASSWORD}${FLUENT_BIT_PASSWORD}" in *[!A-Za-z0-9_-]*) echo "Client passwords must be URL-safe strings." >&2; exit 1;; esac
+              umask 077
+              printf 'machine observability-es-http.logging.svc login elastic password %s\n' "$ELASTIC_PASSWORD" > /tmp/netrc
+              until curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc 'https://observability-es-http.logging.svc:9200/_cluster/health?wait_for_status=yellow&timeout=5s' >/dev/null; do sleep 5; done
+              curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_security/role/grafana_logs_reader --data '{"cluster":["monitor"],"indices":[{"names":["logs-labprod-*"],"privileges":["read","view_index_metadata"]}]}' >/dev/null
+              curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_security/role/fluent_bit_writer --data '{"cluster":["monitor"],"indices":[{"names":["logs-labprod-*"],"privileges":["auto_configure","create_doc","create_index","write"]}]}' >/dev/null
+              curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_security/user/grafana --data "{\"password\":\"${GRAFANA_PASSWORD}\",\"roles\":[\"grafana_logs_reader\"]}" >/dev/null
+              curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_security/user/fluent-bit --data "{\"password\":\"${FLUENT_BIT_PASSWORD}\",\"roles\":[\"fluent_bit_writer\"]}" >/dev/null
+              curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_ilm/policy/logs-retention --data '{"policy":{"phases":{"delete":{"min_age":"7d","actions":{"delete":{}}}}}}' >/dev/null
+              curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_index_template/logs --data '{"index_patterns":["logs-labprod-*"],"priority":100,"template":{"settings":{"index.lifecycle.name":"logs-retention"}}}' >/dev/null
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
