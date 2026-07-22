@@ -22,6 +22,31 @@ spec:
         controllerServiceAccount:
           namespace: arc-systems
           name: arc-controller
+        resourceMeta:
+          autoscalingListener:
+            annotations:
+              argocd.argoproj.io/compare-options: IgnoreExtraneous
+          listenerServiceAccount:
+            annotations:
+              argocd.argoproj.io/compare-options: IgnoreExtraneous
+          listenerRole:
+            annotations:
+              argocd.argoproj.io/compare-options: IgnoreExtraneous
+          listenerRoleBinding:
+            annotations:
+              argocd.argoproj.io/compare-options: IgnoreExtraneous
+          listenerConfigSecret:
+            annotations:
+              argocd.argoproj.io/compare-options: IgnoreExtraneous
+          ephemeralRunnerSet:
+            annotations:
+              argocd.argoproj.io/compare-options: IgnoreExtraneous
+          ephemeralRunner:
+            annotations:
+              argocd.argoproj.io/compare-options: IgnoreExtraneous
+          ephemeralRunnerConfigSecret:
+            annotations:
+              argocd.argoproj.io/compare-options: IgnoreExtraneous
         template:
           spec:
             securityContext:
