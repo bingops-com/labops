@@ -29,6 +29,7 @@ data:
           client_secret: !Env AUTHENTIK_ARGOCD_PROD_CLIENT_SECRET
           grant_types:
             - authorization_code
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
           include_claims_in_id_token: true
           issuer_mode: per_provider
           property_mappings:
@@ -58,6 +59,7 @@ data:
           client_secret: !Env AUTHENTIK_ARGOCD_TEST_CLIENT_SECRET
           grant_types:
             - authorization_code
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
           include_claims_in_id_token: true
           issuer_mode: per_provider
           property_mappings:
