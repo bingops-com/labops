@@ -24,24 +24,37 @@ spec:
           name: arc-controller
         template:
           spec:
+            securityContext:
+              fsGroup: 123
+              runAsNonRoot: true
+              runAsUser: 1001
+              runAsGroup: 123
+              seccompProfile:
+                type: RuntimeDefault
             containers:
               - name: runner
                 image: ghcr.io/bingops-com/labops-runner:0.1.0
                 imagePullPolicy: IfNotPresent
                 command:
                   - /home/runner/run.sh
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                      - ALL
                 env:
                   - name: KUBECONFIG
                     value: /home/runner/.kube/config
                 volumeMounts:
                   - name: labtest-kubeconfig
-                    mountPath: /home/runner/.kube
+                    mountPath: /home/runner/.kube/config
+                    subPath: config
                     readOnly: true
             volumes:
               - name: labtest-kubeconfig
                 secret:
                   secretName: arc-labtest-kubeconfig
-                  defaultMode: 0400
+                  defaultMode: 0440
   destination:
     server: https://kubernetes.default.svc
     namespace: arc-runners
