@@ -16,7 +16,7 @@ The repository is split by ownership:
 - `workloads/`: personal applications with shared bases and explicit cluster overlays.
 
 Argo CD installs platform dependencies before workloads. Bitwarden Secrets
-Manager and the transitional Sealed Secrets controller use sync wave `-9`, Traefik and
+Manager uses sync wave `-9`, Traefik and
 cert-manager use sync wave `-8`, the ACME issuer uses `-6`, and applications use
 wave `0`. Traefik is pinned to chart `40.2.0`; the retired Ingress-NGINX project
 is deliberately not used. Automated sync, pruning and self-healing are enabled
@@ -48,9 +48,9 @@ reachable.
 
 Production is published through the Cloudflare tunnel reconciled by the
 `labprod` app-of-apps. Its cluster-specific `cloudflare-tunnel-secret`
-SealedSecret is committed with the Cloudflare application and produces the
-Secret in namespace `cloudflare`. Reseal it for the current `labprod`
-controller whenever the tunnel credential or sealing key rotates. The
+BitwardenSecret mapping is committed with the Cloudflare application and
+produces the Secret in namespace `cloudflare`. Rotate its value in the
+Bitwarden `labprod` project. The
 portfolio is public at `portfolio.lab.bingo`; `bingops.com` and
 `www.bingops.com` route to the same service. Cloudflare DNS and tunnel routes
 under `lab.bingo` are explicit: no production wildcard is used, and
@@ -62,8 +62,7 @@ Ingress TLS uses Let's Encrypt DNS-01 on both clusters. The expected Secret is n
 `cloudflare-api-token` in namespace `cert-manager`, with key `api-token`. Create
 a dedicated Cloudflare token with `Zone:DNS:Edit` and `Zone:Zone:Read`, limited
 to `bingops.com` and `lab.bingo`, store it in the ignored credentials directory,
-store the `labtest` value in its Bitwarden project, and seal the `labprod` value
-using the transitional procedure below. Do not reuse the broader Terraform
+and store each cluster's value in its matching Bitwarden project. Do not reuse the broader Terraform
 infrastructure token. DNS for `*.test.lab.bingo` remains private; DNS-01 proves domain
 control without publishing the private services or routing traffic through
 Cloudflare.
@@ -113,29 +112,11 @@ a workload.
 
 ## Secret delivery
 
-`labtest` uses the Bitwarden Secrets Manager operator and the dedicated
-Bitwarden US `labtest` project. Its machine token is injected with
-`hacks/bootstrap-bitwarden.sh`; Git contains only the operator configuration and
+Both clusters use the Bitwarden Secrets Manager operator and dedicated
+Bitwarden US projects. Their machine tokens are injected with
+`hacks/bootstrap-bitwarden.sh`; Git contains only operator configuration and
 secret UUID mappings. See
 [`docs/infrastructure/bitwarden-secrets-manager.md`](../docs/infrastructure/bitwarden-secrets-manager.md).
-
-`labprod` remains temporarily on Sealed Secrets. Its controller is named
-`sealed-secrets-controller` in `kube-system`; retain an encrypted backup of its
-private sealing key until production migration is complete.
-
-Store the dedicated cert-manager token as
-`terraform/cloudflare/credentials/cert-manager-api-token` with mode `0600`.
-That directory is ignored. Generate the transitional `labprod` manifest without
-printing the token:
-
-```sh
-kubectl create secret generic cloudflare-api-token --namespace cert-manager --from-file=api-token=terraform/cloudflare/credentials/cert-manager-api-token --dry-run=client -o json | kubeseal --context labprod --controller-name sealed-secrets-controller --controller-namespace kube-system --scope strict --format yaml > apps/platform/certificates/cloudflare-api-token.yaml
-```
-
-Add `cloudflare-api-token.yaml` to
-`apps/platform/certificates/kustomization.yaml`, validate it with `kubeseal
---validate`, then commit it. Repeat the sealing operation after either the
-Cloudflare token or the production sealing key rotates.
 
 ## Bootstrap
 

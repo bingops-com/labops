@@ -27,8 +27,9 @@ Application is declared independently in each cluster app-of-apps directory.
 ## External prerequisite and recovery
 
 An owner of the Bitwarden US organization must create or recover both projects,
-create one machine account per project, grant each account read access only to
-its matching project, and generate an access token. Store the tokens in the
+create one machine account per project, grant each account read/write access
+only while provisioning or rotating values, then reduce it to read access for
+normal operator use. Generate a matching access token and store it in the
 organization's protected recovery process or generate replacements after loss.
 Revoking and replacing a token is the rotation mechanism; its value cannot be
 recovered from Git.
@@ -39,24 +40,21 @@ helper, run `hacks/bootstrap-bitwarden.sh` for the corresponding cluster, and
 unset it afterward. See [`hacks/README.md`](../../hacks/README.md) for the
 idempotent procedure and namespace inventory.
 
-## Migration and recovery order
+## Recovery order
 
 1. Reconcile the GitOps-declared operator and wait for its deployment and CRD.
 2. Create or recover the two Bitwarden projects and least-privilege machine
    accounts, then inject their tokens with the bootstrap helper.
-3. Import each existing secret value directly from its authoritative recovery
-   source into the matching Bitwarden project; never print or stage values.
-4. Commit `BitwardenSecret` mappings using the returned secret UUIDs and
-   temporary Kubernetes Secret names.
-5. Compare key sets and value hashes between the temporary and current Secrets
-   without printing values, then test `labtest` consumers.
-6. Change the mappings to the established Kubernetes Secret names and remove
-   the corresponding SealedSecrets only after the tested cutover is healthy.
-7. Repeat the reviewed cutover for `labprod`; uninstall Sealed Secrets only
-   after no SealedSecret resources remain in either cluster or in Git.
+3. Recover each missing value from its authoritative external source into the
+   matching Bitwarden project; never print or stage values.
+4. Reconcile the committed `BitwardenSecret` UUID mappings and verify their
+   status before starting dependent workloads.
 
-During migration, Sealed Secrets deliberately remains installed. Do not allow
-both controllers to own the same Kubernetes Secret name concurrently.
+Argo CD resolves OIDC secret references only from Secrets labeled
+`app.kubernetes.io/part-of: argocd`. The operator does not propagate arbitrary
+labels, so each OIDC overlay also declares a metadata-only Secret manifest with
+that label. It contains no `data` or `stringData`; Bitwarden remains the sole
+owner of the secret value.
 
 ## Non-sensitive verification
 

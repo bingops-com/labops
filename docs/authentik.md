@@ -34,20 +34,17 @@ published through the Cloudflare tunnel.
 
 ## Secrets and recovery
 
-Three strict-scope SealedSecrets contain the Authentik application key,
-PostgreSQL passwords, bootstrap administrator credentials and the two distinct
-OIDC client secrets. Plaintext values must never be recovered into Git or logs.
-They are recoverable only with the backed-up private sealing keys for their
-owning cluster. Back up the Authentik PostgreSQL volume as identity data;
+BitwardenSecret mappings deliver the Authentik application key, PostgreSQL
+passwords, bootstrap administrator credentials and the two distinct OIDC client
+secrets from the `labprod` Bitwarden project. Plaintext values must never be
+recovered into Git or logs. Back up the Authentik PostgreSQL volume as identity data;
 additional users and credentials remain generated state.
 
-Local bootstrap inputs are staged only under the ignored
-`apps/platform/authentik/credentials/` directory. Never commit this directory;
-store the administrator password in the team password manager and use the local
-file only while generating its strict-scope SealedSecret. Delete the staging
-file immediately after `kubeseal --validate` succeeds.
+Create and rotate these values directly in the Bitwarden `labprod` project.
+Never stage them under `apps/platform/authentik/credentials/` or commit local
+copies. Git stores only the non-sensitive project, organization and secret UUIDs.
 
-On a fresh database, Authentik consumes the sealed `AUTHENTIK_BOOTSTRAP_EMAIL`
+On a fresh database, Authentik consumes the synchronized `AUTHENTIK_BOOTSTRAP_EMAIL`
 and `AUTHENTIK_BOOTSTRAP_PASSWORD` values automatically. Its blueprint creates
 `argocd-admins` and adds `akadmin`, so `/if/flow/initial-setup/` is not required.
 The bootstrap variables do not reset an existing database. Rotate the exposed

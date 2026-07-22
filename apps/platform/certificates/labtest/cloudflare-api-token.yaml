@@ -5,6 +5,7 @@ metadata:
   namespace: cert-manager
 spec:
   organizationId: 38fd86e7-06ee-4ee3-b013-b48f00d76a9e
+  projectId: 4ef29235-632e-45c6-a49a-b48f00d8fe6f
   secretName: cloudflare-api-token
   onlyMappedSecrets: true
   map:

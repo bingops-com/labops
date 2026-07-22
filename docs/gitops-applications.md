@@ -53,8 +53,8 @@ Keep environment differences in the overlays:
 
 Kubernetes secret values never belong in Git. Declare `labtest` credentials as
 BitwardenSecret UUID mappings and keep their values in the Bitwarden `labtest`
-project. `labprod` remains temporarily on SealedSecrets until its migration is
-validated. Plaintext, machine tokens, kubeconfigs, Terraform state and generated
+project; use the equivalent dedicated project for `labprod`. Plaintext, machine
+tokens, kubeconfigs, Terraform state and generated
 certificates never belong in Git.
 
 ## 2. Add both environment Applications
@@ -222,7 +222,7 @@ failed image immutable for post-incident analysis.
 ## Remove an application
 
 Removal is destructive and must be reviewed for persistent data first. Identify
-PVCs, databases, DNS records, tunnel routes, SealedSecrets and external
+PVCs, databases, DNS records, tunnel routes, BitwardenSecret mappings and external
 credentials owned by the application. Back up data according to its owning
 runbook.
 
