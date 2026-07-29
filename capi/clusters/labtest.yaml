@@ -59,13 +59,13 @@ spec:
           sizeGb: 100
       format: raw
       full: true
-      memoryMiB: 4096
+      memoryMiB: 16384
       network:
         default:
           bridge: vmbr0
           model: virtio
           vlan: 10
-      numCores: 2
+      numCores: 4
       numSockets: 1
       pool: Kubernetes
       sourceNode: homelab
