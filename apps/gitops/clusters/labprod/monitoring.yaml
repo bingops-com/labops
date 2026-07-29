@@ -125,11 +125,11 @@ spec:
                 cpu: 100m
                 memory: 160Mi
             dashboards:
-              method: LIST
+              watchMethod: LIST
               skipReload: true
               initDashboards: true
             datasources:
-              method: LIST
+              watchMethod: LIST
               skipReload: true
               initDatasources: true
           grafana.ini:
