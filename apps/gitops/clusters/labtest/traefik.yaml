@@ -48,7 +48,8 @@ spec:
             maxUnavailable: 1
             maxSurge: 0
         service:
-          type: ClusterIP
+          spec:
+            type: ClusterIP
         ports:
           web:
             port: 80
