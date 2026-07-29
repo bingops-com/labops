@@ -29,6 +29,14 @@ dashboard and datasource sidecars. Labtest therefore uses the same
 `500m`/`384Mi` Grafana ceiling as labprod, and both environments give the
 sidecars explicit resources. Readiness tolerates short SQLite and provisioning
 stalls, while liveness starts only after the normal initialization window.
+Because no local Grafana administrator exists, the sidecars run their initial
+dashboard and datasource collection as init containers and skip authenticated
+reload calls; Grafana reads the generated provisioning files when it starts.
+
+Traefik publishes each workload cluster's stable node address directly as the
+Kubernetes Ingress endpoint. The Traefik Service is intentionally ClusterIP
+because traffic enters through host ports, so copying status from that Service
+would leave every Ingress without an address and block Argo CD health checks.
 
 Argo CD owns the ECK operator, Elasticsearch resource,
 `kube-prometheus-stack`, Fluent Bit, ingress, RBAC and all configuration.

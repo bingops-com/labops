@@ -124,6 +124,12 @@ spec:
               limits:
                 cpu: 100m
                 memory: 160Mi
+            dashboards:
+              skipReload: true
+              initDashboards: true
+            datasources:
+              skipReload: true
+              initDatasources: true
           grafana.ini:
             server:
               root_url: https://grafana.lab.bingo
