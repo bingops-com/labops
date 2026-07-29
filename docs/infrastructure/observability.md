@@ -24,6 +24,12 @@ already binds host port 9100 on each single-node cluster, while Prometheus can
 scrape node exporter through its ClusterIP Service without reserving that host
 port.
 
+Grafana 13 runs its embedded API server and unified storage alongside the
+dashboard and datasource sidecars. Labtest therefore uses the same
+`500m`/`384Mi` Grafana ceiling as labprod, and both environments give the
+sidecars explicit resources. Readiness tolerates short SQLite and provisioning
+stalls, while liveness starts only after the normal initialization window.
+
 Argo CD owns the ECK operator, Elasticsearch resource,
 `kube-prometheus-stack`, Fluent Bit, ingress, RBAC and all configuration.
 Local-path PVCs contain generated operational history rather than source data.
@@ -75,6 +81,14 @@ Traefik, certificate, storage, Prometheus, Grafana, Elasticsearch and Fluent
 Bit alerts. Applications is the default route for workload alerts. All three
 receivers send resolved notifications. `Watchdog` and `InfoInhibitor` are
 intentionally discarded to avoid periodic noise.
+
+The monitoring release owns a top-level `AlertmanagerConfig` named
+`discord-routing`. Each Discord receiver references its URL through an
+`apiURL` `SecretKeySelector` into `observability-discord`; webhook values never
+appear in Helm values or generated Git content. Do not use
+`discord_configs.webhook_url_file`: Alertmanager's native Discord receiver
+does not support that field, and the Prometheus Operator will refuse to
+provision the Alertmanager workload.
 
 For every channel, open its settings, create a dedicated incoming webhook under
 **Integrations**, give it a recognizable name such as `Alertmanager labprod
