@@ -1,8 +1,15 @@
 # Talos on Proxmox
 
-This stack downloads the Talos `nocloud` ISO, builds Proxmox template 1234, and clones it to create the single-node management cluster `labmgmt`. Every Kubernetes VM network device is tagged with VLAN 10. The template has Proxmox `on_boot` enabled so CAPMOX clones inherit automatic startup after a Proxmox node reboot. Its Talos ISO is attached to `ide2`, leaving `ide0` available for CAPMOX's generated NoCloud seed; `scsi0` remains first in the boot order after Talos installs. The same `ide2` CD-ROM is declared explicitly on `labmgmt`, because an existing clone does not inherit hardware changes subsequently made to template 1234. The CAPI controllers on `labmgmt` reuse the same template and own the independent workload clusters `labprod` and `labtest`, whose manifests live under `capi/clusters/`.
+This stack downloads the Talos `nocloud` ISO, builds Proxmox template 1234, and clones it to create the single-node management cluster `labmgmt`. Every Kubernetes VM network device is tagged with VLAN 10. The template has Proxmox `on_boot` enabled so CAPMOX clones inherit automatic startup after a Proxmox node reboot. Its Talos ISO is attached to `ide2`, leaving `ide0` available for CAPMOX's generated NoCloud seed; `scsi0` remains first in the boot order after Talos installs. The same `ide2` CD-ROM is declared explicitly on `labmgmt`, because an existing clone does not inherit hardware changes subsequently made to template 1234. The CAPI controllers on `labmgmt` reuse the same template and own the sole workload cluster `labprod`, whose manifest lives under `capi/clusters/`.
 
 ## Prerequisites
+
+- VM disks use the existing Proxmox `local-lvm` thin pool (`pve/data`).
+  The Proxmox administrator owns this host-level prerequisite; Terraform only
+  allocates VM disks in it. Verify capacity with `pvesm status --storage local-lvm`
+  and `lvs -o vg_name,lv_name,lv_size,data_percent,metadata_percent` as root.
+  Reserve space for three 100 GiB VM disks and the 32 GiB template, plus other
+  host workloads and thin-pool headroom. CAPMOX full clones inherit this storage.
 
 - Proxmox VE with an API token.
 - Proxmox VM IDs 1234 and 150 must be free. Terraform creates and owns both resources.
@@ -86,19 +93,81 @@ task lifecycle:create
 task lifecycle:recreate
 ```
 
-`lifecycle:create` configures/reconciles the VLAN router and `labmgmt`, installs the pinned CAPI providers, creates `labprod` and `labtest`, waits for both clusters, then installs their client configurations. It does not delete existing clusters.
+`lifecycle:create` configures/reconciles the VLAN router and `labmgmt`, installs the pinned CAPI providers, creates `labprod`, waits for it, then installs its client configuration. It does not delete an existing cluster.
 
-`lifecycle:recreate` is the complete clean-room rebuild. It first deletes the CAPI-owned `labprod` and `labtest` clusters, including VMs 151 and 152, while `labmgmt` is still available. It then creates and applies a Terraform destruction plan for VM 150, template 1234, and the Terraform-managed Talos assets before running the complete creation lifecycle. The persistent network/Tailscale stack and ignored credential files are retained. Review both destruction and creation plans because all three clusters are replaced.
+`lifecycle:recreate` is the complete clean-room rebuild. It first deletes the CAPI-owned `labprod` cluster, including VM 151, while `labmgmt` is still available. It then creates and applies a Terraform destruction plan for VM 150, template 1234, and the Terraform-managed Talos assets before running the complete creation lifecycle. The persistent network/Tailscale stack and ignored credential files are retained. Review both destruction and creation plans because both clusters are replaced.
 
-### Complete destruction
+### Recovery when the management and workload disks are lost
 
-The guarded destruction workflow preserves lifecycle ownership: it asks CAPI to delete `labprod` and `labtest` while their management cluster is still available, waits for their cleanup, then creates and applies a saved Terraform destruction plan:
+Use this disaster-recovery path only after explicit approval to replace VM IDs
+150, 151 and template 1234 and abandon their current cluster data. It is
+not a management migration: `clusterctl move` and CAPI deletion require the old
+management API. If that API is recoverable, use normal CAPI cleanup instead.
+
+1. Verify all three targets are stopped, the old storage is unavailable, and
+   `local-lvm` has the capacity described above. Preserve other VMs and storage
+   definitions. Keep the old disks offline even if their device returns: old
+   clusters share IP addresses and identities with the replacement deployment.
+2. As the Proxmox administrator, archive only those three files from
+   `/etc/pve/qemu-server/` into a root-only directory under
+   `/var/lib/labops-recovery/`, then remove their active definitions. An archive
+   is sensitive generated recovery state, never a Git artifact. Record its
+   directory in the intervention report. Check each existing definition is
+   stopped and still references the failed storage before moving it. Missing
+   definitions are already retired; do not archive a newly rebuilt VM on rerun.
+   This releases the IDs without attempting to delete inaccessible disks.
+   The guarded helper implements these checks (run from the repository):
+
+   ```sh
+   ssh bingo@192.168.1.100 'sudo bash -s -- 150,151,1234' < hacks/retire-lost-kube-vms.sh
+   ```
+3. Keep a mode-0600 backup of the existing Terraform state in protected local
+   storage. Set `datastore` in `terraform.tfvars` to the healthy datastore.
+   Terraform remains owner of VM 150 and template 1234; do not import 151/152.
+4. Create a saved Terraform plan with explicit replacement of the management
+   Talos secrets, configuration-apply, bootstrap and kubeconfig resources. This
+   prevents old bootstrap state from being reused against empty disks. Review
+   only resource addresses/actions, never plaintext plan JSON or outputs.
+   Apply the reviewed plan; retain the existing ISO when it is available.
+
+   From the repository root, keep all plan/log artifacts private and outside Git:
+
+   ```sh
+   umask 077; recovery_dir=$(mktemp -d /tmp/labops-kube-rebuild.XXXXXX); cp terraform/proxmox/terraform.tfstate "$recovery_dir/pre-rebuild.tfstate"
+   terraform -chdir=terraform/proxmox plan -input=false -no-color -out="$recovery_dir/rebuild.tfplan" '-replace=talos_machine_secrets.cluster["labmgmt"]' '-replace=talos_machine_configuration_apply.node["talos-labmgmt-cp-01"]' '-replace=talos_machine_bootstrap.cluster["labmgmt"]' '-replace=talos_cluster_kubeconfig.cluster["labmgmt"]' > "$recovery_dir/plan.log" 2>&1
+   terraform -chdir=terraform/proxmox show -json "$recovery_dir/rebuild.tfplan" | jq -r '.resource_changes[] | [.address, (.change.actions | join(","))] | @tsv'
+   terraform -chdir=terraform/proxmox apply -input=false -no-color "$recovery_dir/rebuild.tfplan" > "$recovery_dir/apply.log" 2>&1
+   ```
+
+   Stop if any command fails. The plan should create only the missing management
+   VM/template and replace the four Talos resources; it must not affect other
+   host workloads. These local-state backup commands assume the current local
+   backend; use backend-native protected snapshots if migrated to remote state.
+   Temporary artifacts are not durable backups: the operator must retain needed
+   state backups in encrypted storage before workstation cleanup or reboot.
+5. Install management client access, initialize the pinned CAPI providers and
+   apply the workload manifests as documented in the CAPI guide. After partial
+   failure, use a fresh normal plan and resume reconciliation; do not repeatedly
+   replace credentials or archive the newly created VMs.
+6. Verify management and workload nodes are Ready, all four Proxmox disk
+   references use `local-lvm`, and the thin pool has headroom. Rebuild application
+   services and restore backups following the full rebuild runbook.
+
+The host administrator recovers Proxmox from installation media and host
+backups; VM contents require independent backups. API tokens are external
+sensitive inputs recovered/rotated using the token procedures in this README
+and the CAPI guide. Client configurations are regenerated, not restored from
+chat or logs. Recreating disks does not restore databases or persistent volumes.
+
+### Normal destruction with an available management cluster
+
+The guarded destruction workflow preserves lifecycle ownership: it asks CAPI to delete `labprod` while its management cluster is still available, waits for cleanup, then creates and applies a saved Terraform destruction plan:
 
 ```sh
-task lifecycle:destroy CONFIRM_DESTROY=labprod,labtest,labmgmt
+task lifecycle:destroy CONFIRM_DESTROY=labprod,labmgmt
 ```
 
-The required `CONFIRM_DESTROY` value names all three cluster targets exactly, in addition to the interactive prompts. Review `destroy.tfplan` when prompted. The Proxmox Terraform stack also owns VM 150, template 1234, the downloaded Talos ISO, generated Talos secrets and client configurations held in state; those managed assets are included in the destruction plan. The task does not remove the Proxmox VLAN interface, nftables routing, Tailscale route advertisement, or stale files already installed under `~/.kube` and `~/.talos`.
+The required `CONFIRM_DESTROY` value names both cluster targets exactly, in addition to the interactive prompts. Review `destroy.tfplan` when prompted. The Proxmox Terraform stack also owns VM 150, template 1234, the downloaded Talos ISO, generated Talos secrets and client configurations held in state; those managed assets are included in the destruction plan. The task does not remove the Proxmox VLAN interface, nftables routing, Tailscale route advertisement, or stale files already installed under `~/.kube` and `~/.talos`.
 
 For an existing installation, do not change the management VM first. Use this order:
 
@@ -108,10 +177,10 @@ For an existing installation, do not change the management VM first. Use this or
 4. Apply Terraform, regenerate the local kubeconfig/Talos config, and verify `192.168.10.150`.
 5. Apply the VLAN-aware workload manifests only after the management cluster is reachable.
 
-The currently failed `labprod` and `labtest` attempts allocate addresses from their old pools. Delete those failed `Cluster` resources and wait for their Machines, IP claims, and VMs to disappear before recreating them from the VLAN-aware manifests. This is destructive and is only appropriate when those clusters contain no data to retain:
+If a failed `labprod` attempt allocates addresses from its old pool, delete that failed `Cluster` resource and wait for its Machine, IP claim and VM to disappear before recreating it from the VLAN-aware manifest. This is destructive and is only appropriate when the cluster contains no data to retain:
 
 ```sh
-kubectl delete cluster labprod labtest --namespace capi-workloads
+kubectl delete cluster labprod --namespace capi-workloads
 kubectl wait --for=delete machine --all --namespace capi-workloads --timeout=10m
 ```
 
@@ -143,7 +212,7 @@ that its backing user does not have. Scope access to the actual Proxmox node,
 `Kubernetes` pool, datastores, template, and VM IDs used by this stack. The
 additional ISO-storage commands are documented below.
 
-Do not add `labprod` or `labtest` to the Terraform `clusters` map: that would create competing lifecycle owners. For a future HA management cluster, add two control-plane nodes to `labmgmt`, set its `control_plane_vip`, and use that VIP as its endpoint.
+Do not add `labprod` to the Terraform `clusters` map: that would create competing lifecycle owners. For a future HA management cluster, add two control-plane nodes to `labmgmt`, set its `control_plane_vip`, and use that VIP as its endpoint.
 
 ## Deploy from scratch
 
@@ -226,4 +295,4 @@ talosctl health
 
 Both configurations and all cluster secrets are stored in Terraform state. Use an encrypted remote backend with locking before treating this as a long-lived cluster. The generated `talosconfig` and `kubeconfig` files are ignored by Git.
 
-Continue with the [CAPI guide](../../capi/README.md) to install the pinned providers on `labmgmt` and create `labprod` and `labtest` from template 1234.
+Continue with the [CAPI guide](../../capi/README.md) to install the pinned providers on `labmgmt` and create `labprod` from template 1234.

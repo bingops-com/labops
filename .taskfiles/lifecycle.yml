@@ -2,12 +2,12 @@ version: "3"
 
 tasks:
   create:
-    desc: Run the complete creation cycle through labprod and labtest
+    desc: Run the complete creation cycle through labprod
     summary: |
       Configures the Proxmox VLAN router, verifies Tailscale, reconciles labmgmt,
-      installs CAPI, creates labprod and labtest, waits for readiness, and installs
+      installs CAPI, creates labprod, waits for readiness, and installs
       all client configurations. Existing workload clusters are not deleted.
-    prompt: This will configure live Proxmox and create or update all three Kubernetes clusters. Continue?
+    prompt: This will configure live Proxmox and create or update both Kubernetes clusters. Continue?
     cmds:
       - task: :setup:vlan
       - task: :clients:management
@@ -17,13 +17,13 @@ tasks:
       - task: :clients:workloads
 
   recreate:
-    desc: Recreate all three clusters, VM 150, template 1234, and workload VMs
+    desc: Recreate both clusters, VM 150, template 1234, and workload VM 151
     summary: |
-      Deletes the CAPI-owned labprod and labtest clusters first, while labmgmt
+      Deletes the CAPI-owned labprod cluster first, while labmgmt
       is available, then destroys the Terraform-owned labmgmt VM 150, template
-      1234 and Talos assets before recreating all three clusters. Persistent
+      1234 and Talos assets before recreating both clusters. Persistent
       network/Tailscale configuration and ignored credential files are kept.
-    prompt: This permanently recreates labprod, labtest, labmgmt, VMs 150-152, and template 1234. Continue?
+    prompt: This permanently recreates labprod, labmgmt, VMs 150-151, and template 1234. Continue?
     preconditions:
       - sh: test -z "$(kubectl config current-context 2>/dev/null)" || test "$(kubectl config current-context 2>/dev/null)" = labmgmt
         msg: Refusing recreation because kubectl currently targets a cluster other than labmgmt.
@@ -36,16 +36,16 @@ tasks:
       - task: create
 
   destroy:
-    desc: Safely destroy labprod, labtest, then the Terraform-managed labmgmt stack
+    desc: Safely destroy labprod, then the Terraform-managed labmgmt stack
     summary: |
-      Deletes labprod and labtest through CAPI and waits for cleanup before
+      Deletes labprod through CAPI and waits for cleanup before
       creating and applying a reviewed Terraform destruction plan for labmgmt.
       The Terraform stack also owns VM 150, template 1234, its ISO and Talos assets.
       Proxmox VLAN 10 routing and Tailscale advertisement remain configured.
-    prompt: This permanently destroys labprod, labtest, labmgmt, VM 150, and template 1234. Continue?
+    prompt: This permanently destroys labprod, labmgmt, VMs 150-151, and template 1234. Continue?
     preconditions:
-      - sh: test "{{.CONFIRM_DESTROY}}" = "labprod,labtest,labmgmt"
-        msg: Run with CONFIRM_DESTROY=labprod,labtest,labmgmt to name the exact targets.
+      - sh: test "{{.CONFIRM_DESTROY}}" = "labprod,labmgmt"
+        msg: Run with CONFIRM_DESTROY=labprod,labmgmt to name the exact targets.
       - sh: test "$(kubectl config current-context 2>/dev/null)" = labmgmt
         msg: Refusing destruction because the current kubectl context is not labmgmt.
     cmds:
