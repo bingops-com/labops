@@ -8,6 +8,6 @@ tasks:
       - kubectl config use-context labmgmt
 
   workloads:
-    desc: Install kubeconfig and talosconfig for labprod and labtest
+    desc: Install kubeconfig and talosconfig for labprod
     cmds:
-      - ./hacks/cluster-setup.sh --workload labprod --workload labtest
+      - ./hacks/cluster-setup.sh --workload labprod

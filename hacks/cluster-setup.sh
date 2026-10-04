@@ -12,7 +12,7 @@ TALOS_DIR="${HOME}/.talos"
 BASHRC="${HOME}/.bashrc"
 MANAGEMENT_CLUSTER="labmgmt"
 NAMESPACE="capi-workloads"
-WORKLOAD_CLUSTERS=(labprod labtest)
+WORKLOAD_CLUSTERS=(labprod)
 CUSTOM_WORKLOADS=false
 UPDATE_BASHRC=true
 
@@ -36,8 +36,8 @@ Options:
       --management-only      Retrieve only the management cluster
   -h, --help                 Show this help
 
-Without --workload, labprod and labtest are discovered automatically and are
-skipped until their CAPI Cluster resources exist and their kubeconfigs are ready.
+Without --workload, labprod is discovered automatically and is skipped until
+its CAPI Cluster resource exists and its kubeconfig is ready.
 Per-cluster files are installed with mode 0600. Kubernetes configurations are
 flattened into ~/.kube/config and Talos contexts into ~/.talos/config, so both
 clients work without environment variables. Bash exports are also maintained.
