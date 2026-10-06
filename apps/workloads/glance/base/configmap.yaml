@@ -63,10 +63,6 @@ data:
                         url: https://www.talos.dev/
                         icon: si:talos
 
-              - type: to-do
-                title: À faire
-                id: home
-
           - size: full
             widgets:
               - type: monitor
