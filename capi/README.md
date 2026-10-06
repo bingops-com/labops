@@ -129,16 +129,28 @@ unset PROXMOX_URL PROXMOX_TOKEN PROXMOX_SECRET CLUSTERCTL_CONFIG
 Ensure the following dedicated VM IDs and addresses are free before applying.
 All node and VIP addresses must be excluded from DHCP:
 
-| Cluster | Proxmox VM ID | Node address | Control-plane VIP | Proxmox pool |
-| --- | ---: | --- | --- | --- |
-| `labprod` | `151` | `192.168.10.151` | `192.168.10.160` | `Kubernetes` |
-| `labtest` | `152` | `192.168.10.152` | `192.168.10.170` | `Kubernetes` |
+| Cluster | Proxmox VM ID | Node address | Control-plane VIP | CPU | Memory | Proxmox pool |
+| --- | ---: | --- | --- | ---: | ---: | --- |
+| `labprod` | `151` | `192.168.10.151` | `192.168.10.160` | 8 cores | 32 GiB | `Kubernetes` |
+| `labtest` | `152` | `192.168.10.152` | `192.168.10.170` | 4 cores | 16 GiB | `Kubernetes` |
 
 Each cluster currently has one control-plane replica and exactly one available
 node address. The manifests constrain CAPMOX with a single-value `vmIDRange`
 (`151-151` and `152-152`); `virtualMachineID` is controller-managed and must not
 be used to request an ID. Add another unique VM ID range and address allocation
 before increasing the replica count.
+
+The `ProxmoxMachineTemplate` is the source of truth for CPU and memory when a
+machine is created. Changing a template does not resize an existing VM, and
+forcing a CAPI rollout would replace its single control-plane node and local
+disks. For an existing VM, update the matching VM ID in place through the
+Proxmox API with the project-scoped CAPMOX token from the ignored
+`capi/credentials.env`, then reboot that Talos node during a maintenance
+window. Keep the API update aligned with the committed template values. The
+operation is idempotent when the VM already has the requested CPU and memory;
+verify the effective capacity with the Talos memory statistics and Kubernetes
+node capacity without reading any Kubernetes Secret. Never import VM 151 or
+152 into the Proxmox Terraform stack: CAPI remains their lifecycle owner.
 
 CAPMOX rejects a `controlPlaneEndpoint` contained in its node-address pool, so
 the node address and Kubernetes API VIP cannot be merged. The Talos machine
