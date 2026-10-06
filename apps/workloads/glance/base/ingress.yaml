@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: glance
+  namespace: glance
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-cloudflare
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: glance-glance-allowlist@kubernetescrd
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: home.invalid
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: glance
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - home.invalid
+      secretName: glance-tls

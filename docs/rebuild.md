@@ -27,6 +27,9 @@ sensitive generated state, not documentation.
 6. Apply reviewed Cloudflare DNS, tunnel and the production R2 bucket.
 7. Reconcile storage, CloudNativePG and Barman Cloud; verify backup and restore.
 8. Reconcile Authentik, observability and workloads; verify Synced/Healthy.
+9. Reconcile the private DNS route for `home.lab.bingo`, then verify the Glance
+   dashboard through LAN or Tailscale without publishing it through the public
+   Cloudflare Tunnel.
 
 For total VM-disk loss, follow the Proxmox recovery procedure. Never replace
 `labmgmt` while it owns `labprod` unless CAPI objects have first been moved.
