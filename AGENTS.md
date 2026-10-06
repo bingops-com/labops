@@ -71,7 +71,7 @@ duplicate or weaken this repository-wide reproducibility contract there.
 
 ## Safety boundary
 
-- Treat production, preproduction, management clusters, Proxmox, Cloudflare,
+- Treat production, management clusters, Proxmox, Cloudflare,
   DNS, tunnels, persistent storage, and Terraform state as live infrastructure.
 - Editing configuration does not authorize applying or deploying it.
 - Do not run state-changing infrastructure or cluster commands unless the user
@@ -126,8 +126,8 @@ duplicate or weaken this repository-wide reproducibility contract there.
   and pinned versions unless the task requires a change.
 - Prefer declarative changes. Do not make an ad-hoc live fix when the repository
   should remain the source of truth.
-- Production and preproduction overlays must remain explicit. Do not copy a
-  preproduction value into production without verifying its operational impact.
+- The sole workload environment is `labprod`; keep its production overlay
+  explicit and verify the operational impact of every environment-specific value.
 - Do not edit vendored/generated Helm chart contents under `apps/**/charts/`
   unless the task specifically targets the vendored chart. Prefer the owning
   values file, Kustomize overlay, or locally maintained chart under `charts/`.

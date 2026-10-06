@@ -1,9 +1,3 @@
-[production]
-prodk3s ansible_host=192.168.10.160
-
-[preprod]
-ppk3s ansible_host=192.168.10.170
-
 [proxmox]
 homelab ansible_host=192.168.1.100 ansible_user=bingo
 

@@ -3,6 +3,10 @@
 LabOps has one CAPI workload environment: `labprod`. `labmgmt` remains the
 Terraform-owned management cluster and does not host applications.
 
+There are no alternate production or staging overlays. The `clusters/labprod`
+directories are retained as explicit Kustomize boundaries for the sole
+workload cluster.
+
 Argo CD is bootstrapped from `apps/argocd/clusters/labprod` and the root
 Application `apps/gitops/bootstrap/labprod.yaml`. The root reconciles
 `apps/gitops/clusters/labprod`; platform components use negative sync waves

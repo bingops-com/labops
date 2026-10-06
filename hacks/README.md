@@ -1,6 +1,7 @@
 # Operator helpers
 
-- `cluster-setup.sh` installs client access for `labmgmt` and `labprod`.
+- `cluster-setup.sh` installs client access for the fixed `labmgmt` management
+  cluster and sole `labprod` workload cluster.
 - `capi-init.sh` installs the pinned providers on `labmgmt`.
 - `bootstrap-bitwarden.sh labprod` creates namespace-local operator tokens
   from `BWS_LABPROD_ACCESS_TOKEN` without printing it.
@@ -13,7 +14,7 @@ Examples:
 
 ```sh
 ./hacks/cluster-setup.sh --management-only
-./hacks/cluster-setup.sh --workload labprod
+./hacks/cluster-setup.sh
 ./hacks/deploy.sh status prod
 ```
 

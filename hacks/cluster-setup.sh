@@ -12,13 +12,14 @@ TALOS_DIR="${HOME}/.talos"
 BASHRC="${HOME}/.bashrc"
 MANAGEMENT_CLUSTER="labmgmt"
 NAMESPACE="capi-workloads"
-WORKLOAD_CLUSTERS=(labprod)
-CUSTOM_WORKLOADS=false
+WORKLOAD_CLUSTER="labprod"
+INSTALL_WORKLOAD=true
+REQUIRE_WORKLOAD=false
 UPDATE_BASHRC=true
 
 usage() {
   cat <<'EOF'
-Install Kubernetes and Talos client access for all LabOps clusters.
+Install Kubernetes and Talos client access for LabOps.
 
 Usage:
   hacks/cluster-setup.sh [options]
@@ -32,12 +33,13 @@ Options:
       --terraform-dir PATH   Terraform root containing the management state
       --management NAME      Management cluster output key (default: labmgmt)
   -n, --namespace NAME       CAPI workload namespace (default: capi-workloads)
-  -w, --workload NAME        Required workload cluster; repeatable
+  -w, --workload NAME        Require the sole workload cluster (labprod)
       --management-only      Retrieve only the management cluster
   -h, --help                 Show this help
 
 Without --workload, labprod is discovered automatically and is skipped until
-its CAPI Cluster resource exists and its kubeconfig is ready.
+its CAPI Cluster resource exists and its kubeconfig is ready. Any workload
+name other than labprod is rejected.
 Per-cluster files are installed with mode 0600. Kubernetes configurations are
 flattened into ~/.kube/config and Talos contexts into ~/.talos/config, so both
 clients work without environment variables. Bash exports are also maintained.
@@ -96,16 +98,12 @@ while (($# > 0)); do
       ;;
     -w|--workload)
       (($# >= 2)) || die "$1 requires a cluster name"
-      if [[ "${CUSTOM_WORKLOADS}" == false ]]; then
-        WORKLOAD_CLUSTERS=()
-        CUSTOM_WORKLOADS=true
-      fi
-      WORKLOAD_CLUSTERS+=("$2")
+      [[ "$2" == "${WORKLOAD_CLUSTER}" ]] || die "the only workload cluster is ${WORKLOAD_CLUSTER}"
+      REQUIRE_WORKLOAD=true
       shift 2
       ;;
     --management-only)
-      WORKLOAD_CLUSTERS=()
-      CUSTOM_WORKLOADS=true
+      INSTALL_WORKLOAD=false
       shift
       ;;
     -h|--help)
@@ -123,7 +121,7 @@ require_command kubectl
 require_command jq
 require_command talosctl
 require_command base64
-if ((${#WORKLOAD_CLUSTERS[@]} > 0)); then
+if [[ "${INSTALL_WORKLOAD}" == true ]]; then
   require_command clusterctl
 fi
 
@@ -182,48 +180,44 @@ terraform -chdir="${TERRAFORM_DIR}" output -json talosconfigs \
   || die "cannot read talosconfig for ${MANAGEMENT_CLUSTER} from Terraform state"
 TALOS_CONFIGS=("${MANAGEMENT_TALOS_CONFIG}")
 
-for cluster in "${WORKLOAD_CLUSTERS[@]}"; do
-  if [[ "${CUSTOM_WORKLOADS}" == false ]] && \
+if [[ "${INSTALL_WORKLOAD}" == true ]]; then
+  cluster="${WORKLOAD_CLUSTER}"
+  if [[ "${REQUIRE_WORKLOAD}" == false ]] && \
      ! kubectl --kubeconfig "${MANAGEMENT_CONFIG}" \
        --namespace "${NAMESPACE}" get cluster "${cluster}" >/dev/null 2>&1; then
     printf 'Skipping %s: CAPI Cluster resource does not exist yet.\n' "${cluster}"
-    continue
-  fi
-
-  config="${TMP_DIR}/${cluster}.yaml"
-  if ! clusterctl get kubeconfig "${cluster}" \
-    --namespace "${NAMESPACE}" \
-    --kubeconfig "${MANAGEMENT_CONFIG}" >"${config}"; then
-    if [[ "${CUSTOM_WORKLOADS}" == true ]]; then
-      die "cannot retrieve kubeconfig for requested workload cluster ${cluster}"
-    fi
-    printf 'Skipping %s: its kubeconfig is not ready yet.\n' "${cluster}" >&2
-    continue
-  fi
-
-  if [[ ! -s "${config}" ]]; then
-    if [[ "${CUSTOM_WORKLOADS}" == true ]]; then
-      die "clusterctl returned an empty kubeconfig for requested workload cluster ${cluster}"
-    fi
-    printf 'Skipping %s: clusterctl returned an empty kubeconfig.\n' "${cluster}" >&2
-    continue
-  fi
-
-  rename_current_context "${config}" "${cluster}"
-  install_config "${config}" "${cluster}"
-
-  talos_config="${TMP_DIR}/${cluster}.talosconfig"
-  if kubectl --kubeconfig "${MANAGEMENT_CONFIG}" --namespace "${NAMESPACE}" \
-    get secret "${cluster}-talosconfig" -o jsonpath='{.data.talosconfig}' \
-    | base64 --decode >"${talos_config}" && [[ -s "${talos_config}" ]]; then
-    TALOS_CONFIGS+=("${talos_config}")
-  elif [[ "${CUSTOM_WORKLOADS}" == true ]]; then
-    die "cannot retrieve talosconfig from Secret ${cluster}-talosconfig"
   else
-    printf 'Skipping Talos access for %s: its talosconfig Secret is not ready.\n' "${cluster}" >&2
-    rm -f -- "${talos_config}"
+    config="${TMP_DIR}/${cluster}.yaml"
+    if ! clusterctl get kubeconfig "${cluster}" \
+      --namespace "${NAMESPACE}" \
+      --kubeconfig "${MANAGEMENT_CONFIG}" >"${config}"; then
+      if [[ "${REQUIRE_WORKLOAD}" == true ]]; then
+        die "cannot retrieve kubeconfig for ${cluster}"
+      fi
+      printf 'Skipping %s: its kubeconfig is not ready yet.\n' "${cluster}" >&2
+    elif [[ ! -s "${config}" ]]; then
+      if [[ "${REQUIRE_WORKLOAD}" == true ]]; then
+        die "clusterctl returned an empty kubeconfig for ${cluster}"
+      fi
+      printf 'Skipping %s: clusterctl returned an empty kubeconfig.\n' "${cluster}" >&2
+    else
+      rename_current_context "${config}" "${cluster}"
+      install_config "${config}" "${cluster}"
+
+      talos_config="${TMP_DIR}/${cluster}.talosconfig"
+      if kubectl --kubeconfig "${MANAGEMENT_CONFIG}" --namespace "${NAMESPACE}" \
+        get secret "${cluster}-talosconfig" -o jsonpath='{.data.talosconfig}' \
+        | base64 --decode >"${talos_config}" && [[ -s "${talos_config}" ]]; then
+        TALOS_CONFIGS+=("${talos_config}")
+      elif [[ "${REQUIRE_WORKLOAD}" == true ]]; then
+        die "cannot retrieve talosconfig from Secret ${cluster}-talosconfig"
+      else
+        printf 'Skipping Talos access for %s: its talosconfig Secret is not ready.\n' "${cluster}" >&2
+        rm -f -- "${talos_config}"
+      fi
+    fi
   fi
-done
+fi
 
 # Preserve unrelated contexts while replacing LabOps contexts with fresh data.
 KUBE_DEFAULT="${CONFIG_DIR}/config"

@@ -4,6 +4,9 @@ Terraform creates `labmgmt` and Talos template 1234. CAPI on `labmgmt`
 reuses that template and exclusively owns the single workload cluster
 `labprod`; never add `labprod` to the Proxmox Terraform cluster map.
 
+`labmgmt` is a lifecycle control plane, not a second application environment.
+All workloads, ingress, persistence and observability run only on `labprod`.
+
 `labprod` uses VM 151, node address `192.168.10.151`, API VIP
 `192.168.10.160`, 8 cores and 32 GiB. Those addresses and VM ID must be free
 before creation and excluded from DHCP. CAPMOX full clones use `local-lvm`.
