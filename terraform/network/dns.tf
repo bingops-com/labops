@@ -8,14 +8,6 @@ resource "tailscale_dns_configuration" "tailnet" {
   }
 
   split_dns {
-    domain = "test.lab.bingo"
-
-    nameservers {
-      address = "192.168.10.170"
-    }
-  }
-
-  split_dns {
     domain = "argocd.lab.bingo"
 
     nameservers {

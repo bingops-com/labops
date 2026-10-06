@@ -5,13 +5,13 @@ set -euo pipefail
 usage() {
   cat >&2 <<'EOF'
 Usage:
-  ./hacks/deploy.sh diff <test|prod> [--app APP] [--revision REVISION]
-  ./hacks/deploy.sh deploy <test|prod> [--app APP] [--revision REVISION]
-  ./hacks/deploy.sh status <test|prod> [--app APP]
-  ./hacks/deploy.sh restore <test|prod> [--app APP]
+  ./hacks/deploy.sh diff prod [--app APP] [--revision REVISION]
+  ./hacks/deploy.sh deploy prod [--app APP] [--revision REVISION]
+  ./hacks/deploy.sh status prod [--app APP]
+  ./hacks/deploy.sh restore prod [--app APP]
 
 Without --app, every Git-backed Application in the environment is targeted.
-Without --revision, the current Git branch is used. "dev" aliases "test".
+Without --revision, the current Git branch is used.
 EOF
 }
 
@@ -51,13 +51,6 @@ validate_revision() {
 
 configure_environment() {
   case "${environment}" in
-    dev|test)
-      environment="test"
-      cluster_context="${LABTEST_CONTEXT:-labtest}"
-      suffix="labtest"
-      project="labops-labtest"
-      baseline="master"
-      ;;
     prod)
       cluster_context="${LABPROD_CONTEXT:-labprod}"
       suffix="labprod"
@@ -65,7 +58,7 @@ configure_environment() {
       baseline="master"
       ;;
     *)
-      die "Environment must be 'test' or 'prod'."
+      die "Environment must be 'prod'."
       ;;
   esac
 }
