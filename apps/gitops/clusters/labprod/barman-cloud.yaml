@@ -5,6 +5,7 @@ metadata:
   namespace: argocd-system
   annotations:
     argocd.argoproj.io/sync-wave: "-6"
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
 spec:
   project: labops-labprod
   source:
@@ -20,6 +21,12 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    retry:
+      limit: 10
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
