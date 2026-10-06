@@ -1,0 +1,297 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: glance-config
+  namespace: glance
+data:
+  glance.yml: |
+    server:
+      proxied: true
+
+    branding:
+      app-name: Lab Home
+      hide-footer: true
+
+    theme:
+      background-color: 225 14 12
+      primary-color: 195 85 55
+      positive-color: 145 65 50
+      negative-color: 0 75 55
+      contrast-multiplier: 1.15
+
+    pages:
+      - name: Home
+        columns:
+          - size: small
+            widgets:
+              - type: weather
+                title: Antibes
+                location: Antibes, France
+                units: metric
+                hour-format: 24h
+
+              - type: calendar
+                first-day-of-week: monday
+
+              - type: bookmarks
+                groups:
+                  - title: Lab
+                    color: 195 85 55
+                    links:
+                      - title: Argo CD
+                        url: https://argocd.lab.bingo
+                        icon: si:argo
+                      - title: Grafana
+                        url: https://grafana.lab.bingo
+                        icon: si:grafana
+                      - title: Authentik
+                        url: https://auth.lab.bingo
+                        icon: si:authentik
+                      - title: Portfolio
+                        url: https://portfolio.lab.bingo
+                        icon: si:githubpages
+                  - title: DevOps
+                    color: 145 65 50
+                    links:
+                      - title: GitHub
+                        url: https://github.com/bingops-com/labops
+                        icon: si:github
+                      - title: Kubernetes
+                        url: https://kubernetes.io/docs/
+                        icon: si:kubernetes
+                      - title: Talos
+                        url: https://www.talos.dev/
+                        icon: si:talos
+
+          - size: full
+            widgets:
+              - type: monitor
+                title: Services
+                cache: 1m
+                style: compact
+                sites:
+                  - title: Authentik
+                    url: https://auth.lab.bingo
+                    check-url: https://auth.lab.bingo/-/health/live/
+                    icon: si:authentik
+                  - title: Portfolio
+                    url: https://portfolio.lab.bingo
+                    icon: si:githubpages
+                  - title: Argo CD
+                    url: https://argocd.lab.bingo
+                    check-url: http://argocd-server.argocd-system.svc.cluster.local/healthz
+                    icon: si:argo
+                  - title: Grafana
+                    url: https://grafana.lab.bingo
+                    check-url: http://monitoring-grafana.monitoring.svc.cluster.local/api/health
+                    icon: si:grafana
+                  - title: Prometheus
+                    url: https://grafana.lab.bingo
+                    check-url: http://prometheus-monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/-/ready
+                    icon: si:prometheus
+
+              - type: videos
+                title: Vidéos tech
+                limit: 9
+                collapse-after-rows: 2
+                include-shorts: false
+                channels:
+                  - UCVls1GmFKf6WlTraIb_IaJg
+                  - UC8ENHE5xdFSwx71u3fDH5Xw
+                  - UCXuqSBlHAE6Xw-yeJA0Tunw
+
+              - type: rss
+                title: DevOps & self-hosting
+                style: horizontal-cards
+                limit: 12
+                collapse-after: 6
+                cache: 1h
+                feeds:
+                  - url: https://kubernetes.io/feed.xml
+                    title: Kubernetes
+                  - url: https://www.cncf.io/feed/
+                    title: CNCF
+                  - url: https://selfh.st/rss/
+                    title: selfh.st
+
+          - size: small
+            widgets:
+              - type: markets
+                title: Crypto
+                sort-by: change
+                chart-link-template: https://finance.yahoo.com/quote/{SYMBOL}/chart/
+                markets:
+                  - symbol: SOL-USD
+                    name: Solana
+                  - symbol: ETH-USD
+                    name: Ethereum
+                  - symbol: BTC-USD
+                    name: Bitcoin
+                  - symbol: ZEC-USD
+                    name: Zcash
+
+              - type: twitch-channels
+                title: Twitch
+                sort-by: live
+                collapse-after: 5
+                channels:
+                  - theprimeagen
+                  - tsoding
+                  - piratesoftware
+                  - teej_dv
+                  - lowlevellearning
+
+              - type: clock
+                hour-format: 24h
+                timezones:
+                  - timezone: Europe/Paris
+                    label: Antibes
+                  - timezone: America/New_York
+                    label: New York
+                  - timezone: Asia/Tokyo
+                    label: Tokyo
+
+      - name: Ops
+        columns:
+          - size: small
+            widgets:
+              - type: server-stats
+                title: Glance pod
+                servers:
+                  - type: local
+                    name: Glance
+                    hide-swap: true
+
+              - type: bookmarks
+                groups:
+                  - title: Consoles
+                    links:
+                      - title: Argo CD
+                        url: https://argocd.lab.bingo
+                        icon: si:argo
+                      - title: Grafana
+                        url: https://grafana.lab.bingo
+                        icon: si:grafana
+                      - title: GitHub repository
+                        url: https://github.com/bingops-com/labops
+                        icon: si:github
+
+          - size: full
+            widgets:
+              - type: monitor
+                title: Production
+                cache: 30s
+                sites:
+                  - title: Authentik
+                    url: https://auth.lab.bingo
+                    check-url: https://auth.lab.bingo/-/health/live/
+                    icon: si:authentik
+                  - title: Portfolio
+                    url: https://portfolio.lab.bingo
+                    icon: si:githubpages
+                  - title: Argo CD
+                    url: https://argocd.lab.bingo
+                    check-url: http://argocd-server.argocd-system.svc.cluster.local/healthz
+                    icon: si:argo
+                  - title: Grafana
+                    url: https://grafana.lab.bingo
+                    check-url: http://monitoring-grafana.monitoring.svc.cluster.local/api/health
+                    icon: si:grafana
+                  - title: Prometheus
+                    url: https://grafana.lab.bingo
+                    check-url: http://prometheus-monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/-/ready
+                    icon: si:prometheus
+
+              - type: repository
+                repository: bingops-com/labops
+                pull-requests-limit: 5
+                issues-limit: 5
+                commits-limit: 5
+
+          - size: small
+            widgets:
+              - type: releases
+                title: Releases
+                show-source-icon: true
+                limit: 12
+                collapse-after: 6
+                repositories:
+                  - glanceapp/glance
+                  - siderolabs/talos
+                  - kubernetes/kubernetes
+                  - argoproj/argo-cd
+                  - kubernetes-sigs/cluster-api
+                  - cloudnative-pg/cloudnative-pg
+                  - hashicorp/terraform
+
+              - type: hacker-news
+                title: Hacker News
+                limit: 10
+                collapse-after: 5
+
+      - name: Watch
+        columns:
+          - size: small
+            widgets:
+              - type: markets
+                title: Crypto
+                sort-by: change
+                markets:
+                  - symbol: SOL-USD
+                    name: Solana
+                  - symbol: ETH-USD
+                    name: Ethereum
+                  - symbol: BTC-USD
+                    name: Bitcoin
+                  - symbol: ZEC-USD
+                    name: Zcash
+
+              - type: twitch-channels
+                title: Twitch
+                sort-by: live
+                collapse-after: -1
+                channels:
+                  - theprimeagen
+                  - tsoding
+                  - piratesoftware
+                  - teej_dv
+                  - lowlevellearning
+
+          - size: full
+            widgets:
+              - type: videos
+                title: Dernières vidéos
+                limit: 18
+                collapse-after-rows: 4
+                include-shorts: false
+                channels:
+                  - UCVls1GmFKf6WlTraIb_IaJg
+                  - UC8ENHE5xdFSwx71u3fDH5Xw
+                  - UCXuqSBlHAE6Xw-yeJA0Tunw
+
+              - type: rss
+                title: Actualités
+                style: horizontal-cards
+                limit: 15
+                collapse-after: 9
+                feeds:
+                  - url: https://kubernetes.io/feed.xml
+                    title: Kubernetes
+                  - url: https://www.cncf.io/feed/
+                    title: CNCF
+                  - url: https://selfh.st/rss/
+                    title: selfh.st
+
+          - size: small
+            widgets:
+              - type: twitch-top-games
+                title: Tendances Twitch
+                limit: 10
+                collapse-after: 5
+                exclude:
+                  - just-chatting
+                  - pools-hot-tubs-and-beaches
+                  - asmr
+
+              - type: calendar
+                first-day-of-week: monday
