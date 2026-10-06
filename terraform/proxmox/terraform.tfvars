@@ -1,6 +1,6 @@
 node_name                    = "homelab"
 node_pool                    = "Kubernetes"
-datastore                    = "nvme2-lvm"
+datastore                    = "local-lvm"
 iso_datastore                = "local"
 talos_nocloud_template_vm_id = 1234
 kubernetes_vlan_id           = 10

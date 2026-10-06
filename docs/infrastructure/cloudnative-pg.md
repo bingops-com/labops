@@ -11,7 +11,24 @@ ObjectStore and ScheduledBackup resources. The R2 Secret must expose
 
 Rebuild order is R2 bucket, external bucket token, Bitwarden mapping,
 CloudNativePG operator, Barman Cloud plugin, ObjectStore, database cluster and
-ScheduledBackup. Before relying on the backup, verify a completed backup and a
+ScheduledBackup. The Barman Cloud Argo CD Application retries its sync because
+its cert-manager webhook dependency can still be starting when the child
+Application is first reconciled. CloudNativePG and Barman Cloud use server-side
+diff so Kubernetes fields newer than the bundled Argo CD schema do not block
+self-healing after a partial bootstrap.
+
+Verify recovery without reading Secrets:
+
+```sh
+kubectl --context labprod get applications -n argocd-system barman-cloud-labprod cloudnative-pg-labprod postgresql-labprod authentik-labprod
+kubectl --context labprod get certificates -n cnpg-system
+kubectl --context labprod get clusters.postgresql.cnpg.io -n authentik authentik-labprod-postgresql
+kubectl --context labprod get deployments -n authentik
+```
+
+The Barman client and server certificates must be ready, PostgreSQL must report
+one ready instance and a primary, and both Authentik deployments must be
+available. Before relying on the backup, also verify a completed backup and a
 disposable restore without exposing application data or credentials.
 
 The retired `bingops-cnpg-labtest` bucket may be deleted only after explicit
