@@ -15,9 +15,9 @@ and workloads use wave zero. Automated pruning and self-healing are enabled.
 Production names under `lab.bingo` are explicit. Cloudflare Tunnel publishes
 `auth.lab.bingo` and `portfolio.lab.bingo`; `bingops.com` and
 `www.bingops.com` reach the portfolio. Argo CD and Grafana remain private
-through the exact-name Tailscale split-DNS routes and resolve to
-`192.168.10.151`. TLS uses the Bitwarden-delivered cert-manager token and
-Cloudflare DNS-01.
+through exact-name Tailscale split-DNS routes. Glance is also private at
+`home.lab.bingo`. All three private names resolve to `192.168.10.151`. TLS uses
+the Bitwarden-delivered cert-manager token and Cloudflare DNS-01.
 
 Secrets are represented only by BitwardenSecret mappings. The sole Bitwarden
 machine token is injected with `./hacks/bootstrap-bitwarden.sh labprod`.
