@@ -6,10 +6,12 @@ accepts only LAN and tailnet source ranges; the hostname is not published by
 Cloudflare Tunnel.
 
 The tracked ConfigMap owns the dashboard layout. It intentionally uses only
-public feeds and internal health endpoints. A future private calendar feed or
-API token must be stored in the Bitwarden `labprod` project, mapped with a
-BitwardenSecret and injected through an environment variable; never commit its
-value or URL.
+public feeds and internal health endpoints. The Ops page reads node CPU, memory,
+`/var` filesystem, Ready-node and Running-pod metrics from the in-cluster
+Prometheus HTTP API; Glance has no Kubernetes API token or RBAC permissions. A
+future private calendar feed or API token must be stored in the Bitwarden
+`labprod` project, mapped with a BitwardenSecret and injected through an
+environment variable; never commit its value or URL.
 
 Render and verify without reading Secrets:
 
@@ -20,5 +22,5 @@ kubectl --context labprod get deployment,pod,ingress,certificate -n glance
 curl --fail --silent --show-error --output /dev/null --write-out '%{http_code}\n' https://home.lab.bingo
 ```
 
-Glance's built-in server statistics describe the Glance container, not the
-Talos node. Cluster and node capacity remain authoritative in Grafana.
+The compact Ops widget is an operational summary. Grafana remains authoritative
+for metric history, per-node detail and alert investigation.

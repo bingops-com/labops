@@ -155,12 +155,61 @@ data:
         columns:
           - size: small
             widgets:
-              - type: server-stats
-                title: Glance pod
-                servers:
-                  - type: local
-                    name: Glance
-                    hide-swap: true
+              - type: custom-api
+                title: Nœud Kubernetes
+                title-url: https://grafana.lab.bingo
+                cache: 1m
+                url: http://prometheus-monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/api/v1/query
+                parameters:
+                  query: '100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)'
+                subrequests:
+                  memory:
+                    url: http://prometheus-monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/api/v1/query
+                    parameters:
+                      query: 'avg(100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))'
+                  disk:
+                    url: http://prometheus-monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/api/v1/query
+                    parameters:
+                      query: 'avg(100 * (1 - node_filesystem_avail_bytes{mountpoint="/var",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/var",fstype!~"tmpfs|overlay"}))'
+                  nodes:
+                    url: http://prometheus-monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/api/v1/query
+                    parameters:
+                      query: 'sum(kube_node_status_condition{condition="Ready",status="true"})'
+                  pods:
+                    url: http://prometheus-monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/api/v1/query
+                    parameters:
+                      query: 'sum(kube_pod_status_phase{phase="Running"} == 1)'
+                template: |
+                  {{ $memory := .Subrequest "memory" }}
+                  {{ $disk := .Subrequest "disk" }}
+                  {{ $nodes := .Subrequest "nodes" }}
+                  {{ $pods := .Subrequest "pods" }}
+                  {{ if and (eq .Response.StatusCode 200) (eq $memory.Response.StatusCode 200) (eq $disk.Response.StatusCode 200) (eq $nodes.Response.StatusCode 200) (eq $pods.Response.StatusCode 200) }}
+                    <div class="flex justify-between text-center">
+                      <div>
+                        <div class="color-highlight size-h3">{{ .JSON.Float "data.result.0.value.1" | printf "%.0f" }}%</div>
+                        <div class="size-h6">CPU</div>
+                      </div>
+                      <div>
+                        <div class="color-highlight size-h3">{{ $memory.JSON.Float "data.result.0.value.1" | printf "%.0f" }}%</div>
+                        <div class="size-h6">RAM</div>
+                      </div>
+                      <div>
+                        <div class="color-highlight size-h3">{{ $disk.JSON.Float "data.result.0.value.1" | printf "%.0f" }}%</div>
+                        <div class="size-h6">/var</div>
+                      </div>
+                    </div>
+                    <div class="flex justify-between margin-top-10">
+                      <span>Nœuds Ready</span>
+                      <span class="color-highlight">{{ $nodes.JSON.Float "data.result.0.value.1" | printf "%.0f" }}</span>
+                    </div>
+                    <div class="flex justify-between margin-top-5">
+                      <span>Pods Running</span>
+                      <span class="color-highlight">{{ $pods.JSON.Float "data.result.0.value.1" | printf "%.0f" }}</span>
+                    </div>
+                  {{ else }}
+                    <p class="color-negative">Prometheus est indisponible.</p>
+                  {{ end }}
 
               - type: bookmarks
                 groups:
