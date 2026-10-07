@@ -21,65 +21,9 @@ spec:
       releaseName: monitoring
       valuesObject:
         alertmanager:
-          config:
-            global:
-              resolve_timeout: 5m
-            inhibit_rules:
-              - source_matchers:
-                  - severity = critical
-                target_matchers:
-                  - severity =~ warning|info
-                equal:
-                  - namespace
-                  - alertname
-              - source_matchers:
-                  - severity = warning
-                target_matchers:
-                  - severity = info
-                equal:
-                  - namespace
-                  - alertname
-            route:
-              receiver: discord-applications
-              group_by:
-                - namespace
-                - alertname
-              group_wait: 30s
-              group_interval: 5m
-              repeat_interval: 6h
-              routes:
-                - receiver: "null"
-                  matchers:
-                    - alertname =~ "Watchdog|InfoInhibitor"
-                - receiver: discord-critical
-                  matchers:
-                    - severity = critical
-                - receiver: discord-infrastructure
-                  matchers:
-                    - namespace =~ "kube-system|monitoring|logging|argocd-system|cert-manager|traefik|local-path-storage|cnpg-system|private-dns"
-                - receiver: discord-infrastructure
-                  matchers:
-                    - alertname =~ "Kube.*|Node.*|Host.*|Machine.*|Etcd.*|Prometheus.*|Alertmanager.*|Grafana.*|Elasticsearch.*|FluentBit.*|ArgoCD.*|CertManager.*|Traefik.*"
-            receivers:
-              - name: "null"
-              - name: discord-critical
-                discord_configs:
-                  - webhook_url_file: /etc/alertmanager/secrets/observability-discord/critical-url
-                    send_resolved: true
-                    username: LabOps labprod · critical
-              - name: discord-infrastructure
-                discord_configs:
-                  - webhook_url_file: /etc/alertmanager/secrets/observability-discord/infrastructure-url
-                    send_resolved: true
-                    username: LabOps labprod · infrastructure
-              - name: discord-applications
-                discord_configs:
-                  - webhook_url_file: /etc/alertmanager/secrets/observability-discord/applications-url
-                    send_resolved: true
-                    username: LabOps labprod · applications
           alertmanagerSpec:
-            secrets:
-              - observability-discord
+            alertmanagerConfiguration:
+              name: discord-routing
             resources:
               requests:
                 cpu: 30m
@@ -96,7 +40,98 @@ spec:
                   resources:
                     requests:
                       storage: 1Gi
+        extraManifests:
+          - apiVersion: monitoring.coreos.com/v1alpha1
+            kind: AlertmanagerConfig
+            metadata:
+              name: discord-routing
+              namespace: monitoring
+            spec:
+              inhibitRules:
+                - sourceMatch:
+                    - name: severity
+                      matchType: "="
+                      value: critical
+                  targetMatch:
+                    - name: severity
+                      matchType: "=~"
+                      value: warning|info
+                  equal: [namespace, alertname]
+                - sourceMatch:
+                    - name: severity
+                      matchType: "="
+                      value: warning
+                  targetMatch:
+                    - name: severity
+                      matchType: "="
+                      value: info
+                  equal: [namespace, alertname]
+              route:
+                receiver: discord-applications
+                groupBy: [namespace, alertname]
+                groupWait: 30s
+                groupInterval: 5m
+                repeatInterval: 6h
+                routes:
+                  - receiver: "null"
+                    matchers:
+                      - {name: alertname, matchType: "=~", value: Watchdog|InfoInhibitor}
+                  - receiver: discord-critical
+                    matchers:
+                      - {name: severity, matchType: "=", value: critical}
+                  - receiver: discord-infrastructure
+                    matchers:
+                      - {name: namespace, matchType: "=~", value: kube-system|monitoring|logging|argocd-system|cert-manager|traefik|local-path-storage|cnpg-system|private-dns}
+                  - receiver: discord-infrastructure
+                    matchers:
+                      - {name: alertname, matchType: "=~", value: Kube.*|Node.*|Host.*|Machine.*|Etcd.*|Prometheus.*|Alertmanager.*|Grafana.*|Elasticsearch.*|FluentBit.*|ArgoCD.*|CertManager.*|Traefik.*}
+              receivers:
+                - name: "null"
+                - name: discord-critical
+                  discordConfigs:
+                    - apiURL: {name: observability-discord, key: critical-url}
+                      sendResolved: true
+                      username: LabOps labprod · critical
+                - name: discord-infrastructure
+                  discordConfigs:
+                    - apiURL: {name: observability-discord, key: infrastructure-url}
+                      sendResolved: true
+                      username: LabOps labprod · infrastructure
+                - name: discord-applications
+                  discordConfigs:
+                    - apiURL: {name: observability-discord, key: applications-url}
+                      sendResolved: true
+                      username: LabOps labprod · applications
         grafana:
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: grafana
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: grafana
+            initialDelaySeconds: 120
+            timeoutSeconds: 10
+            failureThreshold: 6
+          sidecar:
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                cpu: 100m
+                memory: 160Mi
+            dashboards:
+              watchMethod: LIST
+              skipReload: true
+              initDashboards: true
+            datasources:
+              watchMethod: LIST
+              skipReload: true
+              initDatasources: true
           grafana.ini:
             server:
               root_url: https://grafana.lab.bingo

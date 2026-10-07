@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: portal
+  namespace: portal
+---
+# Read-only view for the cluster, workloads, events and Argo CD widgets.
+# Secrets and ConfigMaps are deliberately absent.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: portal-read
+rules:
+  - apiGroups: [""]
+    resources: [nodes, namespaces, pods, events]
+    verbs: [get, list]
+  - apiGroups: [apps]
+    resources: [deployments, statefulsets, daemonsets]
+    verbs: [get, list]
+  - apiGroups: [argoproj.io]
+    resources: [applications]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: portal-read
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: portal-read
+subjects:
+  - kind: ServiceAccount
+    name: portal
+    namespace: portal

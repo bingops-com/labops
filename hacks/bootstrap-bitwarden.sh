@@ -3,7 +3,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 <labtest|labprod>" >&2
+  echo "Usage: $0 labprod" >&2
 }
 
 if [[ $# -ne 1 ]]; then
@@ -13,13 +13,9 @@ fi
 
 cluster=$1
 case "$cluster" in
-  labtest)
-    token_variable=BWS_LABTEST_ACCESS_TOKEN
-    namespaces=(argocd-system cert-manager logging monitoring postgresql)
-    ;;
   labprod)
     token_variable=BWS_LABPROD_ACCESS_TOKEN
-    namespaces=(argocd-system arc-runners authentik cert-manager cloudflare logging monitoring pz-server)
+    namespaces=(argocd-system authentik cert-manager cloudflare logging monitoring pz-server)
     ;;
   *)
     usage

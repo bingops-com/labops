@@ -16,8 +16,8 @@ tasks:
       - ./hacks/capi-init.sh --yes
 
   workloads:delete:
-    desc: Delete only the CAPI-owned labprod and labtest clusters
-    prompt: This permanently deletes CAPI clusters labprod and labtest and their VMs 151 and 152. Continue?
+    desc: Delete only the CAPI-owned labprod cluster
+    prompt: This permanently deletes CAPI cluster labprod and its VM 151. Continue?
     preconditions:
       - sh: test "$(kubectl config current-context 2>/dev/null)" = labmgmt || { test "{{.ALLOW_MISSING_MANAGEMENT}}" = "true" && test -z "$(kubectl config current-context 2>/dev/null)"; }
         msg: Refusing deletion because the current kubectl context is neither labmgmt nor empty in bootstrap mode.
@@ -41,28 +41,25 @@ tasks:
           exit 0
         fi
 
-        for workload_cluster in labprod labtest; do
-          cluster_resource="$(kubectl get cluster "${workload_cluster}" --namespace capi-workloads --ignore-not-found -o name)"
-          if [ -z "${cluster_resource}" ]; then
-            echo "CAPI cluster ${workload_cluster} does not exist; skipping deletion."
-            continue
-          fi
+        cluster_resource="$(kubectl get cluster labprod --namespace capi-workloads --ignore-not-found -o name)"
+        if [ -z "${cluster_resource}" ]; then
+          echo "CAPI cluster labprod does not exist; skipping deletion."
+          exit 0
+        fi
 
-          kubectl delete "${cluster_resource}" --namespace capi-workloads --wait=true --timeout=20m
-        done
+        kubectl delete "${cluster_resource}" --namespace capi-workloads --wait=true --timeout=20m
 
   workloads:apply:
-    desc: Create labprod and labtest from the tracked CAPI manifests
-    prompt: This will create CAPI clusters labprod and labtest on Proxmox. Continue?
+    desc: Create labprod from the tracked CAPI manifest
+    prompt: This will create CAPI cluster labprod on Proxmox. Continue?
     preconditions:
       - sh: test "$(kubectl config current-context 2>/dev/null)" = labmgmt
         msg: Refusing creation because the current kubectl context is not labmgmt.
     cmds:
       - kubectl apply -f capi/namespace.yaml
       - kubectl apply -f capi/clusters/labprod.yaml
-      - kubectl apply -f capi/clusters/labtest.yaml
 
   workloads:wait:
-    desc: Wait for both CAPI workload clusters to become available
+    desc: Wait for the CAPI workload cluster to become available
     cmds:
-      - kubectl wait --for=condition=Available cluster/labprod cluster/labtest --namespace capi-workloads --timeout=30m
+      - kubectl wait --for=condition=Available cluster/labprod --namespace capi-workloads --timeout=30m

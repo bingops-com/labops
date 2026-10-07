@@ -1,0 +1,12 @@
+# The portal has no login: this allowlist (LAN and tailnet) is its only
+# access control, including for the layout editor.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: portal-allowlist
+  namespace: portal
+spec:
+  ipAllowList:
+    sourceRange:
+      - 192.168.10.0/24
+      - 100.64.0.0/10

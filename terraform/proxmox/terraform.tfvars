@@ -1,6 +1,6 @@
 node_name                    = "homelab"
 node_pool                    = "Kubernetes"
-datastore                    = "nvme2-lvm"
+datastore                    = "local-lvm"
 iso_datastore                = "local"
 talos_nocloud_template_vm_id = 1234
 kubernetes_vlan_id           = 10
@@ -18,7 +18,7 @@ nodes = {
     vm_id          = 150
     mac_address    = "02:00:00:00:01:50"
     cores          = 4
-    memory         = 8192
+    memory         = 16384
     storage        = 100
     network_bridge = "vmbr0"
     cluster        = "labmgmt"

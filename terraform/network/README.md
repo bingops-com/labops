@@ -1,41 +1,17 @@
-# Persistent Proxmox and Tailscale network
+# Network and Tailscale DNS
 
-This Terraform stack owns the network foundation that must outlive every Kubernetes cluster. It invokes the repository's idempotent Ansible role to configure `vmbr0.10`, IPv4 forwarding and nftables on Proxmox, then uses the official Tailscale provider to enable `192.168.1.0/24` and `192.168.10.0/24` on the `homelab` subnet router.
+This Terraform stack owns the tailnet DNS configuration, including exact-name
+split routes for `argocd.lab.bingo` and `grafana.lab.bingo`, plus the
+`lab.bingo` zone (LabOps Portal apex), through the `labprod` DNS VIP
+`192.168.10.160`. Because Tailscale split DNS matches subdomains, the private
+CoreDNS `lab.bingo` zone answers only the apex and forwards every other name,
+such as the public `auth.lab.bingo`, to `1.1.1.1`/`9.9.9.9`. The former
+`test.lab.bingo` and `welcome.lab.bingo` (Glance) routes are removed.
 
-It intentionally has a separate state from `terraform/proxmox`: destroying `labmgmt` must not revoke the route used to reach Proxmox.
+The Tailscale OAuth client is an external sensitive input with the minimum DNS
+write and network scopes required by this stack. Store it only in an ignored
+variables file and rotate it in the admin console if lost.
 
-## Credentials
-
-Create a Tailscale OAuth trust credential with `devices:core:read`, `devices:routes`, and `dns`, then store it only in the ignored local file:
-
-```sh
-cp terraform/network/credentials.auto.tfvars.example terraform/network/credentials.auto.tfvars
-chmod 600 terraform/network/credentials.auto.tfvars
-$EDITOR terraform/network/credentials.auto.tfvars
-```
-
-## Apply
-
-From the repository root:
-
-```sh
-task network:plan
-task network:apply
-```
-
-The plan runs no provisioner. Applying it may run the Proxmox Ansible playbook when its tracked role, inventory, or playbook hash has changed, and then enables the advertised Tailscale routes. Keep the saved state encrypted and locked because Terraform state contains infrastructure identifiers and the OAuth client is used during refresh/apply.
-
-The stack also enables MagicDNS, configures Cloudflare (`1.1.1.1`) and Quad9
-(`9.9.9.9`) as global resolvers, and overrides local DNS. It is the sole owner
-of the tailnet DNS configuration, including split DNS for `test.lab.bingo`
-through `192.168.10.170` and `argocd.lab.bingo` through `192.168.10.160`.
-The exact private name `grafana.lab.bingo` also uses `192.168.10.160`; neither
-production hostname changes resolution for the rest of the public
-`lab.bingo` zone.
-Keeping global and split DNS in the same `tailscale_dns_configuration` resource
-prevents a later network apply from deleting the private application routes.
-
-The former `terraform/tailscale-dns` state must not be applied again. After a
-reviewed network apply has restored both routes, remove only its obsolete state
-ownership using the migration commands in that stack's README. State removal
-does not delete the remote split-DNS configuration now owned here.
+Review a Terraform plan before apply because it contacts and changes the live
+tailnet. Verify `argocd`, `grafana` and the `lab.bingo` apex resolve to `192.168.10.151` while on
+LAN/Tailscale and are not publicly routed.

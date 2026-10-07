@@ -8,10 +8,10 @@
   configuration.
 - [Talos on Proxmox](../terraform/proxmox/README.md): Terraform-owned management
   cluster.
-- [Cluster API](../capi/README.md): CAPI-owned workload clusters.
-- [GitOps applications](../apps/README.md): Argo CD, previews, DNS and workloads.
-- [Application delivery workflow](gitops-applications.md): create, preview,
-  promote, roll back and remove workloads through the current GitOps model.
+- [Cluster API](../capi/README.md): the CAPI-owned `labprod` workload cluster.
+- [GitOps applications](../apps/README.md): Argo CD, DNS and workloads.
+- [Application delivery workflow](gitops-applications.md): create, deploy,
+  roll back and remove workloads through the current GitOps model.
 - [Operator helpers](../hacks/README.md): client configuration and lifecycle
   scripts.
 

@@ -1,0 +1,35 @@
+# Gatus has no ingress: the portal reads its API in-cluster and is its UI.
+# Results are kept in memory and restart empty.
+metrics: true
+
+endpoints:
+  - name: Argo CD
+    group: Plateforme
+    url: http://argocd-server.argocd-system.svc.cluster.local/healthz
+    interval: 60s
+    conditions: ["[STATUS] == 200"]
+  - name: Grafana
+    group: Plateforme
+    url: http://monitoring-grafana.monitoring.svc.cluster.local/api/health
+    interval: 60s
+    conditions: ["[STATUS] == 200"]
+  - name: Prometheus
+    group: Plateforme
+    url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/-/healthy
+    interval: 60s
+    conditions: ["[STATUS] == 200"]
+  - name: Portail
+    group: Plateforme
+    url: http://portal.portal.svc.cluster.local:3000/healthz
+    interval: 60s
+    conditions: ["[STATUS] == 200"]
+  - name: Authentik
+    group: Public
+    url: https://auth.lab.bingo/-/health/live/
+    interval: 60s
+    conditions: ["[STATUS] < 300", "[RESPONSE_TIME] < 2000", "[CERTIFICATE_EXPIRATION] > 168h"]
+  - name: Portfolio
+    group: Public
+    url: https://www.bingops.com
+    interval: 60s
+    conditions: ["[STATUS] == 200", "[RESPONSE_TIME] < 2000", "[CERTIFICATE_EXPIRATION] > 168h"]

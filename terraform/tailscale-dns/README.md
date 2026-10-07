@@ -1,59 +1,14 @@
 # Retired Tailscale split-DNS stack
 
-This stack is retired because Tailscale exposes one tailnet-wide DNS
-configuration. Managing global DNS in `terraform/network` and split DNS here
-caused the two states to overwrite each other. The authoritative declarations
-now live in `terraform/network/dns.tf`; do not run `plan` or `apply` from this
-directory.
+This stack is retired. The authoritative tailnet DNS declaration is
+`terraform/network/dns.tf`; do not plan or apply this directory.
 
-After applying the reviewed `terraform/network` plan that restores both split
-routes, detach the obsolete resources from this state without deleting remote
-DNS settings:
+After applying the reviewed network-stack migration, detach any obsolete
+resources from this retired state without deleting the production remote route:
 
 ```sh
 terraform -chdir=terraform/tailscale-dns state rm tailscale_dns_split_nameservers.labtest tailscale_dns_split_nameservers.argocd_labprod
 ```
 
-Verify first that `test.lab.bingo` and `argocd.lab.bingo` resolve through
-Tailscale. Keep the retired state backup until that verification succeeds.
-
-This stack owns the private DNS routes consumed by Tailscale clients:
-
-| DNS suffix | Nameserver | Owner |
-| --- | --- | --- |
-| `test.lab.bingo` | `192.168.10.170` | CoreDNS on `labtest`; answers with `192.168.10.152` |
-| `argocd.lab.bingo` | `192.168.10.160` | CoreDNS on `labprod`; answers with `192.168.10.151` |
-
-The `argocd.lab.bingo` route is intentionally an exact-name split route. It
-must not replace DNS for the rest of `lab.bingo`. Neither Argo CD hostname is
-served through Cloudflare Tunnel.
-
-The OAuth client is an external prerequisite. It requires Tailscale DNS write
-permission and must be stored only in an ignored variables file. Create or
-rotate it in the Tailscale admin console, update the ignored input, and revoke
-the previous client after a successful apply. The client secret cannot be
-recovered from Git.
-
-Do not set `tailscale_tailnet` to the public Cloudflare zone. A tailnet ID is a
-Tailscale identifier, not a DNS domain owned in Cloudflare. By default the
-provider derives the tailnet from the OAuth client, which is the preferred
-configuration. Set `tailscale_tailnet` only when an explicit Tailnet ID is
-required; copy that ID from the Tailscale admin console rather than guessing it.
-
-Clients must be able to reach `192.168.10.0/24` through an approved Tailscale
-subnet router. Validate without exposing credentials by resolving both names
-while connected to Tailscale and confirming that HTTPS is unreachable after
-disconnecting from both Tailscale and the local network.
-
-Review changes before applying because Terraform contacts the live tailnet:
-
-```sh
-terraform init
-terraform plan
-terraform apply
-```
-
-The resources are declarative and repeated applies are idempotent. If a split
-route is already absent, removing it from this stack requires only a reviewed
-Terraform apply; do not make an ad-hoc dashboard change that leaves Terraform
-state stale.
+State mutation requires explicit authorization. Keep a protected state backup
+until `argocd.lab.bingo` and `grafana.lab.bingo` resolve correctly.

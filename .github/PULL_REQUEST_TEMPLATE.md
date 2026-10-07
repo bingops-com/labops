@@ -18,7 +18,7 @@
 
 ## Environment and operational impact
 
-- Environments: <!-- labmgmt / labtest / labprod / external service / none -->
+- Environments: <!-- labmgmt / labprod / external service / none -->
 - Lifecycle owner: <!-- Terraform / CAPI / Argo CD / external prerequisite -->
 - Persistent data affected: <!-- PVC, PostgreSQL, R2, Terraform state, none -->
 - External systems affected: <!-- Proxmox, Cloudflare, GitHub, Bitwarden, none -->
@@ -32,7 +32,7 @@
 | Check | Result |
 | --- | --- |
 | Offline render, lint, format or syntax checks | |
-| `labtest` validation and exact revision | |
+| Local validation and exact revision | |
 | Health or non-sensitive functional verification | |
 | Checks intentionally not run | |
 
@@ -54,9 +54,7 @@ Documentation updated: <!-- Link the owning README/runbook, or explain why no do
 <!-- Checking a box records what happened; it does not authorize a future live operation. -->
 
 - [ ] No live infrastructure or cluster state was changed.
-- [ ] Any temporary live `labtest` change is described above and restored or intentionally retained until merge.
 - [ ] Nothing was applied to `labprod` or `labmgmt` outside normal post-merge GitOps reconciliation.
-- [ ] This PR is ready for the `deploy/labtest` shared-slot label when applicable.
 
 ## Related work
 

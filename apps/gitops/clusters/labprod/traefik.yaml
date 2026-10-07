@@ -21,7 +21,20 @@ spec:
         deployment:
           kind: DaemonSet
           dnsPolicy: ClusterFirstWithHostNet
+        providers:
+          kubernetesIngress:
+            publishedService:
+              enabled: false
+            ingressEndpoint:
+              ip: 192.168.10.151
         hostNetwork: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
         podSecurityContext:
           runAsGroup: 0
           runAsNonRoot: false
@@ -41,7 +54,8 @@ spec:
             maxUnavailable: 1
             maxSurge: 0
         service:
-          type: ClusterIP
+          spec:
+            type: ClusterIP
         ports:
           web:
             port: 80
