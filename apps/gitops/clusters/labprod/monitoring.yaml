@@ -68,7 +68,7 @@ spec:
                   equal: [namespace, alertname]
               route:
                 receiver: discord-applications
-                groupBy: [namespace, alertname]
+                groupBy: [cluster, namespace, alertname, severity]
                 groupWait: 30s
                 groupInterval: 5m
                 repeatInterval: 6h
@@ -77,6 +77,8 @@ spec:
                     matchers:
                       - {name: alertname, matchType: "=~", value: Watchdog|InfoInhibitor}
                   - receiver: discord-critical
+                    groupWait: 10s
+                    repeatInterval: 2h
                     matchers:
                       - {name: severity, matchType: "=", value: critical}
                   - receiver: discord-infrastructure
@@ -92,16 +94,49 @@ spec:
                     - apiURL: {name: observability-discord, key: critical-url}
                       sendResolved: true
                       username: LabOps labprod · critical
+                      title: '{{`{{ if eq .Status "firing" }}🚨 ALERTE CRITIQUE{{ else }}✅ INCIDENT RÉSOLU{{ end }} · {{ .CommonLabels.alertname }}`}}'
+                      message: |-
+                        {{`{{ if eq .Status "firing" }}**Incident actif**{{ else }}**Retour à la normale**{{ end }}
+                        **Cluster :** {{ .CommonLabels.cluster }} · **Sévérité :** {{ .CommonLabels.severity }}
+                        {{ if .CommonLabels.namespace }}**Namespace :** {{ .CommonLabels.namespace }}{{ end }}
+                        **Occurrences :** {{ len .Alerts }}
+                        {{ range .Alerts }}
+                        • {{ if .Annotations.summary }}{{ .Annotations.summary }}{{ else }}{{ .Labels.alertname }}{{ end }}
+                        {{ if .Annotations.description }}  {{ .Annotations.description }}{{ end }}
+                        {{ if .Annotations.dashboard_url }}  [Dashboard]({{ .Annotations.dashboard_url }}){{ end }}{{ if .Annotations.runbook_url }} · [Runbook]({{ .Annotations.runbook_url }}){{ end }}
+                        {{ end }}`}}
                 - name: discord-infrastructure
                   discordConfigs:
                     - apiURL: {name: observability-discord, key: infrastructure-url}
                       sendResolved: true
                       username: LabOps labprod · infrastructure
+                      title: '{{`{{ if eq .Status "firing" }}⚠️ INFRASTRUCTURE{{ else }}✅ INFRA RÉTABLIE{{ end }} · {{ .CommonLabels.alertname }}`}}'
+                      message: |-
+                        {{`{{ if eq .Status "firing" }}**Incident actif**{{ else }}**Retour à la normale**{{ end }}
+                        **Cluster :** {{ .CommonLabels.cluster }} · **Sévérité :** {{ .CommonLabels.severity }}
+                        {{ if .CommonLabels.namespace }}**Namespace :** {{ .CommonLabels.namespace }}{{ end }}
+                        **Occurrences :** {{ len .Alerts }}
+                        {{ range .Alerts }}
+                        • {{ if .Annotations.summary }}{{ .Annotations.summary }}{{ else }}{{ .Labels.alertname }}{{ end }}
+                        {{ if .Annotations.description }}  {{ .Annotations.description }}{{ end }}
+                        {{ if .Annotations.dashboard_url }}  [Dashboard]({{ .Annotations.dashboard_url }}){{ end }}{{ if .Annotations.runbook_url }} · [Runbook]({{ .Annotations.runbook_url }}){{ end }}
+                        {{ end }}`}}
                 - name: discord-applications
                   discordConfigs:
                     - apiURL: {name: observability-discord, key: applications-url}
                       sendResolved: true
                       username: LabOps labprod · applications
+                      title: '{{`{{ if eq .Status "firing" }}⚠️ APPLICATION{{ else }}✅ APPLICATION RÉTABLIE{{ end }} · {{ .CommonLabels.alertname }}`}}'
+                      message: |-
+                        {{`{{ if eq .Status "firing" }}**Incident actif**{{ else }}**Retour à la normale**{{ end }}
+                        **Cluster :** {{ .CommonLabels.cluster }} · **Sévérité :** {{ .CommonLabels.severity }}
+                        {{ if .CommonLabels.namespace }}**Namespace :** {{ .CommonLabels.namespace }}{{ end }}
+                        **Occurrences :** {{ len .Alerts }}
+                        {{ range .Alerts }}
+                        • {{ if .Annotations.summary }}{{ .Annotations.summary }}{{ else }}{{ .Labels.alertname }}{{ end }}
+                        {{ if .Annotations.description }}  {{ .Annotations.description }}{{ end }}
+                        {{ if .Annotations.dashboard_url }}  [Dashboard]({{ .Annotations.dashboard_url }}){{ end }}{{ if .Annotations.runbook_url }} · [Runbook]({{ .Annotations.runbook_url }}){{ end }}
+                        {{ end }}`}}
         grafana:
           readinessProbe:
             httpGet:
