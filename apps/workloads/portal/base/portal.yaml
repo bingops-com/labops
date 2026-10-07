@@ -6,45 +6,34 @@ title: LabOps
 theme: auto # auto | light | dark
 
 pages:
-  - name: Ops
-    slug: ops
+  - name: Accueil
+    slug: accueil
+    group: Lab
     columns:
       - size: small
         widgets:
-          - type: kubernetes
-            title: Cluster
-          - type: alerts
-            title: Alertes
+          - type: digest
+            title: Dernières 24 heures
             options:
               url: ${PORTAL_VAR_PROMETHEUS_URL}
-          - type: incidents
-            title: Incidents
-          - type: deadlines
-            title: Échéances
-            options:
-              warnDays: 30
-              eol:
-                - { product: kubernetes, cycle: "" }
-              # Dated by hand: tokens and domains that expire without warning.
-              items: []
-          - type: backups
-            title: Sauvegardes
-            options:
-              maxAgeHours: 26
               cronjobs:
                 - pz-server/pz-server-pz-server-backup
-          - type: gameserver
-            title: Project Zomboid
+          - type: incidents
+            title: Incidents
+          - type: bookmarks
+            title: Applications
             options:
-              address: pz-server-pz-server.pz-server.svc.cluster.local:16261
-          - type: certificates
-            title: Certificats
-            options:
-              warnDays: 14
-          - type: events
-            title: Événements
-            options:
-              limit: 6
+              groups:
+                - title: Lab
+                  links:
+                    - { title: Argo CD, url: "https://argocd.lab.bingo", description: GitOps, icon: "si:argo", checkUrl: "http://argocd-server.argocd-system.svc.cluster.local/healthz" }
+                    - { title: Grafana, url: "https://grafana.lab.bingo", description: Métriques et journaux, icon: "si:grafana", checkUrl: "http://monitoring-grafana.monitoring.svc.cluster.local/api/health" }
+                    - { title: Authentik, url: "https://auth.lab.bingo", description: SSO, icon: "si:authentik", checkUrl: "https://auth.lab.bingo/-/health/live/" }
+                    - { title: Portfolio, url: "https://www.bingops.com", description: Site public, checkUrl: "https://www.bingops.com" }
+                - title: Code
+                  links:
+                    - { title: LabOps, url: "https://github.com/bingops-com/labops", description: Source de vérité, icon: "si:github" }
+                    - { title: Pull requests, url: "https://github.com/bingops-com/labops/pulls", icon: "si:github" }
       - size: full
         widgets:
           - type: topology
@@ -90,10 +79,113 @@ pages:
                 - { label: Mémoire, query: 'avg(100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))', format: percent, warn: 75, danger: 90 }
                 - { label: Disque /var, query: 'avg(100 * (1 - node_filesystem_avail_bytes{mountpoint="/var",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/var",fstype!~"tmpfs|overlay"}))', format: percent, warn: 75, danger: 90 }
                 - { label: Pods actifs, query: 'sum(kube_pod_status_phase{phase="Running"} == 1)', format: number }
+
+  - name: Cluster
+    slug: cluster
+    group: Lab
+    columns:
+      - size: small
+        widgets:
+          - type: kubernetes
+            title: Cluster
           - type: forecast
             title: Saturation des disques
             options:
               url: ${PORTAL_VAR_PROMETHEUS_URL}
+          - type: events
+            title: Événements
+            options:
+              limit: 6
+      - size: full
+        widgets:
+          - type: top
+            title: Top consommateurs
+            options:
+              url: ${PORTAL_VAR_PROMETHEUS_URL}
+              limit: 5
+          - type: section
+            title: Charges de travail
+          - type: argocd
+            title: Applications Argo CD
+            options:
+              url: https://argocd.lab.bingo
+          - type: workloads
+            title: Workloads
+            options:
+              exclude: [kube-system]
+              limit: 10
+
+  - name: Fiabilité
+    slug: fiabilite
+    group: Lab
+    columns:
+      - size: small
+        widgets:
+          - type: alerts
+            title: Alertes
+            options:
+              url: ${PORTAL_VAR_PROMETHEUS_URL}
+          - type: backups
+            title: Sauvegardes
+            options:
+              maxAgeHours: 26
+              cronjobs:
+                - pz-server/pz-server-pz-server-backup
+          - type: certificates
+            title: Certificats
+            options:
+              warnDays: 14
+      - size: full
+        widgets:
+          - type: gatus
+            title: Disponibilité
+            options:
+              url: ${PORTAL_VAR_GATUS_URL}
+          - type: postgres
+            title: PostgreSQL
+            options:
+              url: ${PORTAL_VAR_PROMETHEUS_URL}
+      - size: small
+        widgets:
+          - type: status
+            title: Services tiers
+            options:
+              services:
+                - { title: GitHub, url: "https://www.githubstatus.com" }
+                - { title: Cloudflare, url: "https://www.cloudflarestatus.com" }
+                - { title: Tailscale, url: "https://status.tailscale.com" }
+
+  - name: Changements
+    slug: changements
+    group: Lab
+    columns:
+      - size: small
+        widgets:
+          - type: deadlines
+            title: Échéances
+            options:
+              warnDays: 30
+              eol:
+                - { product: kubernetes, cycle: "" }
+              # Dated by hand: tokens and domains that expire without warning.
+              items: []
+          - type: drift
+            title: Dérive de configuration
+            options:
+              branch: master
+              # Installed by the Talos machine configuration, not by Argo CD.
+              ignore:
+                - kubelet-serving-cert-approver
+      - size: full
+        widgets:
+          - type: activity
+            title: Activité récente
+            options:
+              url: ${PORTAL_VAR_PROMETHEUS_URL}
+              cronjobs:
+                - pz-server/pz-server-pz-server-backup
+              hours: 72
+              limit: 10
           - type: versions
             title: Retard de versions
             options:
@@ -107,114 +199,24 @@ pages:
                 - { name: CloudNativePG, repo: cloudnative-pg/cloudnative-pg, source: cnpg-system/cnpg-cloudnative-pg }
                 - { name: Grafana, repo: grafana/grafana, source: monitoring/monitoring-grafana }
                 - { name: Gatus, repo: TwiN/gatus, source: gatus/gatus }
-          - type: activity
-            title: Activité récente
-            options:
-              url: ${PORTAL_VAR_PROMETHEUS_URL}
-              cronjobs:
-                - pz-server/pz-server-pz-server-backup
-              hours: 72
-              limit: 10
-          - type: argocd
-            title: Applications Argo CD
-            options:
-              url: https://argocd.lab.bingo
-          - type: workloads
-            title: Workloads
-            options:
-              exclude: [kube-system]
-              limit: 10
       - size: small
         widgets:
-          - type: gatus
-            title: Disponibilité
-            options:
-              url: ${PORTAL_VAR_GATUS_URL}
           - type: pulls
             title: Pull requests LabOps
             options:
               repo: bingops-com/labops
               limit: 6
-          - type: bookmarks
-            title: Applications
+          - type: releases
+            title: Versions
             options:
-              groups:
-                - title: Lab
-                  links:
-                    - { title: Argo CD, url: "https://argocd.lab.bingo", description: GitOps, icon: "si:argo", checkUrl: "http://argocd-server.argocd-system.svc.cluster.local/healthz" }
-                    - { title: Grafana, url: "https://grafana.lab.bingo", description: Métriques et journaux, icon: "si:grafana", checkUrl: "http://monitoring-grafana.monitoring.svc.cluster.local/api/health" }
-                    - { title: Authentik, url: "https://auth.lab.bingo", description: SSO, icon: "si:authentik", checkUrl: "https://auth.lab.bingo/-/health/live/" }
-                    - { title: Portfolio, url: "https://www.bingops.com", description: Site public, checkUrl: "https://www.bingops.com" }
-                - title: Code
-                  links:
-                    - { title: LabOps, url: "https://github.com/bingops-com/labops", description: Source de vérité, icon: "si:github" }
-                    - { title: Pull requests, url: "https://github.com/bingops-com/labops/pulls", icon: "si:github" }
-
-  - name: Diagnostic
-    slug: diagnostic
-    columns:
-      - size: small
-        widgets:
-          - type: digest
-            title: Dernières 24 heures
-            options:
-              url: ${PORTAL_VAR_PROMETHEUS_URL}
-              cronjobs:
-                - pz-server/pz-server-pz-server-backup
-          - type: drift
-            title: Dérive de configuration
-            options:
-              branch: master
-              # Installed by the Talos machine configuration, not by Argo CD.
-              ignore:
-                - kubelet-serving-cert-approver
-          - type: status
-            title: Services tiers
-            options:
-              services:
-                - { title: GitHub, url: "https://www.githubstatus.com" }
-                - { title: Cloudflare, url: "https://www.cloudflarestatus.com" }
-                - { title: Tailscale, url: "https://status.tailscale.com" }
-      - size: full
-        widgets:
-          - type: top
-            title: Top consommateurs
-            options:
-              url: ${PORTAL_VAR_PROMETHEUS_URL}
-              limit: 5
-          - type: postgres
-            title: PostgreSQL
-            options:
-              url: ${PORTAL_VAR_PROMETHEUS_URL}
+              repos: [siderolabs/talos, argoproj/argo-cd, cert-manager/cert-manager, cloudnative-pg/cloudnative-pg, traefik/traefik, goauthentik/authentik]
 
   - name: Veille
     slug: veille
+    group: Perso
     columns:
-      - size: small
-        widgets:
-          - type: weather
-            options:
-              location: Antibes
-          - type: calendar
-            title: Calendrier
-            options:
-              calendars:
-                - { title: Perso, url: "${PORTAL_VAR_ICAL_URL}" }
-          - type: clock
-            title: Horloges
-            options:
-              zones:
-                - { label: New York, timezone: America/New_York }
-                - { label: Tokyo, timezone: Asia/Tokyo }
       - size: full
         widgets:
-          - type: search
-            options:
-              engine: duckduckgo
-              bangs:
-                - { prefix: "!gh", url: "https://github.com/search?q={q}" }
-                - { prefix: "!k8s", url: "https://kubernetes.io/search/?q={q}" }
-                - { prefix: "!yt", url: "https://www.youtube.com/results?search_query={q}" }
           - type: rss
             title: Flux
             options:
@@ -238,10 +240,8 @@ pages:
             options:
               currency: usd
               coins: [bitcoin, ethereum, solana, zcash]
-          - type: releases
-            title: Versions
-            options:
-              repos: [siderolabs/talos, argoproj/argo-cd, cert-manager/cert-manager, cloudnative-pg/cloudnative-pg, traefik/traefik, goauthentik/authentik]
+          - type: section
+            title: Communautés
           - type: hackernews
             title: Hacker News
             options:
@@ -251,3 +251,39 @@ pages:
             options:
               subreddits: [selfhosted, kubernetes, homelab]
               limit: 8
+
+  - name: Perso
+    slug: perso
+    group: Perso
+    columns:
+      - size: small
+        widgets:
+          - type: weather
+            options:
+              location: Antibes
+          - type: clock
+            title: Horloges
+            options:
+              zones:
+                - { label: New York, timezone: America/New_York }
+                - { label: Tokyo, timezone: Asia/Tokyo }
+      - size: full
+        widgets:
+          - type: search
+            options:
+              engine: duckduckgo
+              bangs:
+                - { prefix: "!gh", url: "https://github.com/search?q={q}" }
+                - { prefix: "!k8s", url: "https://kubernetes.io/search/?q={q}" }
+                - { prefix: "!yt", url: "https://www.youtube.com/results?search_query={q}" }
+          - type: calendar
+            title: Calendrier
+            options:
+              calendars:
+                - { title: Perso, url: "${PORTAL_VAR_ICAL_URL}" }
+      - size: small
+        widgets:
+          - type: gameserver
+            title: Project Zomboid
+            options:
+              address: pz-server-pz-server.pz-server.svc.cluster.local:16261
