@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: pz-server-labprod
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: labops-labprod
+  sources:
+    - repoURL: https://github.com/bingops-com/labops.git
+      targetRevision: master
+      path: apps/workloads/pz-server/clusters/labprod
+    - repoURL: https://github.com/bingops-com/pz-server.git
+      targetRevision: master
+      path: charts/pz-server
+      helm:
+        releaseName: pz-server
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: pz-server
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

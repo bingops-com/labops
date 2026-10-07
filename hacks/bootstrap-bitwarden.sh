@@ -15,7 +15,7 @@ cluster=$1
 case "$cluster" in
   labprod)
     token_variable=BWS_LABPROD_ACCESS_TOKEN
-    namespaces=(argocd-system authentik cert-manager cloudflare logging monitoring)
+    namespaces=(argocd-system authentik cert-manager cloudflare logging monitoring pz-server)
     ;;
   *)
     usage

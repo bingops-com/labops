@@ -24,3 +24,4 @@ resources:
   - portfolio.yaml
   - gatus.yaml
   - portal.yaml
+  - pz-server.yaml
