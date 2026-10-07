@@ -21,6 +21,25 @@ the hostname is not published through Cloudflare Tunnel.
 - DNS: `apps/platform/private-dns` answers the `lab.bingo` apex with the
   Traefik VIP; `terraform/network` owns the matching Tailscale split-DNS entry.
 
+## Layout
+
+`base/portal.yaml` sorts widgets by the question a page answers, so a new
+widget has an obvious home:
+
+| Page | Question | Group |
+| --- | --- | --- |
+| Accueil | Is everything fine? Syntheses only. | Lab |
+| Cluster | What is running? | Lab |
+| Fiabilité | What could break? | Lab |
+| Changements | What moved, what needs updating? | Lab |
+| Veille | What is happening elsewhere? | Perso |
+| Perso | My day. | Perso |
+
+Wide columns hold what is read (lists, charts), narrow ones what is glanced at
+(counters, states), most urgent first. A `section` widget titles and folds the
+widgets below it when a page grows. A layout saved from the browser takes
+precedence over this file until "Revenir au YAML" is used.
+
 ## Access and data
 
 - Reading is open to the LAN and tailnet (Traefik allowlist). Editing the
