@@ -226,6 +226,15 @@ spec:
                   resources:
                     requests:
                       storage: 10Gi
+        # Talos binds these components' metrics to 127.0.0.1, so their targets
+        # can never be scraped: they only produced permanent TargetDown and
+        # "InstanceUnreachable" alerts.
+        kubeControllerManager:
+          enabled: false
+        kubeScheduler:
+          enabled: false
+        kubeProxy:
+          enabled: false
         prometheusOperator:
           resources:
             requests:

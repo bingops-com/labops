@@ -23,13 +23,16 @@ the hostname is not published through Cloudflare Tunnel.
 
 ## Access and data
 
-- No login. The Traefik allowlist is the only access control, including for
-  the layout editor: anyone on the LAN or tailnet can rearrange the pages and
-  therefore make the pod request HTTP addresses of their choice. Set
-  `PORTAL_READONLY=true` on the Deployment to serve `base/portal.yaml` only.
+- Reading is open to the LAN and tailnet (Traefik allowlist). Editing the
+  layout requires an Authentik login and membership of the `portal-editors`
+  group: an editor can make the pod request HTTP addresses of their choice.
+  The OIDC client `portal` is a public PKCE client declared in
+  `apps/platform/authentik/blueprint.yaml`, so there is no client secret to
+  store. Add editors to the group in Authentik or in the blueprint.
 - Kubernetes: the `portal` ServiceAccount is bound to the `portal-read`
-  ClusterRole (get/list on nodes, namespaces, pods, events, apps workloads and
-  Argo CD Applications). It cannot read Secrets or ConfigMaps. Argo CD status
+  ClusterRole (get/list on nodes, namespaces, pods, events, apps workloads,
+  CronJobs, Argo CD Applications, cert-manager Certificates and CloudNativePG
+  clusters and backups). It cannot read Secrets or ConfigMaps. Argo CD status
   comes from the Application resources, so the portal holds no Argo CD token.
 - In-cluster HTTP: Prometheus and Gatus, through the `PORTAL_VAR_*` variables
   of the Deployment. Public APIs: Open-Meteo, CoinGecko, RSS/Atom, YouTube
@@ -43,9 +46,10 @@ the hostname is not published through Cloudflare Tunnel.
 ## State
 
 The `portal-data` PVC (`local-path`) holds `layout.json`, the layout saved from
-the browser, which overrides the pages of `base/portal.yaml`. It is the only
+the browser, which overrides the pages of `base/portal.yaml`, and
+`session.key`, the generated key that signs editor sessions. It is the only
 state outside Git and is not backed up: losing it reverts the portal to
-`base/portal.yaml`. To keep a browser layout, use "Exporter en YAML" in the
+`base/portal.yaml` and signs editors out. To keep a browser layout, use "Exporter en YAML" in the
 editor and commit the result as `base/portal.yaml`.
 
 ## Verify without reading Secrets

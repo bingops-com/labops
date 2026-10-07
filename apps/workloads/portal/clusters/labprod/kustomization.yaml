@@ -23,6 +23,25 @@ patches:
       kind: Deployment
       name: portal
     patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/env/2/value
-        value: labprod
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: portal
+        namespace: portal
+      spec:
+        template:
+          spec:
+            containers:
+              - name: portal
+                env:
+                  - name: PORTAL_CLUSTER_NAME
+                    value: labprod
+                  # Editing requires an Authentik login; reading stays open.
+                  - name: PORTAL_PUBLIC_URL
+                    value: https://lab.bingo
+                  - name: PORTAL_OIDC_ISSUER
+                    value: https://auth.lab.bingo/application/o/portal/
+                  - name: PORTAL_OIDC_CLIENT_ID
+                    value: portal
+                  - name: PORTAL_OIDC_GROUP
+                    value: portal-editors
