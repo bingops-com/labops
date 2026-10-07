@@ -61,7 +61,9 @@ jobs:
       matrix: ${{ fromJson(needs.get-modified-images.outputs.matrix) }}
     permissions:
       packages: write
-      contents: read
+      # Write access is used only by the deployment pull request step.
+      contents: write
+      pull-requests: write
     env:
       IMAGE_NAME: ${{ matrix.image }}
       BUILD_CONTEXT: docker/${{ matrix.image }}
@@ -120,3 +122,11 @@ jobs:
           push: ${{ matrix.is_pr != 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Open deployment pull request
+        if: ${{ matrix.is_pr != 'true' && hashFiles(format('docker/{0}/deploy-target', matrix.image)) != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash .github/scripts/open-deploy-pr.sh

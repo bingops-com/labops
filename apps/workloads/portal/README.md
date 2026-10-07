@@ -34,6 +34,9 @@ the hostname is not published through Cloudflare Tunnel.
   CronJobs, Argo CD Applications, cert-manager Certificates and CloudNativePG
   clusters and backups). It cannot read Secrets or ConfigMaps. Argo CD status
   comes from the Application resources, so the portal holds no Argo CD token.
+- Browser side: link icons declared as `si:<name>` are loaded by the viewer's
+  browser from the Simple Icons CDN (`cdn.simpleicons.org`); remove the `icon`
+  keys in `base/portal.yaml` to avoid that third-party request.
 - In-cluster HTTP: Prometheus and Gatus, through the `PORTAL_VAR_*` variables
   of the Deployment. Public APIs: Open-Meteo, CoinGecko, RSS/Atom, YouTube
   feeds, Hacker News (Algolia), Reddit feeds.

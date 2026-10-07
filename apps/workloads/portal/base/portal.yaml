@@ -71,14 +71,14 @@ pages:
               groups:
                 - title: Lab
                   links:
-                    - { title: Argo CD, url: "https://argocd.lab.bingo", description: GitOps, checkUrl: "http://argocd-server.argocd-system.svc.cluster.local/healthz" }
-                    - { title: Grafana, url: "https://grafana.lab.bingo", description: Métriques et journaux, checkUrl: "http://monitoring-grafana.monitoring.svc.cluster.local/api/health" }
-                    - { title: Authentik, url: "https://auth.lab.bingo", description: SSO, checkUrl: "https://auth.lab.bingo/-/health/live/" }
+                    - { title: Argo CD, url: "https://argocd.lab.bingo", description: GitOps, icon: "si:argo", checkUrl: "http://argocd-server.argocd-system.svc.cluster.local/healthz" }
+                    - { title: Grafana, url: "https://grafana.lab.bingo", description: Métriques et journaux, icon: "si:grafana", checkUrl: "http://monitoring-grafana.monitoring.svc.cluster.local/api/health" }
+                    - { title: Authentik, url: "https://auth.lab.bingo", description: SSO, icon: "si:authentik", checkUrl: "https://auth.lab.bingo/-/health/live/" }
                     - { title: Portfolio, url: "https://www.bingops.com", description: Site public, checkUrl: "https://www.bingops.com" }
                 - title: Code
                   links:
-                    - { title: LabOps, url: "https://github.com/bingops-com/labops", description: Source de vérité }
-                    - { title: Pull requests, url: "https://github.com/bingops-com/labops/pulls" }
+                    - { title: LabOps, url: "https://github.com/bingops-com/labops", description: Source de vérité, icon: "si:github" }
+                    - { title: Pull requests, url: "https://github.com/bingops-com/labops/pulls", icon: "si:github" }
 
   - name: Veille
     slug: veille
