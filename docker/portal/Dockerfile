@@ -7,7 +7,8 @@ RUN apk add --no-cache git \
     && git clone --depth 1 --branch master \
       https://github.com/bingops-com/portal.git . \
     && npm --prefix web ci --no-audit --no-fund \
-    && npm --prefix web run build
+    && npm --prefix web run build \
+    && git rev-parse --short HEAD > web/dist/version.txt
 
 FROM docker.io/golang:1.25-alpine3.22 AS build
 ENV CGO_ENABLED=0

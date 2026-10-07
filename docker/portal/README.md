@@ -10,7 +10,8 @@ distroless base (same pattern as `docker/www`).
 docker build -t ghcr.io/bingops-com/portal docker/portal
 ```
 
-The image contains no configuration: it reads `PORTAL_CONFIG`
+The build writes the source commit to `/version.txt`, which the portal shows
+in its footer. The image contains no configuration: it reads `PORTAL_CONFIG`
 (`/etc/portal/portal.yaml`), mounted from the `apps/workloads/portal`
 ConfigMap, and writes the layout saved from the browser to `PORTAL_DATA`
 (`/data`).

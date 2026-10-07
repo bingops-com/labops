@@ -8,6 +8,7 @@ theme: auto # auto | light | dark
 pages:
   - name: Accueil
     slug: accueil
+    icon: home
     group: Lab
     columns:
       - size: small
@@ -82,6 +83,7 @@ pages:
 
   - name: Cluster
     slug: cluster
+    icon: boxes
     group: Lab
     columns:
       - size: small
@@ -117,6 +119,7 @@ pages:
 
   - name: Fiabilité
     slug: fiabilite
+    icon: shield
     group: Lab
     columns:
       - size: small
@@ -157,6 +160,7 @@ pages:
 
   - name: Changements
     slug: changements
+    icon: history
     group: Lab
     columns:
       - size: small
@@ -213,6 +217,7 @@ pages:
 
   - name: Veille
     slug: veille
+    icon: newspaper
     group: Perso
     columns:
       - size: full
@@ -254,6 +259,7 @@ pages:
 
   - name: Perso
     slug: perso
+    icon: user
     group: Perso
     columns:
       - size: small
