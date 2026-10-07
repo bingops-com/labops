@@ -32,13 +32,17 @@ data:
         log
         reload 10s
         bind 192.168.10.160
+        # Without fallthrough, template answers SERVFAIL for every other name
+        # of the zone instead of handing it to forward.
         template IN A {
             match ^lab[.]bingo[.]$
             answer "{{ .Name }} 30 IN A 192.168.10.151"
+            fallthrough
         }
         template IN AAAA {
             match ^lab[.]bingo[.]$
             rcode NOERROR
+            fallthrough
         }
         forward . 1.1.1.1 9.9.9.9
         cache 30

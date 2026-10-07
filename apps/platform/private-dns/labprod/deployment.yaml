@@ -13,7 +13,7 @@ spec:
   template:
     metadata:
       annotations:
-        labops.bingops.com/config-version: "4"
+        labops.bingops.com/config-version: "5"
       labels:
         app.kubernetes.io/name: coredns-private
     spec:
