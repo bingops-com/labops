@@ -27,14 +27,19 @@ data:
         }
         cache 30
     }
-    home.lab.bingo:53 {
+    lab.bingo:53 {
         errors
         log
         reload 10s
         bind 192.168.10.160
         template IN A {
-            match ^home[.]lab[.]bingo[.]$
+            match ^lab[.]bingo[.]$
             answer "{{ .Name }} 30 IN A 192.168.10.151"
         }
+        template IN AAAA {
+            match ^lab[.]bingo[.]$
+            rcode NOERROR
+        }
+        forward . 1.1.1.1 9.9.9.9
         cache 30
     }

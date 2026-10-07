@@ -6,8 +6,10 @@ Application at `apps/gitops/clusters/labprod/<app>.yaml`.
 
 Use immutable image tags or digests. Public hostnames must be added explicitly
 to `terraform/cloudflare/locals.tf` and `apps/cloudflare/bingops/values.yaml`.
-Private Argo CD and Grafana names stay on Tailscale split DNS. Secret values
-belong in the Bitwarden `labprod` project; Git contains only UUID mappings.
+Private Argo CD and Grafana names and the LabOps Portal apex `lab.bingo` stay
+on Tailscale split DNS. Secret
+values belong in the Bitwarden `labprod` project; Git contains only UUID
+mappings.
 
 Validate locally before merging:
 

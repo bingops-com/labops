@@ -1,0 +1,14 @@
+# Holds layout.json, the page layout saved from the browser. Losing it only
+# reverts the portal to the layout of portal.yaml.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: portal-data
+  namespace: portal
+spec:
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 64Mi

@@ -22,4 +22,5 @@ resources:
   - argocd-access.yaml
   - cloudflare-tunnel.yaml
   - portfolio.yaml
-  - glance.yaml
+  - gatus.yaml
+  - portal.yaml

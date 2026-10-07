@@ -12,10 +12,11 @@
 Required recoverable inputs are the Proxmox Terraform and CAPMOX API tokens,
 the Tailscale OAuth client, the Cloudflare infrastructure and cert-manager
 tokens, the generated tunnel credential, one R2 S3 key restricted to
-`bingops-cnpg-labprod`, and the `labprod` Bitwarden machine token. Keep them
-in the owning password manager or ignored credential file and rotate them at
-their provider if lost. Terraform state, kubeconfigs and Talos configs are
-sensitive generated state, not documentation.
+`bingops-cnpg-labprod`, one R2 S3 key restricted to `bingops-pz-labprod`, the
+Project Zomboid Restic repository password, and the `labprod` Bitwarden machine
+token. Keep them in the owning password manager or ignored credential file and
+rotate them at their provider if lost. Terraform state, kubeconfigs and Talos
+configs are sensitive generated state, not documentation.
 
 ## Dependency order
 
@@ -24,12 +25,20 @@ sensitive generated state, not documentation.
 3. Initialize pinned CAPI providers and create `labprod`.
 4. Install local clients, then bootstrap Argo CD and its production root.
 5. Inject the `labprod` Bitwarden machine token and wait for mappings.
-6. Apply reviewed Cloudflare DNS, tunnel and the production R2 bucket.
+6. Apply reviewed Cloudflare DNS, tunnel and the production R2 buckets.
 7. Reconcile storage, CloudNativePG and Barman Cloud; verify backup and restore.
 8. Reconcile Authentik, observability and workloads; verify Synced/Healthy.
-9. Reconcile the private DNS route for `home.lab.bingo`, then verify the Glance
-   dashboard through LAN or Tailscale without publishing it through the public
-   Cloudflare Tunnel.
+9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
+   verify `https://lab.bingo` through LAN or Tailscale without publishing it
+   through the public Cloudflare Tunnel. The portal image is built from
+   `docker/portal`, which clones the `master` branch of `bingops-com/portal`;
+   that repository, its public GHCR image and the dispatch token are external
+   prerequisites listed in `docker/portal/README.md`. The layout saved from
+   the browser lives only on the `portal-data` PVC and is not restored: the
+   portal starts from `apps/workloads/portal/base/portal.yaml`.
+10. Create the bucket-scoped Project Zomboid R2 token in Bitwarden, reconcile
+    its mappings and the workload, then verify a Restic snapshot and a
+    disposable restore before retiring the Build 41 VM.
 
 For total VM-disk loss, follow the Proxmox recovery procedure. Never replace
 `labmgmt` while it owns `labprod` unless CAPI objects have first been moved.

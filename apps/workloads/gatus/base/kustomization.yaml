@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+
+# The hash suffix restarts Gatus when its endpoints change.
+configMapGenerator:
+  - name: gatus-config
+    namespace: gatus
+    files:
+      - config.yaml

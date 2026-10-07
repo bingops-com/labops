@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: glance-labprod
+  name: gatus-labprod
   namespace: argocd-system
   annotations:
     argocd.argoproj.io/sync-wave: "0"
@@ -10,10 +10,10 @@ spec:
   source:
     repoURL: https://github.com/bingops-com/labops.git
     targetRevision: master
-    path: apps/workloads/glance/clusters/labprod
+    path: apps/workloads/gatus/clusters/labprod
   destination:
     server: https://kubernetes.default.svc
-    namespace: glance
+    namespace: gatus
   syncPolicy:
     automated:
       prune: true

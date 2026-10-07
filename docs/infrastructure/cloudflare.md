@@ -1,7 +1,8 @@
 # Cloudflare
 
-Terraform in `terraform/cloudflare` owns DNS records, the production tunnel
-and the single CloudNativePG backup bucket `bingops-cnpg-labprod`. The provider
+Terraform in `terraform/cloudflare` owns DNS records, the production tunnel,
+the CloudNativePG backup bucket `bingops-cnpg-labprod`, and the Project Zomboid
+backup bucket `bingops-pz-labprod`. The provider
 credential is a sensitive ignored input with DNS, Tunnel and Workers R2 Storage
 write permissions restricted to the LabOps account and zones.
 
@@ -11,9 +12,9 @@ Terraform state are sensitive generated state and are not recovery
 documentation.
 
 R2 runtime credentials are an external prerequisite because Terraform does not
-create S3 access keys. Create one Object Read & Write token restricted to
-`bingops-cnpg-labprod`, store its access-key pair only in Bitwarden, and rotate
-it if lost. The endpoint is
+create S3 access keys. Create separate Object Read & Write tokens restricted to
+each bucket, store their access-key pairs only in Bitwarden, and rotate a token
+if lost. The endpoint is
 `https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com`.
 
 Use a saved, reviewed Terraform plan before apply. Removing the former test

@@ -11,11 +11,18 @@ labels:
 patches:
   - target:
       kind: Ingress
-      name: glance
+      name: portal
     patch: |-
       - op: replace
         path: /spec/rules/0/host
-        value: home.lab.bingo
+        value: lab.bingo
       - op: replace
         path: /spec/tls/0/hosts/0
-        value: home.lab.bingo
+        value: lab.bingo
+  - target:
+      kind: Deployment
+      name: portal
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/2/value
+        value: labprod
