@@ -29,9 +29,16 @@ the hostname is not published through Cloudflare Tunnel.
   The OIDC client `portal` is a public PKCE client declared in
   `apps/platform/authentik/blueprint.yaml`, so there is no client secret to
   store. Add editors to the group in Authentik or in the blueprint.
+- Outbound requests: `PORTAL_INTERNAL_HOSTS=.svc.cluster.local` lets widgets
+  reach in-cluster Services only; any other private address (LAN, node, pod IP)
+  is refused, redirects included. Public addresses stay open. The GitHub
+  widgets call `api.github.com` anonymously (60 requests per hour and per
+  source IP).
+- Monitoring: `ServiceMonitor/portal` scrapes `/metrics`
+  (`portal_fetch_total`, `portal_readout_state`).
 - Kubernetes: the `portal` ServiceAccount is bound to the `portal-read`
   ClusterRole (get/list on nodes, namespaces, pods, events, apps workloads,
-  CronJobs, Argo CD Applications, cert-manager Certificates and CloudNativePG
+  CronJobs and Jobs, Argo CD Applications, cert-manager Certificates and CloudNativePG
   clusters and backups). It cannot read Secrets or ConfigMaps. Argo CD status
   comes from the Application resources, so the portal holds no Argo CD token.
 - Browser side: link icons declared as `si:<name>` are loaded by the viewer's
@@ -50,7 +57,8 @@ the hostname is not published through Cloudflare Tunnel.
 
 The `portal-data` PVC (`local-path`) holds `layout.json`, the layout saved from
 the browser, which overrides the pages of `base/portal.yaml`, and
-`session.key`, the generated key that signs editor sessions. It is the only
+`session.key`, the generated key that signs editor sessions, and
+`readouts.json`, the state of the header readouts and when each last changed. It is the only
 state outside Git and is not backed up: losing it reverts the portal to
 `base/portal.yaml` and signs editors out. To keep a browser layout, use "Exporter en YAML" in the
 editor and commit the result as `base/portal.yaml`.

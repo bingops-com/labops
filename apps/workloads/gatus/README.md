@@ -8,9 +8,10 @@ readout of the [portal](../portal/README.md). It runs only on `labprod`.
   in-cluster.
 - `base/config.yaml` is the source of truth for the monitored endpoints. The
   generated ConfigMap name carries a content hash, so a change restarts Gatus.
-- No credentials, no Kubernetes API access, no persistent state: results are
-  kept in memory and start empty after a restart. Alerting stays with
-  Prometheus and Alertmanager.
+- No credentials and no Kubernetes API access. Check history is kept in SQLite
+  on the `gatus-data` PVC (`local-path`), which lets the portal show
+  availability over 7 days; it is not backed up, and losing it only resets
+  those figures. Alerting stays with Prometheus and Alertmanager.
 
 ## Verify
 

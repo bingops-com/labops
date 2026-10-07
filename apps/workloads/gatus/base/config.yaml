@@ -1,6 +1,10 @@
 # Gatus has no ingress: the portal reads its API in-cluster and is its UI.
-# Results are kept in memory and restart empty.
 metrics: true
+
+# History on the gatus-data volume, so availability survives a restart.
+storage:
+  type: sqlite
+  path: /data/gatus.db
 
 endpoints:
   - name: Argo CD

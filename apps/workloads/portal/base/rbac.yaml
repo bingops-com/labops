@@ -21,7 +21,7 @@ rules:
     resources: [applications]
     verbs: [get, list]
   - apiGroups: [batch]
-    resources: [cronjobs]
+    resources: [cronjobs, jobs]
     verbs: [get, list]
   - apiGroups: [cert-manager.io]
     resources: [certificates]

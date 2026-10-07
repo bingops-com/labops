@@ -23,6 +23,10 @@ pages:
               maxAgeHours: 26
               cronjobs:
                 - pz-server/pz-server-pz-server-backup
+          - type: gameserver
+            title: Project Zomboid
+            options:
+              address: pz-server-pz-server.pz-server.svc.cluster.local:16261
           - type: certificates
             title: Certificats
             options:
@@ -65,6 +69,11 @@ pages:
             title: Disponibilité
             options:
               url: ${PORTAL_VAR_GATUS_URL}
+          - type: pulls
+            title: Pull requests LabOps
+            options:
+              repo: bingops-com/labops
+              limit: 6
           - type: bookmarks
             title: Applications
             options:
@@ -131,6 +140,10 @@ pages:
             options:
               currency: usd
               coins: [bitcoin, ethereum, solana, zcash]
+          - type: releases
+            title: Versions
+            options:
+              repos: [siderolabs/talos, argoproj/argo-cd, cert-manager/cert-manager, cloudnative-pg/cloudnative-pg, traefik/traefik, goauthentik/authentik]
           - type: hackernews
             title: Hacker News
             options:
