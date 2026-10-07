@@ -27,6 +27,30 @@ variable "image" {
   default     = "debian-13"
 }
 
+variable "public_dns_zone" {
+  type        = string
+  description = "Cloudflare DNS zone containing public names for services exposed by the gateway."
+  default     = "bingops.com"
+
+  validation {
+    condition     = can(regex("^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$", var.public_dns_zone))
+    error_message = "public_dns_zone must be a lowercase DNS zone such as bingops.com."
+  }
+}
+
+variable "public_dns_records" {
+  type        = set(string)
+  description = "DNS labels in public_dns_zone that resolve directly to the retained gateway IPv4."
+  default     = ["pz"]
+
+  validation {
+    condition = alltrue([
+      for name in var.public_dns_records : can(regex("^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$", name))
+    ])
+    error_message = "public_dns_records must contain lowercase DNS labels."
+  }
+}
+
 variable "ssh_public_key_path" {
   type        = string
   description = "Operator SSH public-key path for public recovery access or the Hetzner console. Public SSH is disabled by default."

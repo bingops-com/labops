@@ -6,7 +6,8 @@ retained `local-path` PVC and publishes UDP NodePorts `30261` and `30262` for
 the external gateway. The tracked
 [edge-gateway Terraform stack](../../../terraform/edge-gateway/README.md)
 forwards public UDP `16261` and `16262` over Tailscale to those NodePorts. RCON
-remains cluster-internal.
+remains cluster-internal. Players connect to the DNS-only Cloudflare record
+`pz.bingops.com` on the default game port `16261`.
 
 Bitwarden owns all plaintext values. The tracked mappings materialize
 `pz-server-secrets` and `pz-r2-credentials`; the chart only refers to their

@@ -127,3 +127,18 @@ resource "hcloud_server" "edge_gateway" {
     managed   = "terraform"
   }
 }
+
+data "cloudflare_zone" "public" {
+  name = var.public_dns_zone
+}
+
+resource "cloudflare_record" "public_services" {
+  for_each = var.public_dns_records
+
+  zone_id = data.cloudflare_zone.public.id
+  name    = each.value
+  content = hcloud_primary_ip.edge_gateway.ip_address
+  type    = "A"
+  ttl     = 1
+  proxied = false
+}

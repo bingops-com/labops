@@ -4,11 +4,13 @@ This Terraform stack creates a replaceable Hetzner Cloud CX23 that is used only
 as the public layer-4 entry point for services running on `labprod`. It stores no
 application data. A retained primary IPv4 is attached to the VM, cloud-init
 joins the existing Tailscale network, and nftables forwards declared TCP/UDP
-ports through the existing `192.168.10.0/24` subnet route.
+ports through the existing `192.168.10.0/24` subnet route. DNS-only Cloudflare
+records resolve service names directly to the retained IPv4.
 
-The default forwarding table publishes Project Zomboid UDP `16261` and `16262`
-to the Kubernetes NodePorts on `192.168.10.151`. RCON is intentionally absent.
-Additional web or TCP/UDP services are added only through the `forwards` map.
+The default configuration publishes `pz.bingops.com` and forwards Project
+Zomboid UDP `16261` and `16262` to the Kubernetes NodePorts on
+`192.168.10.151`. RCON is intentionally absent. Additional web or TCP/UDP
+services are added through `public_dns_records` and the `forwards` map.
 
 The default `cx23` is the smallest practical x86 instance for this role. At
 the 2026-10-07 Hetzner pricing, the server and retained IPv4 cost about EUR
@@ -17,13 +19,14 @@ the 2026-10-07 Hetzner pricing, the server and retained IPv4 cost about EUR
 ## External inputs and ownership
 
 The stack owns the Hetzner server, its retained IPv4, cloud firewall, SSH key,
-the single-use Tailscale bootstrap key and the generated nftables configuration.
-It does not own Kubernetes Services, DNS records, the Proxmox subnet router or
-the Tailscale policy file.
+the DNS-only service records, the single-use Tailscale bootstrap key and the
+generated nftables configuration. It does not own Kubernetes Services, the
+Cloudflare zone, the Proxmox subnet router or the Tailscale policy file.
 
 Create these prerequisites outside Git and keep them in the password manager:
 
 - a Hetzner Cloud project API token with read/write access to that project;
+- a Cloudflare API token with Zone Read and DNS Edit for `bingops.com`;
 - a dedicated Tailscale OAuth client allowed to create auth keys carrying
   `tag:edge-gateway`;
 - an operator SSH public key at the configured local path.
@@ -40,6 +43,7 @@ Terraform variable file:
 
 ```sh
 export HCLOUD_TOKEN='<from-password-manager>'
+export CLOUDFLARE_API_TOKEN='<from-password-manager>'
 export TAILSCALE_OAUTH_CLIENT_ID='<from-password-manager>'
 export TAILSCALE_OAUTH_CLIENT_SECRET='<from-password-manager>'
 export TAILSCALE_TAILNET='-'
@@ -93,6 +97,11 @@ protocol, public port, private target and optional IPv4 source CIDRs. For
 HTTP/HTTPS, target the host-network Traefik listener on
 `192.168.10.151:80/443`. TLS termination and application routing remain in
 Kubernetes.
+
+Service names in `public_dns_records` are ordinary Cloudflare DNS-only A
+records. Do not enable the Cloudflare HTTP proxy for game or other arbitrary
+UDP traffic. Project Zomboid clients use `pz.bingops.com` with the default game
+port `16261`.
 
 The gateway uses source NAT so return traffic follows the Tailscale tunnel.
 Applications therefore do not see the original client address; with the

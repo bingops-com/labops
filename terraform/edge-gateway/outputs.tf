@@ -23,3 +23,10 @@ output "public_forwards" {
     }
   }
 }
+
+output "public_hostnames" {
+  description = "DNS-only service names resolving to the public edge gateway."
+  value = sort([
+    for record in cloudflare_record.public_services : record.hostname
+  ])
+}

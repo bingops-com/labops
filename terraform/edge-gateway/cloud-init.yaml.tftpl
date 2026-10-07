@@ -35,6 +35,6 @@ runcmd:
   - [apt-get, update]
   - [apt-get, install, --yes, "tailscale=${tailscale_version}"]
   - [systemctl, enable, --now, tailscaled]
-  - [bash, -ec, "trap 'shred --remove /run/tailscale-auth-key; rm -f /var/lib/cloud/instance/user-data.txt /var/lib/cloud/instance/user-data.txt.i' EXIT; tailscale up --auth-key=\"$(cat /run/tailscale-auth-key)\" --hostname=${hostname} --accept-routes --netfilter-mode=off --ssh"]
+  - [bash, -ec, "trap 'shred --remove /run/tailscale-auth-key; rm -f /var/lib/cloud/instance/user-data.txt /var/lib/cloud/instance/user-data.txt.i' EXIT; tailscale up --auth-key=file:/run/tailscale-auth-key --hostname=${hostname} --accept-routes --netfilter-mode=off --ssh"]
 
 final_message: "LabOps edge gateway bootstrap completed"
