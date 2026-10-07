@@ -20,3 +20,8 @@ spec:
       isWALArchiver: true
       parameters:
         barmanObjectName: authentik-labprod-postgresql
+        # Archive folder of this incarnation of the database. Barman refuses
+        # to archive into a folder written by an earlier incarnation
+        # ("Expected empty archive"), so bump the suffix whenever the cluster
+        # is recreated with initdb. Earlier folders stay available for restore.
+        serverName: authentik-labprod-postgresql-g2

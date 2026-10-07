@@ -61,7 +61,10 @@ spec:
               curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_security/user/grafana --data "{\"password\":\"${GRAFANA_PASSWORD}\",\"roles\":[\"grafana_logs_reader\"]}" >/dev/null
               curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_security/user/fluent-bit --data "{\"password\":\"${FLUENT_BIT_PASSWORD}\",\"roles\":[\"fluent_bit_writer\"]}" >/dev/null
               curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_ilm/policy/logs-retention --data '{"policy":{"phases":{"delete":{"min_age":"7d","actions":{"delete":{}}}}}}' >/dev/null
-              curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_index_template/logs --data '{"index_patterns":["logs-labprod-*"],"priority":100,"template":{"settings":{"index.lifecycle.name":"logs-retention"}}}' >/dev/null
+              curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_index_template/logs --data '{"index_patterns":["logs-labprod-*"],"priority":100,"template":{"settings":{"index.lifecycle.name":"logs-retention","index.number_of_replicas":0}}}' >/dev/null
+              # Single-node cluster: a replica can never be allocated and keeps
+              # Elasticsearch yellow, which Argo CD reports as Progressing forever.
+              curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT 'https://observability-es-http.logging.svc:9200/logs-labprod-*/_settings' --data '{"index":{"number_of_replicas":0}}' >/dev/null
           volumeMounts:
             - name: tmp
               mountPath: /tmp
