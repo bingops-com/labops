@@ -20,10 +20,8 @@ spec:
         fsGroup: 65532
       containers:
         - name: portal
-          # First rollout only: replace with the published sha-<commit> tag
-          # (see docker/portal/README.md) and set imagePullPolicy: IfNotPresent.
-          image: ghcr.io/bingops-com/portal:latest
-          imagePullPolicy: Always
+          image: ghcr.io/bingops-com/portal:sha-6110a91
+          imagePullPolicy: IfNotPresent
           env:
             - name: PORTAL_CONFIG
               value: /etc/portal/portal.yaml
