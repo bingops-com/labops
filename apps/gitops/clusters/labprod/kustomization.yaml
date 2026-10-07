@@ -25,3 +25,4 @@ resources:
   - argocd-access.yaml
   - cloudflare-tunnel.yaml
   - portfolio.yaml
+  - pz-server.yaml

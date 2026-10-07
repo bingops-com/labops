@@ -19,6 +19,7 @@ spec:
     - https://fluent.github.io/helm-charts
     - ghcr.io/actions/actions-runner-controller-charts
     - https://github.com/rancher/local-path-provisioner.git
+    - https://github.com/bingops-com/pz-server.git
   destinations:
     - server: https://kubernetes.default.svc
       namespace: "*"
