@@ -1,0 +1,15 @@
+# Scrapes the portal's own metrics: source fetches by widget type and the
+# state of each header readout (portal_readout_state).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: portal
+  namespace: portal
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: portal
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 60s

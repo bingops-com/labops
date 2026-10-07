@@ -45,3 +45,7 @@ patches:
                     value: portal
                   - name: PORTAL_OIDC_GROUP
                     value: portal-editors
+                  # The only private addresses widgets may reach; public
+                  # addresses stay open.
+                  - name: PORTAL_INTERNAL_HOSTS
+                    value: .svc.cluster.local
