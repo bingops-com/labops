@@ -17,6 +17,10 @@ Application is first reconciled. CloudNativePG and Barman Cloud use server-side
 diff so Kubernetes fields newer than the bundled Argo CD schema do not block
 self-healing after a partial bootstrap.
 
+Prometheus scrapes the database exporter through the tracked PodMonitor
+(`pod-monitor.yaml`); the portal's PostgreSQL widget reads size, connections
+and archiving age from it.
+
 ## Archive folder and database incarnations
 
 The cluster archives to `s3://bingops-cnpg-labprod/authentik/<serverName>`,
