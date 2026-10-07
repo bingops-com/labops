@@ -32,8 +32,9 @@ the hostname is not published through Cloudflare Tunnel.
 - Outbound requests: `PORTAL_INTERNAL_HOSTS=.svc.cluster.local` lets widgets
   reach in-cluster Services only; any other private address (LAN, node, pod IP)
   is refused, redirects included. Public addresses stay open. The GitHub
-  widgets call `api.github.com` anonymously (60 requests per hour and per
-  source IP).
+  widgets (releases, pull requests, version lag) call `api.github.com`
+  anonymously (60 requests per hour and per source IP; about 25 are used), and
+  the deadlines widget reads end-of-support dates from `endoflife.date`.
 - Monitoring: `ServiceMonitor/portal` scrapes `/metrics`
   (`portal_fetch_total`, `portal_readout_state`).
 - Kubernetes: the `portal` ServiceAccount is bound to the `portal-read`
@@ -58,7 +59,9 @@ the hostname is not published through Cloudflare Tunnel.
 The `portal-data` PVC (`local-path`) holds `layout.json`, the layout saved from
 the browser, which overrides the pages of `base/portal.yaml`, and
 `session.key`, the generated key that signs editor sessions, and
-`readouts.json`, the state of the header readouts and when each last changed. It is the only
+`readouts.json`, the state of the header readouts and when each last changed,
+and `incidents.json`, the incident log the portal keeps by itself (a degraded
+readout opens an incident, its recovery closes it). It is the only
 state outside Git and is not backed up: losing it reverts the portal to
 `base/portal.yaml` and signs editors out. To keep a browser layout, use "Exporter en YAML" in the
 editor and commit the result as `base/portal.yaml`.
