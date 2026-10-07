@@ -7,8 +7,10 @@ the external gateway. RCON remains cluster-internal.
 
 Bitwarden owns all plaintext values. The tracked mappings materialize
 `pz-server-secrets` and `pz-r2-credentials`; the chart only refers to their
-names and keys. The namespace must also contain the read-only `bw-auth-token`
-created by the bootstrap helper.
+names and keys. A least-privilege CronJob copies `bw-auth-token` from the
+cluster bootstrap copy in `argocd-system` every five minutes, including after
+machine-token rotation. Its logs contain only whether the target Secret was
+created or updated, never the token.
 
 Terraform owns `bingops-pz-labprod`. Its Object Read & Write token is an
 external prerequisite restricted to that bucket and stored in Bitwarden.

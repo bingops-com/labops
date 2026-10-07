@@ -20,3 +20,8 @@ Examples:
 
 Kubeconfigs and Talos configs are sensitive generated artifacts installed with
 mode 0600. Do not commit them or paste their contents into logs.
+
+The helper seeds the platform bootstrap namespaces. Project Zomboid then
+inherits token creation and rotation from `argocd-system` through its
+GitOps-managed, least-privilege CronJob; do not inject the token into
+`pz-server` manually.

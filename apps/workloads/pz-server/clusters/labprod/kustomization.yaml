@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
+  - bitwarden-token-sync.yaml
   - bitwarden-secrets.yaml
 
 labels:
