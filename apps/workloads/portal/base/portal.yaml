@@ -150,6 +150,43 @@ pages:
                     - { title: LabOps, url: "https://github.com/bingops-com/labops", description: Source de vérité, icon: "si:github" }
                     - { title: Pull requests, url: "https://github.com/bingops-com/labops/pulls", icon: "si:github" }
 
+  - name: Diagnostic
+    slug: diagnostic
+    columns:
+      - size: small
+        widgets:
+          - type: digest
+            title: Dernières 24 heures
+            options:
+              url: ${PORTAL_VAR_PROMETHEUS_URL}
+              cronjobs:
+                - pz-server/pz-server-pz-server-backup
+          - type: drift
+            title: Dérive de configuration
+            options:
+              branch: master
+              # Installed by the Talos machine configuration, not by Argo CD.
+              ignore:
+                - kubelet-serving-cert-approver
+          - type: status
+            title: Services tiers
+            options:
+              services:
+                - { title: GitHub, url: "https://www.githubstatus.com" }
+                - { title: Cloudflare, url: "https://www.cloudflarestatus.com" }
+                - { title: Tailscale, url: "https://status.tailscale.com" }
+      - size: full
+        widgets:
+          - type: top
+            title: Top consommateurs
+            options:
+              url: ${PORTAL_VAR_PROMETHEUS_URL}
+              limit: 5
+          - type: postgres
+            title: PostgreSQL
+            options:
+              url: ${PORTAL_VAR_PROMETHEUS_URL}
+
   - name: Veille
     slug: veille
     columns:
