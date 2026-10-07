@@ -24,7 +24,9 @@ configs are sensitive generated state, not documentation.
 2. Recreate Terraform-owned `labmgmt`; verify Talos and Kubernetes APIs.
 3. Initialize pinned CAPI providers and create `labprod`.
 4. Install local clients, then bootstrap Argo CD and its production root.
-5. Inject the `labprod` Bitwarden machine token and wait for mappings.
+5. Inject the `labprod` Bitwarden machine token into the bootstrap namespaces
+   and wait for mappings. Workload token synchronizers, including Project
+   Zomboid, then create their namespace-local copy automatically.
 6. Apply reviewed Cloudflare DNS, tunnel and the production R2 buckets.
 7. Reconcile storage, CloudNativePG and Barman Cloud; verify backup and restore.
 8. Reconcile Authentik, observability and workloads; verify Synced/Healthy.
