@@ -67,13 +67,17 @@ operator refreshes the Kubernetes Secret automatically.
 | DNS doesn’t resolve   | Confirm DNS records in Cloudflare      |
 | Credential error      | Re-export credentials from Terraform   |
 
-## CloudNativePG backup buckets
+## R2 backup buckets
 
 Terraform owns the `bingops-cnpg-labtest` and `bingops-cnpg-labprod` R2
 buckets. They use the `WEUR` location hint and remain separate so each
 environment can have an independently scoped credential and retention policy.
 The pinned Cloudflare provider does not support R2 jurisdiction locks; `WEUR`
 is a placement hint, not a regulatory EU residency guarantee.
+
+Terraform also owns `bingops-pz-labprod`. Project Zomboid uses this dedicated
+bucket as an encrypted Restic repository, independently of the CloudNativePG
+Barman Cloud repositories.
 
 R2 S3 credentials are an unavoidable external prerequisite because their
 secret access key is disclosed only when the token is created. In the
