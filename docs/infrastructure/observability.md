@@ -13,12 +13,14 @@ kubectl --context labprod get applications -n argocd-system monitoring-labprod e
 kubectl --context labprod get elasticsearch,pods,pvc -n logging
 ```
 
-Elasticsearch runs as a single node, so the bootstrap Job sets
-`number_of_replicas: 0` on the `logs-labprod-*` template and on existing
-indices. With a replica the cluster stays yellow, Argo CD reports
-`observability-config-labprod` as Progressing and its sync never reaches the
-PostSync bootstrap Job. `kubectl --context labprod get elasticsearch -n logging`
-must report `green`.
+Elasticsearch runs as a single node. The bootstrap Job therefore installs the
+`logs-labprod` index template (priority 200, above the built-in `logs`
+template, which Elasticsearch refuses to overwrite) with
+`number_of_replicas: 0` and the failure store disabled, and sets zero replicas
+on existing `logs-labprod-*` indices and their failure-store indices. With any
+replica the cluster stays yellow, Argo CD reports
+`observability-config-labprod` as Progressing and its sync never completes.
+`kubectl --context labprod get elasticsearch -n logging` must report `green`.
 
 Confirm Prometheus targets, Grafana datasources, recent `logs-labprod-*`
 documents and firing/resolved Discord notifications after reconciliation.
