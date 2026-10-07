@@ -20,6 +20,9 @@ spec:
     helm:
       releaseName: monitoring
       valuesObject:
+        defaultRules:
+          additionalRuleLabels:
+            cluster: labprod
         alertmanager:
           alertmanagerSpec:
             alertmanagerConfiguration:
@@ -295,7 +298,6 @@ spec:
               cpu: 20m
               memory: 24Mi
             limits:
-              cpu: 100m
               memory: 64Mi
   destination:
     server: https://kubernetes.default.svc
