@@ -61,10 +61,15 @@ spec:
               curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_security/user/grafana --data "{\"password\":\"${GRAFANA_PASSWORD}\",\"roles\":[\"grafana_logs_reader\"]}" >/dev/null
               curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_security/user/fluent-bit --data "{\"password\":\"${FLUENT_BIT_PASSWORD}\",\"roles\":[\"fluent_bit_writer\"]}" >/dev/null
               curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_ilm/policy/logs-retention --data '{"policy":{"phases":{"delete":{"min_age":"7d","actions":{"delete":{}}}}}}' >/dev/null
-              curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_index_template/logs --data '{"index_patterns":["logs-labprod-*"],"priority":100,"template":{"settings":{"index.lifecycle.name":"logs-retention","index.number_of_replicas":0}}}' >/dev/null
-              # Single-node cluster: a replica can never be allocated and keeps
-              # Elasticsearch yellow, which Argo CD reports as Progressing forever.
+              # A dedicated template above the built-in "logs" one (priority 100),
+              # which Elasticsearch refuses to replace with a narrower pattern.
+              # Single node: no replicas, and no failure store, whose indices
+              # would each ask for a replica and keep the cluster yellow. Argo CD
+              # then reports the Application as Progressing forever.
+              curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT https://observability-es-http.logging.svc:9200/_index_template/logs-labprod --data '{"index_patterns":["logs-labprod-*"],"priority":200,"data_stream":{},"composed_of":["logs@mappings","logs@settings","ecs@mappings"],"template":{"settings":{"index.lifecycle.name":"logs-retention","index.number_of_replicas":0},"data_stream_options":{"failure_store":{"enabled":false}}}}' >/dev/null
+              # Existing indices keep the settings they were created with.
               curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT 'https://observability-es-http.logging.svc:9200/logs-labprod-*/_settings' --data '{"index":{"number_of_replicas":0}}' >/dev/null
+              curl --insecure --silent --show-error --fail --netrc-file /tmp/netrc -H 'Content-Type: application/json' -X PUT 'https://observability-es-http.logging.svc:9200/logs-labprod-*::failures/_settings' --data '{"index":{"number_of_replicas":0}}' >/dev/null
           volumeMounts:
             - name: tmp
               mountPath: /tmp
