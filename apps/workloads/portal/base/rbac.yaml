@@ -4,8 +4,8 @@ metadata:
   name: portal
   namespace: portal
 ---
-# Read-only view for the cluster, workloads, events and Argo CD widgets.
-# Secrets and ConfigMaps are deliberately absent.
+# Read-only view for the cluster, workloads, events, Argo CD, certificate and
+# backup widgets. Secrets and ConfigMaps are deliberately absent.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -19,6 +19,15 @@ rules:
     verbs: [get, list]
   - apiGroups: [argoproj.io]
     resources: [applications]
+    verbs: [get, list]
+  - apiGroups: [batch]
+    resources: [cronjobs]
+    verbs: [get, list]
+  - apiGroups: [cert-manager.io]
+    resources: [certificates]
+    verbs: [get, list]
+  - apiGroups: [postgresql.cnpg.io]
+    resources: [clusters, backups]
     verbs: [get, list]
 ---
 apiVersion: rbac.authorization.k8s.io/v1

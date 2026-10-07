@@ -25,9 +25,11 @@ The image workflow publishes `ghcr.io/bingops-com/portal` with the tags
 - a change under `docker/portal` reaches `master` here.
 
 A published image is not deployed by itself. To roll it out, copy the
-`sha-<commit>` tag from the workflow run (or the GHCR package page) into
-`apps/workloads/portal/base/deployment.yaml` and merge. The `sha` is the
-commit of this repository at build time, not of the source repository.
+timestamp tag (`YYYYMMDD-HHmmss`) from the workflow run or the GHCR package
+page into `apps/workloads/portal/base/deployment.yaml` and merge. Prefer it to
+`sha-<commit>`: that `sha` is the commit of this repository at build time, so
+two source builds without a commit here in between publish the same `sha` tag
+and the second overwrites the first. The timestamp tag is unique per build.
 
 ## External prerequisites
 

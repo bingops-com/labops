@@ -23,6 +23,13 @@ data:
           is_superuser: false
           users:
             - !Find [authentik_core.user, [username, akadmin]]
+      - model: authentik_core.group
+        identifiers:
+          name: portal-editors
+        attrs:
+          is_superuser: false
+          users:
+            - !Find [authentik_core.user, [username, akadmin]]
       - model: authentik_providers_oauth2.oauth2provider
         id: argocd-provider
         identifiers:
@@ -82,3 +89,32 @@ data:
           name: Grafana production
           provider: !KeyOf grafana-provider
           meta_launch_url: https://grafana.lab.bingo
+      - model: authentik_providers_oauth2.oauth2provider
+        id: portal-provider
+        identifiers:
+          name: LabOps Portal production
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: public
+          client_id: portal
+          grant_types:
+            - authorization_code
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, profile]]
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, email]]
+          redirect_uris:
+            - matching_mode: strict
+              url: https://lab.bingo/auth/callback
+      - model: authentik_core.application
+        identifiers:
+          slug: portal
+        attrs:
+          name: LabOps Portal production
+          provider: !KeyOf portal-provider
+          meta_launch_url: https://lab.bingo
