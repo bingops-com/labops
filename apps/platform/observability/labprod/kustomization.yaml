@@ -8,3 +8,4 @@ resources:
   - elasticsearch.yaml
   - elasticsearch-bootstrap.yaml
   - grafana-allowlist.yaml
+  - prometheus-rules.yaml

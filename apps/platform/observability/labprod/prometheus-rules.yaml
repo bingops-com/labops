@@ -1,0 +1,71 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: labops-log-pipeline
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: labops-log-pipeline
+    app.kubernetes.io/part-of: observability
+spec:
+  groups:
+    - name: labops.logging.rules
+      interval: 30s
+      rules:
+        - alert: FluentBitMetricsMissing
+          expr: absent(up{namespace="logging", service="fluent-bit"}) or min(up{namespace="logging", service="fluent-bit"}) == 0
+          for: 10m
+          labels:
+            severity: critical
+            component: fluent-bit
+          annotations:
+            summary: Fluent Bit n'est plus collecté par Prometheus
+            description: Prometheus ne reçoit plus les métriques du collecteur Fluent Bit du cluster labprod depuis au moins 10 minutes. La collecte des logs peut être interrompue.
+            dashboard_url: https://grafana.lab.bingo/d/labops-logging/labops-logging
+        - alert: FluentBitOutputErrors
+          expr: sum(increase(fluentbit_output_errors_total{name=~"es\\..*"}[10m])) > 0
+          for: 5m
+          labels:
+            severity: warning
+            component: fluent-bit
+          annotations:
+            summary: Fluent Bit rencontre des erreurs vers Elasticsearch
+            description: Au moins une erreur d'envoi vers Elasticsearch a été observée sur les 10 dernières minutes et le problème persiste depuis 5 minutes.
+            dashboard_url: https://grafana.lab.bingo/d/labops-logging/labops-logging
+        - alert: FluentBitOutputRetries
+          expr: sum(increase(fluentbit_output_retries_total{name=~"es\\..*"}[10m])) > 5
+          for: 10m
+          labels:
+            severity: warning
+            component: fluent-bit
+          annotations:
+            summary: Fluent Bit accumule les tentatives vers Elasticsearch
+            description: Plus de cinq nouvelles tentatives d'envoi ont été observées par fenêtre de 10 minutes pendant au moins 10 minutes.
+            dashboard_url: https://grafana.lab.bingo/d/labops-logging/labops-logging
+        - alert: FluentBitRecordsDropped
+          expr: sum(increase(fluentbit_output_dropped_records_total{name=~"es\\..*"}[10m])) > 0 or sum(increase(fluentbit_output_retries_failed_total{name=~"es\\..*"}[10m])) > 0
+          labels:
+            severity: critical
+            component: fluent-bit
+          annotations:
+            summary: Fluent Bit a perdu des logs
+            description: Fluent Bit a abandonné ou supprimé au moins un enregistrement destiné à Elasticsearch pendant les 10 dernières minutes.
+            dashboard_url: https://grafana.lab.bingo/d/labops-logging/labops-logging
+        - alert: FluentBitNoRecords
+          expr: sum(increase(fluentbit_input_records_total{name=~"tail\\..*"}[15m])) == 0
+          for: 15m
+          labels:
+            severity: warning
+            component: fluent-bit
+          annotations:
+            summary: Aucun nouveau log n'est collecté
+            description: Fluent Bit est joignable mais n'a lu aucun enregistrement de conteneur depuis 30 minutes. Vérifier les volumes /var/log et la configuration tail.
+            dashboard_url: https://grafana.lab.bingo/d/labops-logging/labops-logging
+        - alert: FluentBitLongLinesSkipped
+          expr: sum(increase(fluentbit_input_long_line_skipped_total{name=~"tail\\..*"}[15m])) > 0
+          labels:
+            severity: warning
+            component: fluent-bit
+          annotations:
+            summary: Fluent Bit ignore des lignes de log trop longues
+            description: Au moins une ligne dépassant la taille maximale du buffer a été ignorée pendant les 15 dernières minutes.
+            dashboard_url: https://grafana.lab.bingo/d/labops-logging/labops-logging
