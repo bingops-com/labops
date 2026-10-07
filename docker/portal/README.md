@@ -29,11 +29,6 @@ A published image is not deployed by itself. To roll it out, copy the
 `apps/workloads/portal/base/deployment.yaml` and merge. The `sha` is the
 commit of this repository at build time, not of the source repository.
 
-The Deployment starts on `latest` with `imagePullPolicy: Always` because no
-`sha` tag exists before the first build. Replace it with the first published
-`sha-<commit>` tag and `imagePullPolicy: IfNotPresent` right after the first
-rollout, so the running image is pinned and reproducible.
-
 ## External prerequisites
 
 | Prerequisite | Purpose | Owner and storage | Verification |
