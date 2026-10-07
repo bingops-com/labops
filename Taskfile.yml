@@ -3,6 +3,7 @@ version: "3"
 includes:
   capi: .taskfiles/capi.yml
   clients: .taskfiles/clients.yml
+  edge: .taskfiles/edge.yml
   hacks: .taskfiles/hacks.yml
   lifecycle: .taskfiles/lifecycle.yml
   network: .taskfiles/network.yml

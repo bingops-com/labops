@@ -3,7 +3,10 @@
 Argo CD combines the environment resources in this directory with the Helm
 chart owned by `bingops-com/pz-server`. The chart runs the Build 42 server on a
 retained `local-path` PVC and publishes UDP NodePorts `30261` and `30262` for
-the external gateway. RCON remains cluster-internal.
+the external gateway. The tracked
+[edge-gateway Terraform stack](../../../terraform/edge-gateway/README.md)
+forwards public UDP `16261` and `16262` over Tailscale to those NodePorts. RCON
+remains cluster-internal.
 
 Bitwarden owns all plaintext values. The tracked mappings materialize
 `pz-server-secrets` and `pz-r2-credentials`; the chart only refers to their

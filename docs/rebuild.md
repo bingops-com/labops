@@ -2,7 +2,8 @@
 
 ## Ownership
 
-- Terraform owns Proxmox networking, Cloudflare, Tailscale DNS and `labmgmt`.
+- Terraform owns Proxmox networking, the public Hetzner edge gateway,
+  Cloudflare, Tailscale DNS and `labmgmt`.
 - CAPI on `labmgmt` owns the sole workload cluster `labprod`.
 - Argo CD owns all platform services and workloads on `labprod`.
 - Bitwarden owns plaintext application credentials; Git owns their mappings.
@@ -10,7 +11,8 @@
 ## Inputs outside Git
 
 Required recoverable inputs are the Proxmox Terraform and CAPMOX API tokens,
-the Tailscale OAuth client, the Cloudflare infrastructure and cert-manager
+the Hetzner Cloud token, the network/DNS and edge-gateway Tailscale OAuth
+clients, the Cloudflare infrastructure and cert-manager
 tokens, the generated tunnel credential, one R2 S3 key restricted to
 `bingops-cnpg-labprod`, one R2 S3 key restricted to `bingops-pz-labprod`, the
 Project Zomboid Restic repository password, and the `labprod` Bitwarden machine
@@ -27,10 +29,13 @@ configs are sensitive generated state, not documentation.
 5. Inject the `labprod` Bitwarden machine token into the bootstrap namespaces
    and wait for mappings. Workload token synchronizers, including Project
    Zomboid, then create their namespace-local copy automatically.
-6. Apply reviewed Cloudflare DNS, tunnel and the production R2 buckets.
-7. Reconcile storage, CloudNativePG and Barman Cloud; verify backup and restore.
-8. Reconcile Authentik, observability and workloads; verify Synced/Healthy.
-9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
+6. Review the edge-gateway forwarding table, apply its saved plan, then verify
+   its Tailscale route and intended public ports. The gateway is stateless; its
+   retained IPv4 is the stable public endpoint.
+7. Apply reviewed Cloudflare DNS, tunnel and the production R2 buckets.
+8. Reconcile storage, CloudNativePG and Barman Cloud; verify backup and restore.
+9. Reconcile Authentik, observability and workloads; verify Synced/Healthy.
+10. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
    verify `https://lab.bingo` through LAN or Tailscale without publishing it
    through the public Cloudflare Tunnel. The portal image is built from
    `docker/portal`, which clones the `master` branch of `bingops-com/portal`;
@@ -38,7 +43,7 @@ configs are sensitive generated state, not documentation.
    prerequisites listed in `docker/portal/README.md`. The layout saved from
    the browser lives only on the `portal-data` PVC and is not restored: the
    portal starts from `apps/workloads/portal/base/portal.yaml`.
-10. Create the bucket-scoped Project Zomboid R2 token in Bitwarden, reconcile
+11. Create the bucket-scoped Project Zomboid R2 token in Bitwarden, reconcile
     its mappings and the workload, then verify a Restic snapshot and a
     disposable restore before retiring the Build 41 VM.
 
