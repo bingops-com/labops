@@ -16,7 +16,15 @@ else
   fi
 
   echo "::notice:: Comparing commits: $BEFORE_SHA → ${GITHUB_SHA}"
-  modified_dirs=$(git diff --name-only "$BEFORE_SHA" "${GITHUB_SHA}" | grep '^docker/' | cut -d/ -f2 | sort -u)
+  # A removed context still appears in the diff; only build those that remain.
+  modified_dirs=""
+  for dir in $(git diff --name-only "$BEFORE_SHA" "${GITHUB_SHA}" | grep '^docker/' | cut -d/ -f2 | sort -u); do
+    if [ -f "docker/$dir/Dockerfile" ]; then
+      modified_dirs+="$dir "
+    else
+      echo "::notice:: Skipping removed Docker context: $dir"
+    fi
+  done
 
   if [ -z "$modified_dirs" ]; then
     echo "::warning:: No modified Docker contexts detected."
