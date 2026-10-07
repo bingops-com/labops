@@ -20,7 +20,7 @@ spec:
         fsGroup: 65532
       containers:
         - name: portal
-          image: ghcr.io/bingops-com/portal:20261007-153427
+          image: ghcr.io/bingops-com/portal:20261007-162358
           imagePullPolicy: IfNotPresent
           env:
             - name: PORTAL_CONFIG
