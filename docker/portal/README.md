@@ -24,12 +24,14 @@ The image workflow publishes `ghcr.io/bingops-com/portal` with the tags
   `rebuild-image` dispatch; a pull request there builds without publishing);
 - a change under `docker/portal` reaches `master` here.
 
-A published image is not deployed by itself. To roll it out, copy the
-timestamp tag (`YYYYMMDD-HHmmss`) from the workflow run or the GHCR package
-page into `apps/workloads/portal/base/deployment.yaml` and merge. Prefer it to
-`sha-<commit>`: that `sha` is the commit of this repository at build time, so
-two source builds without a commit here in between publish the same `sha` tag
-and the second overwrites the first. The timestamp tag is unique per build.
+A published image is not deployed by itself. After each publication the
+workflow opens a pull request (`deploy/portal-<tag>`) that sets the image of
+the manifest named in `deploy-target` to the new timestamp tag
+(`YYYYMMDD-HHmmss`); merging it is the deployment, closing it skips the build.
+The timestamp tag is used rather than `sha-<commit>` because that `sha` is the
+commit of this repository at build time: two source builds without a commit
+here in between would publish the same `sha` tag. Pull requests opened by the
+workflow token do not start other workflows, so they carry no checks.
 
 ## External prerequisites
 
@@ -41,3 +43,7 @@ and the second overwrites the first. The timestamp tag is unique per build.
 
 Without the token the dispatch fails, but a change under `docker/portal`
 still builds the image.
+| Actions may create pull requests | Lets the image workflow open the deployment pull request | Repository setting **Settings > Actions > General > Allow GitHub Actions to create and approve pull requests**; owner: repository admin | A publication is followed by a `deploy/portal-<tag>` pull request |
+
+Without that setting the publication still succeeds and the last step fails;
+update the image tag in `deploy-target`'s manifest by hand.
