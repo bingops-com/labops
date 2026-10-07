@@ -47,6 +47,40 @@ pages:
               limit: 6
       - size: full
         widgets:
+          - type: topology
+            title: Carte du lab
+            options:
+              gatus: ${PORTAL_VAR_GATUS_URL}
+              # State comes from the Argo CD Application and, when named, the
+              # Gatus endpoint; a link takes the state of its worse end.
+              nodes:
+                - { id: internet, label: Internet, layer: 0 }
+                - { id: tailnet, label: Tailscale et LAN, layer: 0 }
+                - { id: tunnel, label: Cloudflare Tunnel, layer: 1, app: cloudflare-tunnel-labprod }
+                - { id: traefik, label: Traefik, layer: 1, app: traefik-labprod }
+                - { id: portfolio, label: Portfolio, layer: 2, app: portfolio-labprod, endpoint: Portfolio }
+                - { id: authentik, label: Authentik, layer: 2, app: authentik-labprod, endpoint: Authentik }
+                - { id: portal, label: Portail, layer: 2, app: portal-labprod, endpoint: Portail }
+                - { id: argocd, label: Argo CD, layer: 2, app: argocd-labprod, endpoint: Argo CD }
+                - { id: grafana, label: Grafana, layer: 2, app: monitoring-labprod, endpoint: Grafana }
+                - { id: postgresql, label: PostgreSQL, layer: 3, app: postgresql-labprod }
+                - { id: prometheus, label: Prometheus, layer: 3, app: monitoring-labprod, endpoint: Prometheus }
+                - { id: elasticsearch, label: Elasticsearch, layer: 3, app: observability-config-labprod }
+                - { id: gatus, label: Gatus, layer: 3, app: gatus-labprod }
+              links:
+                - { from: internet, to: tunnel }
+                - { from: tailnet, to: traefik }
+                - { from: tunnel, to: traefik }
+                - { from: traefik, to: portfolio }
+                - { from: traefik, to: authentik }
+                - { from: traefik, to: portal }
+                - { from: traefik, to: argocd }
+                - { from: traefik, to: grafana }
+                - { from: authentik, to: postgresql }
+                - { from: grafana, to: prometheus }
+                - { from: grafana, to: elasticsearch }
+                - { from: portal, to: prometheus }
+                - { from: portal, to: gatus }
           - type: prometheus
             title: Ressources
             options:
