@@ -37,3 +37,8 @@ endpoints:
     url: https://www.bingops.com
     interval: 60s
     conditions: ["[STATUS] == 200", "[RESPONSE_TIME] < 2000", "[CERTIFICATE_EXPIRATION] > 168h"]
+  - name: RomM
+    group: Public
+    url: https://romm.lab.bingo/api/heartbeat
+    interval: 60s
+    conditions: ["[STATUS] == 200", "[RESPONSE_TIME] < 5000", "[CERTIFICATE_EXPIRATION] > 168h"]

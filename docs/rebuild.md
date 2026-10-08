@@ -30,6 +30,11 @@ configs are sensitive generated state, not documentation.
 6. Apply reviewed Cloudflare DNS, tunnel and the production R2 buckets.
 7. Reconcile storage, CloudNativePG and Barman Cloud; verify backup and restore.
 8. Reconcile Authentik, observability and workloads; verify Synced/Healthy.
+   RomM's OIDC client is public PKCE and adds no external credential. Its CNPG
+   archive reuses the existing bucket-scoped backup key. Restore the operator's
+   external, legally obtained RomM library backup to `romm-data` if that PVC was
+   lost; Git and the database archive cannot reconstruct those files. See
+   `apps/workloads/romm/README.md`.
 9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
    verify `https://lab.bingo` through LAN or Tailscale without publishing it
    through the public Cloudflare Tunnel. The portal image is built from
