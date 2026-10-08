@@ -25,6 +25,26 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
+      initContainers:
+        - name: initialize-data-directories
+          image: rommapp/romm:5.3.1
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-ec"]
+          args: ["mkdir -p /romm/library/roms /romm/resources /romm/assets /romm/config; chown -R 1000:1000 /romm/library /romm/resources /romm/assets /romm/config"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+              add: ["CHOWN", "DAC_OVERRIDE"]
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: false
+            runAsUser: 0
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: data
+              mountPath: /romm
       containers:
         - name: romm
           image: rommapp/romm:5.3.1

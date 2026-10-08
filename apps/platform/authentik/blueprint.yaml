@@ -448,13 +448,6 @@ data:
           is_superuser: false
           users:
             - !Find [authentik_core.user, [username, akadmin]]
-      - model: authentik_core.group
-        identifiers:
-          name: romm-admins
-        attrs:
-          is_superuser: false
-          users:
-            - !Find [authentik_core.user, [username, bingops]]
       - model: authentik_providers_oauth2.oauth2provider
         id: argocd-provider
         identifiers:
@@ -543,6 +536,20 @@ data:
           name: LabOps Portal production
           provider: !KeyOf portal-provider
           meta_launch_url: https://lab.bingo
+  romm.yaml: |
+    version: 1
+    metadata:
+      name: labops-romm
+    entries:
+      # Keep RomM independent from the branding blueprint. A legacy duplicate
+      # auth.lab.bingo Brand must not prevent the SSO provider from reconciling.
+      - model: authentik_core.group
+        identifiers:
+          name: romm-admins
+        attrs:
+          is_superuser: false
+          users:
+            - !Find [authentik_core.user, [username, bingops]]
       - model: authentik_providers_oauth2.scopemapping
         id: romm-email-scope
         identifiers:

@@ -49,7 +49,9 @@ mounted blueprint is the source of truth.
 
 The blueprint makes `bingops` the sole member of `romm-admins`. RomM skips its
 local setup wizard and creates that account automatically on the first OIDC
-login; no RomM bootstrap password is required.
+login; no RomM bootstrap password is required. RomM is kept in the independent
+`romm.yaml` blueprint entry so a failure in the shared brand cannot block its
+OIDC provider, scopes, group or application.
 
 After reconciliation, verify the Authentik discovery endpoint and each login
 through trusted HTTPS without printing tokens or Secret data. Also open an
