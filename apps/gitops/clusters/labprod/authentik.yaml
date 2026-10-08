@@ -28,6 +28,16 @@ spec:
           configMaps:
             - authentik-blueprints
         server:
+          # Brand favicon, served from Authentik's media storage.
+          volumes:
+            - name: branding-assets
+              configMap:
+                name: authentik-branding-assets
+          volumeMounts:
+            - name: branding-assets
+              mountPath: /data/media/public/labops-favicon.svg
+              subPath: labops-favicon.svg
+              readOnly: true
           ingress:
             enabled: true
             ingressClassName: traefik
