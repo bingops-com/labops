@@ -19,6 +19,12 @@ spec:
       # The romm Service would otherwise inject ROMM_PORT=tcp://...:80,
       # overriding RomM's numeric Nginx listen-port setting.
       enableServiceLinks: false
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: romm
           image: rommapp/romm:5.3.1
