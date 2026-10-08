@@ -4,6 +4,424 @@ metadata:
   name: authentik-blueprints
   namespace: authentik
 data:
+  branding.yaml: |
+    version: 1
+    metadata:
+      name: labops-branding
+    entries:
+      - model: authentik_brands.brand
+        identifiers:
+          domain: auth.lab.bingo
+        attrs:
+          default: false
+          branding_title: LabOps SSO
+          flow_authentication: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          flow_invalidation: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
+          flow_user_settings: !Find [authentik_flows.flow, [slug, default-user-settings-flow]]
+          attributes:
+            settings:
+              theme:
+                base: light
+          branding_custom_css: |
+            /*
+             * lab.bingo SSO: Authentik brand CSS, shared by every LabOps application.
+             *
+             * Authentik adopts this sheet in the document and in every component shadow
+             * root. Selectors follow the flow DOM of 2026.5, where the executor host
+             * itself carries the login class:
+             *
+             *   ak-flow-executor.pf-c-login[data-layout]   #shadow
+             *     main.pf-c-login__main                      <- ::before tagline, ::after lockup
+             *       div.pf-c-login__main-header.pf-c-brand   <- welcome panel
+             *         img.branding-logo                      <- repainted as the cat
+             *       ak-stage-*              #shadow
+             *         ak-flow-card          #shadow          <- title, body, actions
+             *     footer.pf-c-login__footer
+             *
+             * Every executor rule is written twice: ":host(.pf-c-login[data-layout]) x"
+             * for that structure, and ".pf-c-login[data-layout] x" for releases that wrap
+             * the same children in an inner div.pf-c-login (2026.8 does).
+             *
+             * Typography uses the Red Hat families that Authentik itself serves, so no
+             * font is uploaded or fetched from elsewhere. The mark and the animated cat
+             * are SVG data URIs: edit them here, there is no other copy.
+             */
+
+            :root,
+            :host {
+              --labops-surface: #ffffff;
+              --labops-ink: #111730;
+              --labops-ink-soft: #586079;
+              --labops-field-line: #8690a3;
+              --labops-blue: #1443d6;
+              --labops-blue-dark: #0f36b3;
+              --labops-blue-deep: #0a2480;
+              --labops-mint: #8af2bf;
+              --labops-font-display: "RedHatDisplay", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+              --labops-font-text: "RedHatText", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+              --pf-global--primary-color--100: var(--labops-blue);
+              --pf-global--primary-color--200: var(--labops-blue-dark);
+              --pf-global--link--Color: var(--labops-blue);
+              --pf-global--link--Color--hover: var(--labops-blue-dark);
+              color-scheme: light;
+            }
+
+            /* Page frame: welcome panel on the left, native flow on the right. */
+
+            :host(.pf-c-login[data-layout]),
+            .pf-c-login[data-layout] {
+              --labops-panel: clamp(22rem, 44vw, 48rem);
+              --labops-pad: clamp(2rem, 3.5vw, 3.5rem);
+              /* Size of the "lab.bingo" word; the greeting scales with it. */
+              --labops-word: clamp(3.25rem, min(6.6vw, 13dvh), 6.5rem);
+              --labops-cat: clamp(5.5rem, min(10vw, 20dvh), 9.5rem);
+
+              --ak-c-login__main--BackgroundColor: var(--labops-surface);
+              --ak-c-login__main--BoxShadow: none;
+              --ak-global--BackgroundContrastFilter: none;
+              --pf-c-login__main-header--PaddingTop: 0;
+              --pf-c-login__main-header--PaddingRight: 0;
+              --pf-c-login__main-header--PaddingBottom: 2rem;
+              --pf-c-login__main-header--PaddingLeft: 0;
+              --pf-c-login__main-body--PaddingRight: 0;
+              --pf-c-login__main-body--PaddingLeft: 0;
+              --pf-c-login__main-footer--PaddingBottom: 0;
+
+              grid-template-columns: var(--labops-panel) minmax(0, 1fr);
+              grid-template-rows: minmax(0, 1fr);
+              grid-template-areas: none;
+              justify-content: normal;
+              background: var(--labops-surface);
+              color: var(--labops-ink);
+              font-family: var(--labops-font-text);
+            }
+
+            :host(.pf-c-login[data-layout])::before,
+            .pf-c-login[data-layout]::before,
+            :host(.pf-c-login[data-layout])::after,
+            .pf-c-login[data-layout]::after {
+              display: none;
+            }
+
+            :host(.pf-c-login[data-layout]) .pf-c-login__header,
+            .pf-c-login[data-layout] .pf-c-login__header {
+              grid-area: 1 / 2;
+            }
+
+            :host(.pf-c-login[data-layout]) .pf-c-login__main,
+            .pf-c-login[data-layout] .pf-c-login__main {
+              grid-area: 1 / 1 / -1 / -1;
+              align-self: stretch;
+              display: grid;
+              grid-template-columns: var(--labops-panel) minmax(0, 1fr);
+              grid-template-rows: minmax(0, 1fr);
+              max-width: none;
+              min-height: 100dvh;
+              margin: 0;
+            }
+
+            /* The site footer only carries the vendor credit: this brand sets no footer
+               links, so the whole band is removed. */
+            :host(.pf-c-login[data-layout]) .pf-c-login__footer,
+            .pf-c-login[data-layout] .pf-c-login__footer {
+              display: none;
+            }
+
+            :host(.pf-c-login[data-layout]) [part="locale-select"],
+            .pf-c-login[data-layout] [part="locale-select"] {
+              --ak-c-flow-executor__locale-select--Color: var(--labops-ink-soft);
+              inset-inline-start: calc(var(--labops-panel) + 1rem);
+            }
+
+            /* The stage (or its loading placeholder) is the only other child of main. */
+            :host(.pf-c-login[data-layout]) .pf-c-login__main > :not(.pf-c-brand, ak-loading-overlay),
+            .pf-c-login[data-layout] .pf-c-login__main > :not(.pf-c-brand, ak-loading-overlay) {
+              grid-area: 1 / 2;
+              align-self: center;
+              justify-self: center;
+              box-sizing: border-box;
+              width: min(100%, 31rem);
+              padding: 4.5rem clamp(1.5rem, 4vw, 3rem);
+            }
+
+            /* Welcome panel: the greeting is centred, the cat sits on the floor in the
+               bottom right corner, opposite the product lockup. */
+
+            :host(.pf-c-login[data-layout]) .pf-c-login__main-header.pf-c-brand,
+            .pf-c-login[data-layout] .pf-c-login__main-header.pf-c-brand {
+              grid-area: 1 / 1;
+              display: grid;
+              grid-template-columns: max-content;
+              align-content: center;
+              justify-content: center;
+              position: relative;
+              overflow: hidden;
+              padding: calc(var(--labops-pad) + 3rem) var(--labops-pad) calc(var(--labops-pad) + 4rem);
+              background:
+                radial-gradient(circle at 50% 46%, rgb(255 255 255 / 0.12), transparent 58%),
+                radial-gradient(rgb(255 255 255 / 0.13) 1px, transparent 1.6px) 0 0 / 1.75rem 1.75rem,
+                linear-gradient(170deg, var(--labops-blue) 30%, var(--labops-blue-deep) 100%);
+              color: #ffffff;
+              text-align: left;
+            }
+
+            /* The logo image is collapsed to its padding box, which shows the cat. */
+            :host(.pf-c-login[data-layout]) .pf-c-brand .branding-logo,
+            .pf-c-login[data-layout] .pf-c-brand .branding-logo {
+              position: absolute;
+              right: var(--labops-pad);
+              bottom: 0;
+              display: block;
+              box-sizing: content-box;
+              width: calc(1.127 * var(--labops-cat));
+              max-width: none;
+              height: 0;
+              padding-top: var(--labops-cat);
+              overflow: hidden;
+              background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='124' height='110' viewBox='0 0 124 110'%3E%3Cstyle%3E .tail { transform-origin: 84px 100px; animation: tail 2.6s ease-in-out infinite alternate; } .head { transform-origin: 60px 56px; animation: head 7s ease-in-out infinite; } .ear { transform-origin: 72px 24px; animation: ear 5.5s ease-in-out infinite; } .eyes { transform-origin: 60px 40px; animation: blink 4.8s linear infinite; } @keyframes tail { from { transform: rotate(3deg); } to { transform: rotate(-16deg); } } @keyframes head { 0%25, 55%25, 100%25 { transform: rotate(0deg); } 65%25, 90%25 { transform: rotate(-7deg); } } @keyframes ear { 0%25, 80%25, 88%25, 100%25 { transform: rotate(0deg); } 84%25 { transform: rotate(14deg); } } @keyframes blink { 0%25, 93%25, 100%25 { transform: scaleY(1); } 96.5%25 { transform: scaleY(.08); } } @media (prefers-reduced-motion: reduce) { .tail, .head, .ear, .eyes { animation: none; } } %3C/style%3E%3Cpath class='tail' d='M84 100c18 5 30-6 22-24' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M32 110C27 82 40 56 60 56s33 26 28 54z' fill='%23fff'/%3E%3Cpath d='M52 110V95M68 110V95' stroke='%231443d6' stroke-opacity='.28' stroke-width='2' stroke-linecap='round'/%3E%3Cg class='head'%3E%3Cpath d='M40 31 42 8l15 13z' fill='%23fff' stroke='%23fff' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath class='ear' d='M80 31 78 8 63 21z' fill='%23fff' stroke='%23fff' stroke-width='4' stroke-linejoin='round'/%3E%3Cellipse cx='60' cy='40' rx='25' ry='21' fill='%23fff'/%3E%3Cg class='eyes' fill='%230b2a94'%3E%3Cellipse cx='50' cy='40' rx='3.4' ry='4.6'/%3E%3Cellipse cx='70' cy='40' rx='3.4' ry='4.6'/%3E%3C/g%3E%3Cpath d='M57.5 47h5L60 50z' fill='%230b2a94' stroke='%230b2a94' stroke-linejoin='round'/%3E%3Cpath d='M43 57q17 9 34 0' fill='none' stroke='%238af2bf' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='60' cy='65' r='4.5' fill='%238af2bf' stroke='%230b2a94' stroke-opacity='.35'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+              color: transparent;
+              font-size: 0;
+            }
+
+            :host(.pf-c-login[data-layout]) .pf-c-brand::before,
+            .pf-c-login[data-layout] .pf-c-brand::before {
+              grid-area: 1 / 1;
+              margin: 0 0 calc(-0.02 * var(--labops-word)) calc(0.04 * var(--labops-word));
+              color: rgb(255 255 255 / 0.88);
+              content: "Bienvenue sur";
+              font: 500 calc(0.32 * var(--labops-word)) / 1 var(--labops-font-display);
+              letter-spacing: -0.01em;
+            }
+
+            :host(.pf-c-login[data-layout]) .pf-c-brand::after,
+            .pf-c-login[data-layout] .pf-c-brand::after {
+              grid-area: 2 / 1;
+              content: "lab.bingo";
+              font: 900 var(--labops-word) / 1 var(--labops-font-display);
+              letter-spacing: -0.035em;
+              white-space: nowrap;
+            }
+
+            /* Corners of the panel: product lockup above, tagline below. They are
+               pseudo-elements of main, laid over the panel's grid cell. */
+
+            :host(.pf-c-login[data-layout]) .pf-c-login__main::after,
+            .pf-c-login[data-layout] .pf-c-login__main::after,
+            :host(.pf-c-login[data-layout]) .pf-c-login__main::before,
+            .pf-c-login[data-layout] .pf-c-login__main::before {
+              grid-area: 1 / 1;
+              z-index: 1;
+              justify-self: start;
+              margin: var(--labops-pad);
+              color: #ffffff;
+              pointer-events: none;
+            }
+
+            :host(.pf-c-login[data-layout]) .pf-c-login__main::after,
+            .pf-c-login[data-layout] .pf-c-login__main::after {
+              align-self: start;
+              padding-left: 3.25rem;
+              background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23fff' fill-opacity='.14'/%3E%3Cpath d='M20 16v26a6 6 0 0 0 6 6h12' fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='46' cy='48' r='5.5' fill='%238af2bf'/%3E%3C/svg%3E") left center / 2.5rem 2.5rem no-repeat;
+              content: "LabOps SSO";
+              font: 700 1.0625rem / 2.5rem var(--labops-font-display);
+              letter-spacing: -0.005em;
+            }
+
+            :host(.pf-c-login[data-layout]) .pf-c-login__main::before,
+            .pf-c-login[data-layout] .pf-c-login__main::before {
+              align-self: end;
+              /* Leaves the corner to the cat. */
+              max-width: min(24rem, calc(var(--labops-panel) - 2 * var(--labops-pad) - 1.127 * var(--labops-cat) - 1rem));
+              color: rgb(255 255 255 / 0.78);
+              content: "Un accès unique à vos applications.";
+              font: 400 1rem / 1.5 var(--labops-font-text);
+            }
+
+            /* Native flow card: title, fields, actions. */
+
+            ak-flow-card {
+              display: block;
+            }
+
+            /* The flow title is Authentik data that names the vendor by default. It is
+               collapsed and replaced by neutral copy. */
+            .pf-c-login__main-header:not(.pf-c-brand) .pf-c-title {
+              color: var(--labops-ink);
+              font-size: 0;
+              line-height: 0;
+            }
+
+            .pf-c-login__main-header:not(.pf-c-brand) .pf-c-title::before {
+              display: block;
+              content: "Connexion";
+              font: 800 2.25rem / 1.1 var(--labops-font-display);
+              letter-spacing: -0.025em;
+            }
+
+            .pf-c-login__main-header:not(.pf-c-brand) .pf-c-title::after {
+              display: block;
+              margin-top: 0.625rem;
+              color: var(--labops-ink-soft);
+              content: "Identifiez-vous pour accéder à vos applications.";
+              font: 400 1rem / 1.5 var(--labops-font-text);
+            }
+
+            ak-flow-card .pf-c-form {
+              --pf-c-form--GridGap: 1.25rem;
+              --pf-c-form__group--m-action--MarginTop: 0.25rem;
+              color: var(--labops-ink);
+              font-family: var(--labops-font-text);
+            }
+
+            ak-flow-card .pf-c-form p {
+              color: var(--labops-ink-soft);
+            }
+
+            ak-flow-card .pf-c-form__label {
+              color: var(--labops-ink);
+              font-size: 0.875rem;
+              font-weight: 500;
+            }
+
+            ak-flow-card .pf-c-form-control {
+              --pf-c-form-control--BorderTopColor: var(--labops-field-line);
+              --pf-c-form-control--BorderRightColor: var(--labops-field-line);
+              --pf-c-form-control--BorderBottomColor: var(--labops-field-line);
+              --pf-c-form-control--BorderLeftColor: var(--labops-field-line);
+              --pf-c-form-control--BorderRadius: 10px;
+              --pf-c-form-control--hover--BorderBottomColor: var(--labops-ink);
+              --pf-c-form-control--focus--BorderBottomWidth: var(--pf-c-form-control--BorderWidth);
+              --pf-c-form-control--focus--PaddingBottom: var(--pf-c-form-control--PaddingBottom);
+              --pf-c-form-control--PaddingRight: 1rem;
+              --pf-c-form-control--PaddingLeft: 1rem;
+              --pf-c-form-control--Height: 3rem;
+              height: 3rem;
+              border: 1px solid var(--labops-field-line);
+              color: var(--labops-ink);
+              font-family: var(--labops-font-text);
+            }
+
+            ak-flow-card .pf-c-form-control:hover {
+              border-color: var(--labops-ink);
+            }
+
+            ak-flow-card .pf-c-form-control:focus {
+              border-color: var(--labops-blue);
+              outline: 3px solid rgb(20 67 214 / 0.22);
+              outline-offset: 0;
+            }
+
+            ak-flow-card .pf-c-button {
+              --pf-c-button--BorderRadius: 10px;
+              --pf-c-button--after--BorderRadius: 10px;
+              --pf-c-button--FontWeight: 700;
+              min-height: 3rem;
+              font-family: var(--labops-font-display);
+              letter-spacing: 0.005em;
+            }
+
+            ak-flow-card .pf-c-button:focus-visible {
+              outline: 3px solid rgb(20 67 214 / 0.35);
+              outline-offset: 2px;
+            }
+
+            ak-flow-card .pf-c-login__main-footer-band {
+              --pf-c-login__main-footer-band--PaddingTop: 0.5rem;
+              color: var(--labops-ink-soft);
+              font: 400 0.9375rem / 1.5 var(--labops-font-text);
+            }
+
+            ak-flow-card .pf-c-login__main-footer-band a {
+              color: var(--labops-blue);
+              font-weight: 500;
+              overflow-wrap: anywhere;
+            }
+
+            /* Narrow screens: the panel becomes a compact header above the flow, with the
+               cat sitting on its bottom edge. */
+
+            @media (max-width: 56rem) {
+              :host(.pf-c-login[data-layout]),
+              .pf-c-login[data-layout] {
+                --labops-pad: 1.5rem;
+                --labops-word: 2.5rem;
+                grid-template-columns: minmax(0, 1fr);
+              }
+
+              :host(.pf-c-login[data-layout]) .pf-c-login__header,
+              .pf-c-login[data-layout] .pf-c-login__header {
+                grid-area: 1 / 1;
+              }
+
+              :host(.pf-c-login[data-layout]) .pf-c-login__main,
+              .pf-c-login[data-layout] .pf-c-login__main {
+                grid-area: 1 / 1;
+                grid-template-columns: minmax(0, 1fr);
+                grid-template-rows: auto 1fr;
+                min-height: 0;
+              }
+
+              :host(.pf-c-login[data-layout]) [part="locale-select"],
+              .pf-c-login[data-layout] [part="locale-select"] {
+                /* Out of the header band, which belongs to the lockup. */
+                inset-block: auto 0.75rem;
+                inset-inline: 0.75rem auto;
+              }
+
+              :host(.pf-c-login[data-layout]) .pf-c-login__main > :not(.pf-c-brand, ak-loading-overlay),
+              .pf-c-login[data-layout] .pf-c-login__main > :not(.pf-c-brand, ak-loading-overlay) {
+                grid-area: 2 / 1;
+                align-self: start;
+                padding-block: 2.25rem 1.5rem;
+              }
+
+              :host(.pf-c-login[data-layout]) .pf-c-login__main-header.pf-c-brand,
+              .pf-c-login[data-layout] .pf-c-login__main-header.pf-c-brand {
+                display: block;
+                padding: calc(var(--labops-pad) + 2.5rem + 1.5rem) var(--labops-pad) var(--labops-pad);
+                background:
+                  radial-gradient(rgb(255 255 255 / 0.13) 1px, transparent 1.6px) 0 0 / 1.75rem 1.75rem,
+                  linear-gradient(170deg, var(--labops-blue) 30%, var(--labops-blue-deep) 100%);
+              }
+
+              :host(.pf-c-login[data-layout]) .pf-c-brand .branding-logo,
+              .pf-c-login[data-layout] .pf-c-brand .branding-logo {
+                right: 1.25rem;
+                width: 5.07rem;
+                padding-top: 4.5rem;
+              }
+
+              :host(.pf-c-login[data-layout]) .pf-c-brand::before,
+              .pf-c-login[data-layout] .pf-c-brand::before,
+              :host(.pf-c-login[data-layout]) .pf-c-brand::after,
+              .pf-c-login[data-layout] .pf-c-brand::after {
+                display: block;
+                margin: 0;
+              }
+
+              :host(.pf-c-login[data-layout]) .pf-c-brand::before,
+              .pf-c-login[data-layout] .pf-c-brand::before {
+                margin-bottom: 0.25rem;
+                font-size: 1.0625rem;
+              }
+
+              :host(.pf-c-login[data-layout]) .pf-c-login__main::before,
+              .pf-c-login[data-layout] .pf-c-login__main::before {
+                display: none;
+              }
+
+              .pf-c-login__main-header:not(.pf-c-brand) .pf-c-title::before {
+                font-size: 1.875rem;
+              }
+            }
+
+            /* Very short viewports: keep the words, drop the cat. */
+            @media (min-width: 56.0625rem) and (max-height: 24rem) {
+              :host(.pf-c-login[data-layout]) .pf-c-brand .branding-logo,
+              .pf-c-login[data-layout] .pf-c-brand .branding-logo {
+                display: none;
+              }
+            }
   argocd.yaml: |
     version: 1
     metadata:
