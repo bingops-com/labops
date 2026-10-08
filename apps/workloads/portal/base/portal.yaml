@@ -30,6 +30,7 @@ pages:
                     - { title: Argo CD, url: "https://argocd.lab.bingo", description: GitOps, icon: "si:argo", checkUrl: "http://argocd-server.argocd-system.svc.cluster.local/healthz" }
                     - { title: Grafana, url: "https://grafana.lab.bingo", description: Métriques et journaux, icon: "si:grafana", checkUrl: "http://monitoring-grafana.monitoring.svc.cluster.local/api/health" }
                     - { title: Authentik, url: "https://auth.lab.bingo", description: SSO, icon: "si:authentik", checkUrl: "https://auth.lab.bingo/-/health/live/" }
+                    - { title: RomM, url: "https://romm.lab.bingo", description: Bibliothèque de jeux, icon: "si:nintendogamecube", checkUrl: "https://romm.lab.bingo/api/heartbeat" }
                     - { title: Portfolio, url: "https://www.bingops.com", description: Site public, checkUrl: "https://www.bingops.com" }
                 - title: Code
                   links:
@@ -50,6 +51,7 @@ pages:
                 - { id: traefik, label: Traefik, layer: 1, app: traefik-labprod }
                 - { id: portfolio, label: Portfolio, layer: 2, app: portfolio-labprod, endpoint: Portfolio }
                 - { id: authentik, label: Authentik, layer: 2, app: authentik-labprod, endpoint: Authentik }
+                - { id: romm, label: RomM, layer: 2, app: romm-labprod, endpoint: RomM }
                 - { id: portal, label: Portail, layer: 2, app: portal-labprod, endpoint: Portail }
                 - { id: argocd, label: Argo CD, layer: 2, app: argocd-labprod, endpoint: Argo CD }
                 - { id: grafana, label: Grafana, layer: 2, app: monitoring-labprod, endpoint: Grafana }
@@ -63,10 +65,13 @@ pages:
                 - { from: tunnel, to: traefik }
                 - { from: traefik, to: portfolio }
                 - { from: traefik, to: authentik }
+                - { from: traefik, to: romm }
                 - { from: traefik, to: portal }
                 - { from: traefik, to: argocd }
                 - { from: traefik, to: grafana }
                 - { from: authentik, to: postgresql }
+                - { from: romm, to: authentik }
+                - { from: romm, to: postgresql }
                 - { from: grafana, to: prometheus }
                 - { from: grafana, to: elasticsearch }
                 - { from: portal, to: prometheus }

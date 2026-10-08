@@ -30,6 +30,13 @@ data:
           is_superuser: false
           users:
             - !Find [authentik_core.user, [username, akadmin]]
+      - model: authentik_core.group
+        identifiers:
+          name: romm-admins
+        attrs:
+          is_superuser: false
+          users:
+            - !Find [authentik_core.user, [username, akadmin]]
       - model: authentik_providers_oauth2.oauth2provider
         id: argocd-provider
         identifiers:
@@ -118,3 +125,56 @@ data:
           name: LabOps Portal production
           provider: !KeyOf portal-provider
           meta_launch_url: https://lab.bingo
+      - model: authentik_providers_oauth2.scopemapping
+        id: romm-email-scope
+        identifiers:
+          name: RomM verified email
+        attrs:
+          scope_name: email
+          description: Email claim required by RomM with Authentik 2025.10+
+          expression: |
+            return {
+                "email": request.user.email,
+                "email_verified": True,
+            }
+      - model: authentik_providers_oauth2.scopemapping
+        id: romm-groups-scope
+        identifiers:
+          name: RomM group membership
+        attrs:
+          scope_name: groups
+          description: Authentik group names used by RomM role mapping
+          expression: |
+            return {
+                "groups": [group.name for group in request.user.all_groups()],
+            }
+      - model: authentik_providers_oauth2.oauth2provider
+        id: romm-provider
+        identifiers:
+          name: RomM production
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: public
+          client_id: romm
+          grant_types:
+            - authorization_code
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, profile]]
+            - !KeyOf romm-email-scope
+            - !KeyOf romm-groups-scope
+          redirect_uris:
+            - matching_mode: strict
+              url: https://romm.lab.bingo/api/oauth/openid
+      - model: authentik_core.application
+        identifiers:
+          slug: romm
+        attrs:
+          name: RomM production
+          provider: !KeyOf romm-provider
+          meta_launch_url: https://romm.lab.bingo

@@ -13,7 +13,7 @@ Application `apps/gitops/bootstrap/labprod.yaml`. The root reconciles
 and workloads use wave zero. Automated pruning and self-healing are enabled.
 
 Production names under `lab.bingo` are explicit. Cloudflare Tunnel publishes
-`auth.lab.bingo` and `portfolio.lab.bingo`; `bingops.com` and
+`auth.lab.bingo`, `portfolio.lab.bingo` and `romm.lab.bingo`; `bingops.com` and
 `www.bingops.com` reach the portfolio. Argo CD and Grafana remain private
 through exact-name Tailscale split-DNS routes, and the LabOps Portal is
 private at the `lab.bingo` apex. The private names resolve to `192.168.10.151`;
