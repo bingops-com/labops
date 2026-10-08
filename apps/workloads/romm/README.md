@@ -45,7 +45,9 @@ The ROM library, downloaded metadata, saves and optional RomM configuration on
 database backup. Their owner is the lab operator. Keep legally obtained source
 media or an independent encrypted backup outside the cluster, then restore the
 expected `library`, `resources`, `assets` and `config` directories below
-`/romm`. This is the only input that cannot be recovered from Git or the CNPG
+`/romm`. An idempotent init container creates these directories, including
+`library/roms`, and repairs their ownership for RomM's UID/GID 1000 before each
+start. This is the only input that cannot be recovered from Git or the CNPG
 archive. A lost PVC without that external copy is an explicit data-loss gap.
 
 ## Validation
@@ -62,7 +64,9 @@ Secret values:
 ```sh
 kubectl --context labprod get application romm-labprod -n argocd-system
 kubectl --context labprod get deployment,pod,pvc,cluster,scheduledbackup -n romm
+kubectl --context labprod exec -n romm deployment/romm -- test -w /romm/library/roms
 curl --fail --silent --show-error https://romm.lab.bingo/api/heartbeat >/dev/null
+curl --fail --silent --show-error https://auth.lab.bingo/application/o/romm/.well-known/openid-configuration >/dev/null
 ```
 
 Uploading the same library tree again and rescanning is safe after a partial
