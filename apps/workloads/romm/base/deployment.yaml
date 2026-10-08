@@ -16,6 +16,9 @@ spec:
         app.kubernetes.io/name: romm
     spec:
       automountServiceAccountToken: false
+      # The romm Service would otherwise inject ROMM_PORT=tcp://...:80,
+      # overriding RomM's numeric Nginx listen-port setting.
+      enableServiceLinks: false
       containers:
         - name: romm
           image: rommapp/romm:5.3.1
