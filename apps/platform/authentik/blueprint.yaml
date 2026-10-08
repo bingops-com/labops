@@ -9,12 +9,20 @@ data:
     metadata:
       name: labops-branding
     entries:
+      # Browser tab title of Authentik's default flow, which must already exist;
+      # the on-page heading is localised by the brand CSS.
+      - model: authentik_flows.flow
+        identifiers:
+          slug: default-authentication-flow
+        attrs:
+          title: lab.bingo
       - model: authentik_brands.brand
         identifiers:
           domain: auth.lab.bingo
         attrs:
           default: false
           branding_title: LabOps SSO
+          branding_favicon: labops-favicon.svg
           flow_authentication: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
           flow_invalidation: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
           flow_user_settings: !Find [authentik_flows.flow, [slug, default-user-settings-flow]]
@@ -64,6 +72,26 @@ data:
               --pf-global--link--Color: var(--labops-blue);
               --pf-global--link--Color--hover: var(--labops-blue-dark);
               color-scheme: light;
+            }
+
+            /* Copy. English is the default and French overrides it; any other Authentik
+               locale falls back to English. Authentik sets the active locale on <html lang>
+               and custom properties inherit into every shadow root, so these are declared
+               on :root only: redeclaring them on :host would mask the French values. */
+
+            :root {
+              --labops-t-greeting: "Welcome to";
+              --labops-t-tagline: "One sign-in for all your applications.";
+              --labops-t-title: "Log in";
+              --labops-t-lead: "Log in to access your applications.";
+            }
+
+            :root:lang(fr) {
+              --labops-t-greeting: "Bienvenue sur";
+              --labops-t-tagline: "Un accès unique à vos applications.";
+              --labops-t-title: "Connexion";
+              --labops-t-lead: "Identifiez-vous pour accéder à vos applications.";
+              --labops-t-identifier: "Adresse e-mail ou nom d’utilisateur";
             }
 
             /* Page frame: welcome panel on the left, native flow on the right. */
@@ -188,7 +216,7 @@ data:
               grid-area: 1 / 1;
               margin: 0 0 calc(-0.02 * var(--labops-word)) calc(0.04 * var(--labops-word));
               color: rgb(255 255 255 / 0.88);
-              content: "Bienvenue sur";
+              content: var(--labops-t-greeting);
               font: 500 calc(0.32 * var(--labops-word)) / 1 var(--labops-font-display);
               letter-spacing: -0.01em;
             }
@@ -233,7 +261,7 @@ data:
               /* Leaves the corner to the cat. */
               max-width: min(24rem, calc(var(--labops-panel) - 2 * var(--labops-pad) - 1.127 * var(--labops-cat) - 1rem));
               color: rgb(255 255 255 / 0.78);
-              content: "Un accès unique à vos applications.";
+              content: var(--labops-t-tagline);
               font: 400 1rem / 1.5 var(--labops-font-text);
             }
 
@@ -253,7 +281,7 @@ data:
 
             .pf-c-login__main-header:not(.pf-c-brand) .pf-c-title::before {
               display: block;
-              content: "Connexion";
+              content: var(--labops-t-title);
               font: 800 2.25rem / 1.1 var(--labops-font-display);
               letter-spacing: -0.025em;
             }
@@ -262,7 +290,7 @@ data:
               display: block;
               margin-top: 0.625rem;
               color: var(--labops-ink-soft);
-              content: "Identifiez-vous pour accéder à vos applications.";
+              content: var(--labops-t-lead);
               font: 400 1rem / 1.5 var(--labops-font-text);
             }
 
@@ -299,6 +327,27 @@ data:
               border: 1px solid var(--labops-field-line);
               color: var(--labops-ink);
               font-family: var(--labops-font-text);
+            }
+
+            /* The label above already names the field. */
+            ak-flow-card .pf-c-form-control::placeholder {
+              color: transparent;
+            }
+
+            /* Authentik's French catalogue leaves the identification label half in
+               English ("Email ou Username"). It is rewritten for the email + username
+               configuration of the default identification stage. */
+            label[for="ak-identifier-input"]:lang(fr) .pf-c-form__label-text {
+              font-size: 0;
+            }
+
+            label[for="ak-identifier-input"]:lang(fr) .pf-c-form__label-text::before {
+              content: var(--labops-t-identifier);
+              font-size: 0.875rem;
+            }
+
+            label[for="ak-identifier-input"]:lang(fr) .pf-c-form__label-text::after {
+              font-size: 0.875rem;
             }
 
             ak-flow-card .pf-c-form-control:hover {

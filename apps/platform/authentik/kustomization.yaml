@@ -4,4 +4,5 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - blueprint.yaml
+  - branding-assets.yaml
   - bitwarden-secret.yaml
