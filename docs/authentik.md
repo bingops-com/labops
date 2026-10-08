@@ -47,6 +47,10 @@ file, external font, CDN asset or manual Admin UI setting to recover during a
 rebuild. Change the blueprint rather than editing the brand in Authentik; the
 mounted blueprint is the source of truth.
 
+The blueprint makes `bingops` the sole member of `romm-admins`. RomM skips its
+local setup wizard and creates that account automatically on the first OIDC
+login; no RomM bootstrap password is required.
+
 After reconciliation, verify the Authentik discovery endpoint and each login
 through trusted HTTPS without printing tokens or Secret data. Also open an
 incognito window on `https://auth.lab.bingo/if/flow/default-authentication-flow/`

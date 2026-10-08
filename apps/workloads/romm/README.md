@@ -18,9 +18,10 @@ by the least-privilege token synchronizer from `argocd-system`.
 
 Authentik group membership is the source of truth for RomM roles. Members of
 `romm-admins` are administrators; every authenticated Authentik user is granted
-the normal user role. `akadmin` is declared as the initial administrator. The
-native login and setup wizard remain enabled as a recovery path; do not disable
-them until an OIDC administrator login has been verified.
+the normal user role. `bingops` is the sole declared administrator. The setup
+wizard is disabled and OIDC registration is explicit, so the first successful
+Authentik login creates the RomM account without a local bootstrap credential.
+Native password login remains available as a recovery path.
 
 ## Data and recovery
 

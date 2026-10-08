@@ -454,7 +454,7 @@ data:
         attrs:
           is_superuser: false
           users:
-            - !Find [authentik_core.user, [username, akadmin]]
+            - !Find [authentik_core.user, [username, bingops]]
       - model: authentik_providers_oauth2.oauth2provider
         id: argocd-provider
         identifiers:
