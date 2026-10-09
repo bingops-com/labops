@@ -11,8 +11,8 @@ docker build -t ghcr.io/bingops-com/status docker/status
 ```
 
 The image contains no configuration: it reads `STATUS_CONFIG`
-(`/etc/status/status.yaml`), mounted from the `apps/workloads/status`
-ConfigMap, and writes its availability history to `STATUS_DATA` (`/data`).
+(`/etc/status/status.yaml`), rendered by the `charts/status` Helm chart
+from the values of `apps/workloads/status`, and writes its availability history to `STATUS_DATA` (`/data`).
 
 ## Releases
 
@@ -25,8 +25,8 @@ The image workflow publishes `ghcr.io/bingops-com/status` with the tags
 
 A published image is not deployed by itself. Once `deploy-target` exists in
 this directory, the workflow opens a pull request (`deploy/status-<tag>`) after
-each publication that sets the image of the manifest it names to the new
-timestamp tag (`YYYYMMDD-HHmmss`); merging it is the deployment. See
+each publication that sets `image.tag` of the Helm values file it names to the
+new timestamp tag (`YYYYMMDD-HHmmss`); merging it is the deployment. See
 [`docker/portal/README.md`](../portal/README.md) for why the timestamp tag is
 the one deployed.
 

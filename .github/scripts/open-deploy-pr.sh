@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Opens a pull request that points a workload at the image just published.
-# Runs only for images that declare docker/<image>/deploy-target, the manifest
-# holding their "image:" line. Merging the pull request is the deployment.
+# Runs only for images that declare docker/<image>/deploy-target: the manifest
+# holding their "image:" line, or the Helm values file whose "tag:" line
+# directly follows their "repository:" line. Merging the pull request is the
+# deployment.
 
 set -euo pipefail
 
@@ -20,7 +22,9 @@ if [[ ! -f "$target" ]]; then
   exit 1
 fi
 
-sed -i -E "s|(image: ${image}):[^[:space:]]+|\1:${tag}|" "$target"
+sed -i -E \
+  -e "s|(image: ${image}):[^[:space:]]+|\1:${tag}|" \
+  -e "\|repository: ${image}\$|{n;s|(tag: ).*|\1${tag}|;}" "$target"
 if git diff --quiet -- "$target"; then
   echo "::notice::${target} already uses ${image}:${tag}."
   exit 0

@@ -1,0 +1,47 @@
+fullnameOverride: ""
+
+# Added to every object; never part of a selector.
+extraLabels: {}
+
+image:
+  repository: ghcr.io/bingops-com/status
+  # Deployments pin a timestamp tag in their own values file.
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+# Holds history.json, the availability per day and the incidents. Losing it
+# only resets the figures of the page; nothing else depends on it.
+persistence:
+  # Without a volume the history is lost at every restart.
+  enabled: true
+  storageClassName: ""
+  size: 64Mi
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+# Rendered as status.yaml, the configuration file documented in the source
+# repository. It is read once at start; a change restarts the page.
+config:
+  title: Status
+  gatus: http://gatus.gatus.svc.cluster.local:8080
+  # Only endpoints of these Gatus groups are recorded and shown.
+  groups: [Public]
+  interval: 60s
+  days: 90
+  timezone: UTC
+  # Failed checks in a row before an incident is opened.
+  failureThreshold: 2
+  # Words and public address of each service; name is the Gatus endpoint name.
+  services: []
+  # Hand-written announcements, most recent first.
+  notices: []

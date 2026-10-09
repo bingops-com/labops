@@ -54,7 +54,14 @@ configs are sensitive generated state, not documentation.
    that repository, its public GHCR image and the dispatch token are external
    prerequisites listed in `docker/portal/README.md`. The layout saved from
    the browser lives only on the `portal-data` PVC and is not restored: the
-   portal starts from `apps/workloads/portal/base/portal.yaml`.
+   portal starts from `apps/workloads/portal/base/portal.yaml`. The public
+   status page `https://status.lab.bingo` follows Gatus, which it reads
+   in-cluster: its image is built from `docker/status` with the external
+   prerequisites listed in `docker/status/README.md`, its DNS record comes
+   from `terraform/cloudflare` and its route from the Cloudflare Tunnel
+   values. Its history lives only on the `status-data` PVC and is not
+   restored: after a rebuild the page starts again without past days. See
+   `apps/workloads/status/README.md`.
 10. Create the bucket-scoped Project Zomboid R2 token in Bitwarden, reconcile
     its mappings and the workload, then verify a Restic snapshot and a
     disposable restore before retiring the Build 41 VM.

@@ -29,6 +29,7 @@ The current application decisions are:
 | Portal | None; its PVC contains an exportable layout, sessions and derived status. | Required for editing; `portal-editors`, only `bingops`. | Commit exported layouts; loss of the remaining state is accepted. |
 | ROM stack (RomM, ROMarr, Prowlarr, qBittorrent) | `rom-postgresql` (CloudNativePG) for RomM; the other services do not require a relational database. | RomM OIDC required; `rom-admins`, only `bingops`. ROMarr, Prowlarr and qBittorrent are cluster-internal and have no public interactive login. | Database to the `romm` R2 prefix; shared PVC to `rom-files` with 30-day changed-object retention. |
 | Gatus | None; seven-day SQLite history is disposable. | Not applicable; no exposed UI. | Loss resets history and is accepted. |
+| Status | None; a JSON file on its PVC holds 90 days of availability derived from Gatus. | Not applicable; public, read-only page with no login and no privileged function. | Loss resets the figures of the page and is accepted. |
 | Portfolio | None; stateless public site. | Not applicable; no privileged UI. | Rebuild from Git and the immutable image. |
 | Project Zomboid | None. | Not applicable; the game protocol does not use browser SSO. | Restic backup to the dedicated `bingops-pz-labprod` R2 bucket. |
 
@@ -49,6 +50,12 @@ Validate locally before merging:
 kubectl kustomize "apps/workloads/${APP_NAME}/clusters/labprod" >/dev/null
 kubectl kustomize --enable-helm apps/gitops/clusters/labprod >/dev/null
 ```
+
+An application delivered by a chart under `charts/` (currently Status) keeps
+only its `clusters/labprod/values.yaml` under `apps/workloads/<app>`; its
+Argo CD Application renders the chart from `master` with that file. Validate
+it with `helm lint` and `helm template` as shown in its README instead of the
+first command.
 
 `master` is the declared production revision. A reviewed merge is the normal
 deployment authorization. For an exceptional branch deployment, first push the
