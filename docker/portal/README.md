@@ -40,7 +40,7 @@ workflow token do not start other workflows, so they carry no checks.
 | --- | --- | --- | --- |
 | `bingops-com/portal` is public | The build clones it anonymously | GitHub organisation owner | `git ls-remote --heads https://github.com/bingops-com/portal.git master` |
 | GHCR package `portal` is public | `labprod` pulls it without a pull secret | Package settings, set once after the first publish | `docker manifest inspect ghcr.io/bingops-com/portal:latest` from a logged-out client |
-| `REPO_INFRA_TOKEN` secret in `bingops-com/portal` | Lets the source repository dispatch `rebuild-image` here | Fine-grained token limited to this repository with `Contents: read and write`; the same kind of secret `www.bingops.com` uses; recreate it in GitHub and store it again as a repository secret to rotate | A code push to `master` of the source starts the "Build and Push Docker image to GHCR" workflow |
+| `REPO_INFRA_TOKEN` organisation secret of `bingops-com`, readable by `portal` | Lets the source repository dispatch `rebuild-image` here | Fine-grained token limited to this repository with `Contents: read and write`, shared with the other source repositories; creation and rotation are described in [`docker/status/README.md`](../status/README.md#creating-or-rotating-repo_infra_token) | A code push to `master` of the source starts the "Build and Push Docker image to GHCR" workflow |
 
 Without the token the dispatch fails, but a change under `docker/portal`
 still builds the image.
