@@ -14,7 +14,10 @@ the Tailscale OAuth client, the Cloudflare infrastructure and cert-manager
 tokens, the generated tunnel credential, one R2 S3 key restricted to
 `bingops-cnpg-labprod`, one R2 S3 key restricted to `bingops-pz-labprod`, the
 Project Zomboid Restic repository password, and the `labprod` Bitwarden machine
-token. Keep them in the owning password manager or ignored credential file and
+token. The `bingops` Authentik password is also external to Git and belongs in
+the operator's password manager; the Bitwarden-delivered Authentik bootstrap
+credential is its recovery source after an empty-database rebuild. Keep all
+these inputs in the owning password manager or ignored credential file and
 rotate them at their provider if lost. Terraform state, kubeconfigs and Talos
 configs are sensitive generated state, not documentation.
 
@@ -30,6 +33,11 @@ configs are sensitive generated state, not documentation.
 6. Apply reviewed Cloudflare DNS, tunnel and the production R2 buckets.
 7. Reconcile storage, CloudNativePG and Barman Cloud; verify backup and restore.
 8. Reconcile Authentik, observability and workloads; verify Synced/Healthy.
+   After an empty Authentik database initialization, use the bootstrap account
+   to set or reset the password of the blueprint-owned `bingops` identity, then
+   verify that `bingops` is the sole member of every relying-application
+   privileged group. Store the password only in the operator's password
+   manager; the reset is safe to repeat after a partial failure.
    RomM's OIDC client is public PKCE and adds no external credential. Its CNPG
    archive reuses the existing bucket-scoped backup key. Restore the operator's
    external, legally obtained RomM library backup to `romm-data` if that PVC was

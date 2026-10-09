@@ -22,6 +22,15 @@ Repository-wide behavior belongs in [`AGENTS.md`](../AGENTS.md). Add a nested
 directory. Use the prompt itself for a one-off requirement that should not
 become repository policy.
 
+Project-local skills in `.agents/skills/` provide focused workflows:
+
+- `labops-structure` routes new components and application onboarding through
+  the repository's ownership and acceptance boundaries;
+- `labops-versioning` handles pinned application and infrastructure dependency
+  updates;
+- `labops-documentation` keeps owning runbooks and rebuild documentation
+  aligned with configuration changes.
+
 Do not use chat history as a runbook. When a prompt reveals a reconstruction
 prerequisite, capture it in the owning README and update the rebuild runbook if
 it changes dependency order or cross-system recovery.

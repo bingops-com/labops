@@ -476,27 +476,34 @@ data:
     metadata:
       name: argocd-oidc
     entries:
+      - model: authentik_core.user
+        identifiers:
+          username: bingops
+        attrs:
+          name: Bingops
+          email: therealbingops@gmail.com
+          is_active: true
       - model: authentik_core.group
         identifiers:
           name: argocd-admins
         attrs:
           is_superuser: false
           users:
-            - !Find [authentik_core.user, [username, akadmin]]
+            - !Find [authentik_core.user, [username, bingops]]
       - model: authentik_core.group
         identifiers:
           name: grafana-admins
         attrs:
           is_superuser: false
           users:
-            - !Find [authentik_core.user, [username, akadmin]]
+            - !Find [authentik_core.user, [username, bingops]]
       - model: authentik_core.group
         identifiers:
           name: portal-editors
         attrs:
           is_superuser: false
           users:
-            - !Find [authentik_core.user, [username, akadmin]]
+            - !Find [authentik_core.user, [username, bingops]]
       - model: authentik_providers_oauth2.oauth2provider
         id: argocd-provider
         identifiers:

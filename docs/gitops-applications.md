@@ -4,6 +4,38 @@ There is one workload environment, `labprod`. Every application has one
 production overlay at `apps/workloads/<app>/clusters/labprod` and one Argo CD
 Application at `apps/gitops/clusters/labprod/<app>.yaml`.
 
+## Application acceptance gate
+
+Every new application must classify its database, authentication and durable
+data before it is considered complete. "Not applicable" is valid only with a
+short rationale in the application's README; do not add a database, login or
+backup to a stateless service merely to satisfy the checklist.
+
+| Concern | Required implementation | Post-reconciliation evidence |
+| --- | --- | --- |
+| Relational database | Use a CloudNativePG `Cluster`; consume its generated application credential rather than an in-chart database. | The application connects successfully through the CNPG read/write Service and the `Cluster` reports ready. |
+| Database backup | Declare a Barman Cloud `ObjectStore` and `ScheduledBackup` targeting a unique prefix in `s3://bingops-cnpg-labprod`. Reuse the namespace-local, Bitwarden-delivered bucket credential. | A completed `Backup` exists and the CNPG/Barman status reports successful WAL archival without displaying Secret data. |
+| Interactive or privileged access | Declare the Authentik provider, application and a dedicated privileged group in the tracked blueprint. Public, read-only or non-HTTP services may document why SSO is not applicable. | OIDC discovery and login work through trusted HTTPS. |
+| Administrator assignment | Map the application's administrator role only to its privileged Authentik group. The group must contain only `bingops` (`therealbingops@gmail.com`). Disable or account for local bootstrap administrators. | `bingops` receives the administrator role and a non-privileged test identity does not. The group membership contains exactly `bingops`. |
+| Non-database durable data | Back up irreplaceable PVC/object data to a dedicated, least-privilege Cloudflare R2 prefix or bucket. If data is reproducible or intentionally disposable, document that classification and the consequence of loss. | The latest backup is successful and a disposable restore has been tested; for disposable data, verify the documented rebuild path. |
+
+The current application decisions are:
+
+| Application | Database | Authentik / privileged identity | Durable-data recovery |
+| --- | --- | --- | --- |
+| Authentik | `authentik-labprod-postgresql` (CloudNativePG). | It is the identity provider, not an OIDC relying application; its own bootstrap administration is documented separately. | Database to the `authentik` R2 prefix. |
+| Argo CD | None; desired state is stored in Git and Kubernetes. | Required; `argocd-admins`, only `bingops`. | Rebuild from Git; no application backup. |
+| Grafana | No operator database; dashboards and data sources are declarative. | Required; `grafana-admins`, only `bingops`. | Rebuild from Git; metrics and logs follow their platform retention. |
+| Portal | None; its PVC contains an exportable layout, sessions and derived status. | Required for editing; `portal-editors`, only `bingops`. | Commit exported layouts; loss of the remaining state is accepted. |
+| RomM | `romm-postgresql` (CloudNativePG). | Required; `romm-admins`, only `bingops`. | Database to the `romm` R2 prefix. The ROM library remains an explicitly documented external recovery input. |
+| Gatus | None; seven-day SQLite history is disposable. | Not applicable; no exposed UI. | Loss resets history and is accepted. |
+| Portfolio | None; stateless public site. | Not applicable; no privileged UI. | Rebuild from Git and the immutable image. |
+| Project Zomboid | None. | Not applicable; the game protocol does not use browser SSO. | Restic backup to the dedicated `bingops-pz-labprod` R2 bucket. |
+
+Update this table in the same change whenever an application's classification
+changes. Platform applications not listed here must document the same decisions
+in their owning runbook.
+
 Use immutable image tags or digests. Public hostnames must be added explicitly
 to `terraform/cloudflare/locals.tf` and `apps/cloudflare/bingops/values.yaml`.
 Private Argo CD and Grafana names and the LabOps Portal apex `lab.bingo` stay
@@ -31,6 +63,12 @@ Verify without reading Secrets:
 ./hacks/deploy.sh status prod
 kubectl --context labprod get applications -n argocd-system
 ```
+
+For an application with CNPG, SSO or durable data, extend its README with
+resource-specific, non-sensitive checks for the acceptance gate above. A render
+alone does not prove connectivity, login authorization or backup usability;
+perform those runtime checks only after the change has been deployed through an
+authorized merge or an explicitly authorized live operation.
 
 Rollback by reverting the production commit or restoring `master`, then wait
 for Argo CD to report Synced and Healthy.
