@@ -1,0 +1,36 @@
+# labprod values of charts/status, the public status page of lab.bingo.
+extraLabels:
+  environment: labprod
+
+image:
+  repository: ghcr.io/bingops-com/status
+  tag: 20261009-214727
+
+persistence:
+  storageClassName: local-path
+
+# Availability is read from Gatus; this block says which of its groups are
+# public and how each service is presented.
+config:
+  title: lab.bingo
+  gatus: http://gatus.gatus.svc.cluster.local:8080
+  # To put a service on the page, add its endpoint to that group in
+  # apps/workloads/gatus/base/config.yaml.
+  groups: [Public]
+  timezone: Europe/Paris
+  # Words and public address of each service; name is the Gatus endpoint name.
+  services:
+    - name: Authentik
+      description: Connexion unique aux applications du lab
+      url: https://auth.lab.bingo
+    - name: Portfolio
+      description: Site public
+      url: https://www.bingops.com
+    - name: RomM
+      description: Bibliothèque de jeux
+      url: https://rom.lab.bingo
+  # Hand-written announcements, most recent first:
+  #   - date: 2026-10-12
+  #     title: Maintenance du stockage
+  #     body: Les services seront indisponibles une dizaine de minutes vers 22 h.
+  notices: []

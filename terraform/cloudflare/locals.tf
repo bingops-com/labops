@@ -14,6 +14,7 @@ locals {
     "portfolio.lab.bingo",
     "rom.lab.bingo",
     "romm.lab.bingo",
+    "status.lab.bingo",
   ])
 
   tunnels_with_secrets = {

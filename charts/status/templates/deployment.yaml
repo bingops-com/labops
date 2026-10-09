@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "status.fullname" . }}
+  labels:
+    {{- include "status.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  # One writer for history.json on a ReadWriteOnce volume.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "status.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "status.labels" . | nindent 8 }}
+      annotations:
+        # status.yaml is read once at start: restart when it changes.
+        checksum/config: {{ toYaml .Values.config | sha256sum }}
+    spec:
+      # The page only reads Gatus over HTTP; it never calls the Kubernetes API.
+      automountServiceAccountToken: false
+      # Keeps the Service-derived STATUS_PORT=tcp://... out of the STATUS_*
+      # settings read by the page.
+      enableServiceLinks: false
+      securityContext:
+        fsGroup: 65532
+      containers:
+        - name: status
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: STATUS_CONFIG
+              value: /etc/status/status.yaml
+            - name: STATUS_DATA
+              value: /data
+          ports:
+            - name: http
+              containerPort: 3000
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          volumeMounts:
+            - name: config
+              mountPath: /etc/status
+              readOnly: true
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "status.fullname" . }}-config
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "status.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

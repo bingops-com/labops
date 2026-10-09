@@ -27,6 +27,11 @@ endpoints:
     url: http://portal.portal.svc.cluster.local:3000/healthz
     interval: 60s
     conditions: ["[STATUS] == 200"]
+  - name: Status
+    group: Plateforme
+    url: http://status.status.svc.cluster.local/healthz
+    interval: 60s
+    conditions: ["[STATUS] == 200"]
   - name: Authentik
     group: Public
     url: https://auth.lab.bingo/-/health/live/
