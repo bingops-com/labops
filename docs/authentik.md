@@ -9,8 +9,8 @@ The tracked blueprint owns four OIDC applications: confidential Argo CD at
 `https://grafana.lab.bingo/login/generic_oauth`, the public-PKCE LabOps Portal
 at `https://lab.bingo/auth/callback`, and public-PKCE RomM at
 `https://rom.lab.bingo/api/oauth/openid` (with the former `romm.lab.bingo`
-redirect retained during migration). ROMarr uses an Authentik proxy provider
-at `https://romarr.lab.bingo`. RomM receives Authentik group names through a
+redirect retained during migration). ROMarr is cluster-internal and therefore
+has no Authentik provider. RomM receives Authentik group names through a
 dedicated `groups` scope; `rom-admins` grants its administrator role.
 Its dedicated `email` scope emits the verified-email claim required by RomM on
 Authentik 2025.10 and later. Only the confidential Argo CD client secret and the
@@ -120,9 +120,10 @@ printing either credential.
 RomM skips its local setup wizard and creates the account automatically on the
 first OIDC login; no RomM bootstrap password is required. RomM is kept in the
 independent `romm.yaml` blueprint entry so a failure in the shared brand cannot
-block its OIDC provider, scopes, groups or applications. That same entry owns
-the ROMarr proxy provider, Embedded Outpost assignment and an application
-policy that permits only `rom-admins`.
+block its OIDC provider, scopes, groups or application. The entry also removes
+the retired ROMarr proxy provider and application; deleting the provider clears
+its Embedded Outpost assignment. The cleanup is safe to repeat after an upgrade
+or empty-database rebuild.
 
 After reconciliation, verify the Authentik discovery endpoint and each login
 through trusted HTTPS without printing tokens or Secret data. Also open an

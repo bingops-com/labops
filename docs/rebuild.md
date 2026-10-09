@@ -42,6 +42,8 @@ configs are sensitive generated state, not documentation.
    archive and the ROM stack file backup reuse the existing bucket-scoped R2
    key. Restore `rom-data` from `rom-files/current`, then restore the database
    from the documented Barman generation. See `apps/workloads/rom/README.md`.
+   Only RomM is published; ROMarr, Prowlarr and qBittorrent are internal
+   ClusterIP services and require neither public DNS nor Authentik providers.
    During the blue/green namespace migration, keep `romm` as the rollback source
    and leave automated sync of `rom-labprod` disabled until its acceptance gate
    passes.
