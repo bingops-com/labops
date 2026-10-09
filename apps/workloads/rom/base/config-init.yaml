@@ -57,6 +57,8 @@ data:
     for path in managed_paths:
         Path(path).mkdir(parents=True, exist_ok=True)
     for path in managed_paths + (str(prowlarr_config), str(qbittorrent_config)):
-        os.chown(path, 1000, 1000)
+        stat = os.stat(path)
+        if stat.st_uid != 1000 or stat.st_gid != 1000:
+            os.chown(path, 1000, 1000)
         if os.path.isdir(path):
             os.chmod(path, 0o775)

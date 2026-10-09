@@ -12,6 +12,9 @@ proxy provider. The `rom-admins` group contains only `bingops`
 (`therealbingops@gmail.com`) and is the only privileged group mapped by either
 application. Prowlarr and qBittorrent have cluster-internal Services only, so
 they have no public login surface and no separate SSO provider.
+Their LinuxServer S6 entrypoints start as root only long enough to switch to
+UID/GID 1000; their containers drop every capability except the ownership and
+UID/GID-switch capabilities required for that transition.
 
 ## Storage and credentials
 
@@ -39,6 +42,12 @@ daily Barman backup and 14-day retention under the `romm` prefix. Both use the
 existing bucket-scoped R2 credential delivered from Bitwarden. R2 server-side
 encryption is used; there is no additional client-side encryption key to
 recover.
+
+The sync-wave `-2` bootstrap Job copies the Bitwarden machine token into the
+namespace before the wave `-1` `BitwardenSecret` is created. Argo CD waits for
+that one-time Job to complete, preventing R2 consumers and CNPG recovery from
+starting before `rom-r2-credentials` can be materialized. The five-minute
+CronJob keeps the token current after bootstrap and rotation.
 
 ## Blue/green migration
 
