@@ -19,20 +19,42 @@ The same blueprint owns the `auth.lab.bingo` brand. Its inline custom CSS uses
 neutral `LabOps SSO` branding shared by every relying application, while the
 brand attributes keep the Authentik interface in light mode. The login flow
 uses a full-viewport split layout: a blue welcome panel on the left ("Welcome to
-lab.bingo", the `LabOps SSO` lockup, a tagline and an animated cat sitting in
-the bottom corner) and the native Authentik flow centered on the right. It does
-not visually identify itself with any one client application. On narrow screens
-the welcome panel becomes a compact header above the flow.
+lab.bingo", the `LabOps SSO` lockup, a tagline and an animated cat with a
+pirate eye patch sitting in the bottom corner) and the native Authentik flow
+centered on the right. It does not visually identify itself with any one client
+application. On narrow screens the welcome panel becomes a compact header above
+the flow.
 
 The page is available in English and French. Authentik translates its own
 strings from the visitor's locale (browser language or the language selector)
 and exposes that locale on `<html lang>`; the copy added by the brand CSS is
 declared once as `--labops-t-*` custom properties, in English on `:root` and in
-French on `:root:lang(fr)`. Every other Authentik locale shows the English copy:
-add a `:root:lang(xx)` block to translate one. The French block also rewrites
-the identification label, which Authentik's French catalogue renders as "Email
-ou Username"; that rewrite assumes the email + username fields of the default
-identification stage.
+French on `:root:lang(fr)`. The French block also rewrites the identification
+label, which Authentik's French catalogue renders as "Email ou Username"; that
+rewrite assumes the email + username fields of the default identification
+stage. With it, every visible string of the login page is translated.
+
+The language selector only offers English and French: the CSS hides the other
+`<option>` elements of `ak-locale-select`, as Authentik has no setting to
+restrict its locales. This has three known limits:
+
+- pickers that ignore option styling (iOS, Android) still list every locale;
+- a browser set to another language still gets Authentik's own strings in that
+  language, next to the English copy of the brand. Add a `:root:lang(xx)` block
+  and widen the option rule to support one more language;
+- when the selector is used, Authentik 2026.5 only redraws the current step in
+  the new language on the next page load or step, while the brand copy follows
+  at once. The page is briefly bilingual until then.
+
+Authentik does not enforce the uniqueness of a brand domain in its database.
+labprod once held two `auth.lab.bingo` brands, which made every later change to
+the brand fail validation ("domain must be unique") and silently kept the
+previous login page. The blueprint therefore starts with a `state: absent`
+entry that removes an `auth.lab.bingo` brand still carrying Authentik's stock
+favicon, before the entry that owns the brand. It does nothing on a healthy or
+empty instance. If the login page stops following the blueprint, check in the
+Admin interface under Customization > Blueprints that `labops-branding` is
+`successful`, and under System > Brands that the domain appears once.
 
 The browser tab shows the LabOps mark and the title `lab.bingo - LabOps SSO`:
 
@@ -83,6 +105,7 @@ through trusted HTTPS without printing tokens or Secret data. Also open an
 incognito window on `https://auth.lab.bingo/if/flow/default-authentication-flow/`
 and verify the welcome panel, the `LabOps SSO` lockup, the animated cat, the
 absence of the vendor name, keyboard focus and the narrow-screen layout. Check
-both languages with the language selector ("Log in" / "Connexion" and their
-matching copy), and the browser tab: LabOps icon and `lab.bingo - LabOps SSO`.
+both languages with the language selector, which must list only English and
+French ("Log in" / "Connexion" and their matching copy, after a reload), and
+the browser tab: LabOps icon and `lab.bingo - LabOps SSO`.
 This visual check is non-sensitive.

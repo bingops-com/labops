@@ -16,6 +16,18 @@ data:
           slug: default-authentication-flow
         attrs:
           title: lab.bingo
+      # Repair for a duplicated brand. Authentik does not enforce the uniqueness
+      # of a brand domain in its database, and labprod ended up with two
+      # auth.lab.bingo brands: the entry below was then refused ("domain must be
+      # unique") and the whole blueprint with it. A brand of this domain that
+      # still carries the stock favicon was not written by this blueprint, so it
+      # is removed; the entry below then updates the remaining brand, or creates
+      # it. Without such a brand this entry does nothing.
+      - model: authentik_brands.brand
+        state: absent
+        identifiers:
+          domain: auth.lab.bingo
+          branding_favicon: /static/dist/assets/icons/icon.png
       - model: authentik_brands.brand
         identifiers:
           domain: auth.lab.bingo
@@ -161,6 +173,13 @@ data:
               inset-inline-start: calc(var(--labops-panel) + 1rem);
             }
 
+            /* Only the two languages this brand translates are offered. The options
+               live in the shadow root of ak-locale-select. Pickers that ignore option
+               styling (iOS, Android) still list every Authentik locale. */
+            select[name="locale"] option:not([value="en"], [value^="fr"]) {
+              display: none;
+            }
+
             /* The stage (or its loading placeholder) is the only other child of main. */
             :host(.pf-c-login[data-layout]) .pf-c-login__main > :not(.pf-c-brand, ak-loading-overlay),
             .pf-c-login[data-layout] .pf-c-login__main > :not(.pf-c-brand, ak-loading-overlay) {
@@ -206,7 +225,7 @@ data:
               height: 0;
               padding-top: var(--labops-cat);
               overflow: hidden;
-              background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='124' height='110' viewBox='0 0 124 110'%3E%3Cstyle%3E .tail { transform-origin: 84px 100px; animation: tail 2.6s ease-in-out infinite alternate; } .head { transform-origin: 60px 56px; animation: head 7s ease-in-out infinite; } .ear { transform-origin: 72px 24px; animation: ear 5.5s ease-in-out infinite; } .eyes { transform-origin: 60px 40px; animation: blink 4.8s linear infinite; } @keyframes tail { from { transform: rotate(3deg); } to { transform: rotate(-16deg); } } @keyframes head { 0%25, 55%25, 100%25 { transform: rotate(0deg); } 65%25, 90%25 { transform: rotate(-7deg); } } @keyframes ear { 0%25, 80%25, 88%25, 100%25 { transform: rotate(0deg); } 84%25 { transform: rotate(14deg); } } @keyframes blink { 0%25, 93%25, 100%25 { transform: scaleY(1); } 96.5%25 { transform: scaleY(.08); } } @media (prefers-reduced-motion: reduce) { .tail, .head, .ear, .eyes { animation: none; } } %3C/style%3E%3Cpath class='tail' d='M84 100c18 5 30-6 22-24' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M32 110C27 82 40 56 60 56s33 26 28 54z' fill='%23fff'/%3E%3Cpath d='M52 110V95M68 110V95' stroke='%231443d6' stroke-opacity='.28' stroke-width='2' stroke-linecap='round'/%3E%3Cg class='head'%3E%3Cpath d='M40 31 42 8l15 13z' fill='%23fff' stroke='%23fff' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath class='ear' d='M80 31 78 8 63 21z' fill='%23fff' stroke='%23fff' stroke-width='4' stroke-linejoin='round'/%3E%3Cellipse cx='60' cy='40' rx='25' ry='21' fill='%23fff'/%3E%3Cg class='eyes' fill='%230b2a94'%3E%3Cellipse cx='50' cy='40' rx='3.4' ry='4.6'/%3E%3Cellipse cx='70' cy='40' rx='3.4' ry='4.6'/%3E%3C/g%3E%3Cpath d='M57.5 47h5L60 50z' fill='%230b2a94' stroke='%230b2a94' stroke-linejoin='round'/%3E%3Cpath d='M43 57q17 9 34 0' fill='none' stroke='%238af2bf' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='60' cy='65' r='4.5' fill='%238af2bf' stroke='%230b2a94' stroke-opacity='.35'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+              background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='124' height='110' viewBox='0 0 124 110'%3E%3Cstyle%3E .tail { transform-origin: 84px 100px; animation: tail 2.6s ease-in-out infinite alternate; } .head { transform-origin: 60px 56px; animation: head 7s ease-in-out infinite; } .ear { transform-origin: 72px 24px; animation: ear 5.5s ease-in-out infinite; } .eyes { transform-origin: 50px 40px; animation: blink 4.8s linear infinite; } @keyframes tail { from { transform: rotate(3deg); } to { transform: rotate(-16deg); } } @keyframes head { 0%25, 55%25, 100%25 { transform: rotate(0deg); } 65%25, 90%25 { transform: rotate(-7deg); } } @keyframes ear { 0%25, 80%25, 88%25, 100%25 { transform: rotate(0deg); } 84%25 { transform: rotate(14deg); } } @keyframes blink { 0%25, 93%25, 100%25 { transform: scaleY(1); } 96.5%25 { transform: scaleY(.08); } } @media (prefers-reduced-motion: reduce) { .tail, .head, .ear, .eyes { animation: none; } } %3C/style%3E%3Cpath class='tail' d='M84 100c18 5 30-6 22-24' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M32 110C27 82 40 56 60 56s33 26 28 54z' fill='%23fff'/%3E%3Cpath d='M52 110V95M68 110V95' stroke='%231443d6' stroke-opacity='.28' stroke-width='2' stroke-linecap='round'/%3E%3Cg class='head'%3E%3Cpath d='M40 31 42 8l15 13z' fill='%23fff' stroke='%23fff' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath class='ear' d='M80 31 78 8 63 21z' fill='%23fff' stroke='%23fff' stroke-width='4' stroke-linejoin='round'/%3E%3Cellipse cx='60' cy='40' rx='25' ry='21' fill='%23fff'/%3E%3Cg class='eyes' fill='%230b2a94'%3E%3Cellipse cx='50' cy='40' rx='3.4' ry='4.6'/%3E%3C/g%3E%3Cpath d='M39.5 27.5 84.5 44' fill='none' stroke='%230b2a94' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M63 34.5h14v6a7 7 0 0 1-14 0z' fill='%230b2a94' stroke='%230b2a94' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M57.5 47h5L60 50z' fill='%230b2a94' stroke='%230b2a94' stroke-linejoin='round'/%3E%3Cpath d='M43 57q17 9 34 0' fill='none' stroke='%238af2bf' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='60' cy='65' r='4.5' fill='%238af2bf' stroke='%230b2a94' stroke-opacity='.35'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
               color: transparent;
               font-size: 0;
             }
