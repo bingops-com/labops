@@ -78,6 +78,15 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          # Hosted runners share addresses that hit Docker Hub's anonymous
+          # pull limit (429) or time out. BuildKit itself and the base images
+          # are read from Google's public mirror of Docker Hub; Dockerfiles
+          # keep their docker.io names.
+          driver-opts: image=mirror.gcr.io/moby/buildkit:buildx-stable-1
+          buildkitd-config-inline: |
+            [registry."docker.io"]
+              mirrors = ["mirror.gcr.io"]
 
       - name: Log in to GHCR
         if: ${{ matrix.is_pr != 'true' }}
