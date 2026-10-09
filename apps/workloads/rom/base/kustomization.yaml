@@ -4,9 +4,10 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - pvc.yaml
-  - valkey.yaml
+  - config-init.yaml
+  - restore.yaml
   - postgresql.yaml
-  - deployment.yaml
-  - service.yaml
-  - ingress.yaml
-  - r2-files-backup.yaml
+  - valkey.yaml
+  - romm.yaml
+  - arr-stack.yaml
+  - backup.yaml

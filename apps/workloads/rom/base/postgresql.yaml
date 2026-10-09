@@ -1,0 +1,76 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: rom-postgresql
+  namespace: rom
+spec:
+  instances: 1
+  bootstrap:
+    recovery:
+      source: romm-postgresql-g1
+      database: romm
+      owner: romm
+  externalClusters:
+    - name: romm-postgresql-g1
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: rom-postgresql
+          serverName: romm-postgresql-g1
+  storage:
+    size: 8Gi
+    storageClass: local-path
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: rom-postgresql
+        serverName: rom-postgresql-g2
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: rom-postgresql
+  namespace: rom
+spec:
+  configuration:
+    destinationPath: s3://bingops-cnpg-labprod/romm
+    endpointURL: https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com
+    s3Credentials:
+      accessKeyId:
+        name: rom-r2-credentials
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: rom-r2-credentials
+        key: ACCESS_SECRET_KEY
+    wal:
+      compression: gzip
+    data:
+      compression: gzip
+  retentionPolicy: 14d
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: rom-postgresql-daily
+  namespace: rom
+spec:
+  schedule: "0 30 3 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: rom-postgresql
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: rom-postgresql
+  namespace: rom
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: rom-postgresql
+  podMetricsEndpoints:
+    - port: metrics

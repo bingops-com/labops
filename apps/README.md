@@ -11,9 +11,12 @@ Argo CD is bootstrapped from `apps/argocd/clusters/labprod` and the root
 Application `apps/gitops/bootstrap/labprod.yaml`. The root reconciles
 `apps/gitops/clusters/labprod`; platform components use negative sync waves
 and workloads use wave zero. Automated pruning and self-healing are enabled.
+The temporary `rom-labprod` blue/green target is the sole exception: automated
+sync remains disabled until its documented restore and acceptance checks pass.
 
 Production names under `lab.bingo` are explicit. Cloudflare Tunnel publishes
-`auth.lab.bingo`, `portfolio.lab.bingo` and `romm.lab.bingo`; `bingops.com` and
+`auth.lab.bingo`, `portfolio.lab.bingo`, `rom.lab.bingo`,
+`romarr.lab.bingo` and the migration fallback `romm.lab.bingo`; `bingops.com` and
 `www.bingops.com` reach the portfolio. Argo CD and Grafana remain private
 through exact-name Tailscale split-DNS routes, and the LabOps Portal is
 private at the `lab.bingo` apex. The private names resolve to `192.168.10.151`;

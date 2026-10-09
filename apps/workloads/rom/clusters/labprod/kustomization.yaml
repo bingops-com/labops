@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - bitwarden-token-sync.yaml
+  - r2-secret.yaml
+
+labels:
+  - pairs:
+      environment: labprod
+
+patches:
+  - target:
+      kind: Namespace
+      name: rom
+    patch: |-
+      - op: add
+        path: /metadata/annotations
+        value:
+          argocd.argoproj.io/sync-wave: "-2"
+  - target:
+      kind: Ingress
+      name: romm
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: rom.lab.bingo
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: rom.lab.bingo

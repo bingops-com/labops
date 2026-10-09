@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rom-files-r2-restore
+  namespace: rom
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: OnFailure
+      containers:
+        - name: rclone
+          image: rclone/rclone:1.75.1
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-ec"]
+          args:
+            - test -f /data/.r2-migration-restored || { test -n "$(rclone lsf r2:bingops-cnpg-labprod/rom-files/current --max-depth 1)"; rclone copy r2:bingops-cnpg-labprod/rom-files/current /data --checkers 8 --transfers 4; touch /data/.r2-migration-restored; }
+          env:
+            - { name: RCLONE_CONFIG_R2_TYPE, value: s3 }
+            - { name: RCLONE_CONFIG_R2_PROVIDER, value: Cloudflare }
+            - { name: RCLONE_CONFIG_R2_ENDPOINT, value: https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com }
+            - name: RCLONE_CONFIG_R2_ACCESS_KEY_ID
+              valueFrom: { secretKeyRef: { name: rom-r2-credentials, key: ACCESS_KEY_ID } }
+            - name: RCLONE_CONFIG_R2_SECRET_ACCESS_KEY
+              valueFrom: { secretKeyRef: { name: rom-r2-credentials, key: ACCESS_SECRET_KEY } }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            readOnlyRootFilesystem: true
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile: { type: RuntimeDefault }
+          volumeMounts:
+            - { name: data, mountPath: /data }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: rom-data }
+        - name: tmp
+          emptyDir: {}

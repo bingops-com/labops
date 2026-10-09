@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: romm
+  namespace: rom
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: romm
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: romm
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: romm
+          image: rommapp/romm:5.3.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - { name: TZ, value: Europe/Paris }
+            - { name: ROMM_DB_DRIVER, value: postgresql }
+            - { name: DB_HOST, value: rom-postgresql-rw }
+            - { name: DB_PORT, value: "5432" }
+            - name: DB_NAME
+              valueFrom: { secretKeyRef: { name: rom-postgresql-app, key: dbname } }
+            - name: DB_USER
+              valueFrom: { secretKeyRef: { name: rom-postgresql-app, key: username } }
+            - name: DB_PASSWD
+              valueFrom: { secretKeyRef: { name: rom-postgresql-app, key: password } }
+            - name: ROMM_AUTH_SECRET_KEY
+              valueFrom: { secretKeyRef: { name: rom-postgresql-app, key: password } }
+            - { name: REDIS_HOST, value: romm-valkey }
+            - { name: ROMM_BASE_URL, value: https://rom.lab.bingo }
+            - { name: ROMM_SESSION_SECURE_COOKIE, value: "true" }
+            - { name: HASHEOUS_API_ENABLED, value: "true" }
+            - { name: DISABLE_SETUP_WIZARD, value: "true" }
+            - { name: OIDC_ENABLED, value: "true" }
+            - { name: OIDC_ALLOW_REGISTRATION, value: "true" }
+            - { name: OIDC_PROVIDER, value: authentik }
+            - { name: OIDC_CLIENT_ID, value: romm }
+            - { name: OIDC_REDIRECT_URI, value: https://rom.lab.bingo/api/oauth/openid }
+            - { name: OIDC_SERVER_APPLICATION_URL, value: https://auth.lab.bingo/application/o/romm }
+            - { name: OIDC_CLAIM_ROLES, value: groups }
+            - { name: OIDC_ROLE_ADMIN, value: rom-admins }
+            - { name: OIDC_ROLE_VIEWER, value: "*" }
+          readinessProbe:
+            httpGet: { path: /api/heartbeat, port: http }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 12
+          startupProbe:
+            httpGet: { path: /api/heartbeat, port: http }
+            periodSeconds: 10
+            failureThreshold: 60
+          livenessProbe:
+            httpGet: { path: /api/heartbeat, port: http }
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 100m, memory: 512Mi }
+            limits: { cpu: "2", memory: 2Gi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            seccompProfile: { type: RuntimeDefault }
+          volumeMounts:
+            - { name: data, mountPath: /romm }
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: rom-data }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: romm
+  namespace: rom
+spec:
+  selector:
+    app.kubernetes.io/name: romm
+  ports:
+    - { name: http, port: 80, targetPort: http }
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: romm
+  namespace: rom
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-cloudflare
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: rom.invalid
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: romm, port: { name: http } }
+  tls:
+    - hosts: [rom.invalid]
+      secretName: rom-tls

@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rom-labprod
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: labops-labprod
+  source:
+    repoURL: https://github.com/bingops-com/labops.git
+    targetRevision: master
+    path: apps/workloads/rom/clusters/labprod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: rom
+  syncPolicy:
+    automated:
+      enabled: false
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

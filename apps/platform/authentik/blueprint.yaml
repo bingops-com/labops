@@ -625,6 +625,14 @@ data:
           is_superuser: false
           users:
             - !Find [authentik_core.user, [username, bingops]]
+      - model: authentik_core.group
+        id: rom-admins
+        identifiers:
+          name: rom-admins
+        attrs:
+          is_superuser: false
+          users:
+            - !Find [authentik_core.user, [username, bingops]]
       - model: authentik_providers_oauth2.scopemapping
         id: romm-email-scope
         identifiers:
@@ -671,10 +679,52 @@ data:
           redirect_uris:
             - matching_mode: strict
               url: https://romm.lab.bingo/api/oauth/openid
+            - matching_mode: strict
+              url: https://rom.lab.bingo/api/oauth/openid
       - model: authentik_core.application
         identifiers:
           slug: romm
         attrs:
           name: RomM production
           provider: !KeyOf romm-provider
-          meta_launch_url: https://romm.lab.bingo
+          meta_launch_url: https://rom.lab.bingo
+      - model: authentik_providers_proxy.proxyprovider
+        id: romarr-proxy-provider
+        identifiers:
+          name: ROMarr production
+        attrs:
+          mode: proxy
+          external_host: https://romarr.lab.bingo
+          internal_host: http://romarr.rom.svc.cluster.local:6868
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      - model: authentik_core.application
+        id: romarr-application
+        identifiers:
+          slug: romarr
+        attrs:
+          name: ROMarr production
+          slug: romarr
+          provider: !KeyOf romarr-proxy-provider
+          meta_launch_url: https://romarr.lab.bingo
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !KeyOf romarr-application
+          group: !KeyOf rom-admins
+          order: 0
+        attrs:
+          target: !KeyOf romarr-application
+          group: !KeyOf rom-admins
+          order: 0
+          enabled: true
+          negate: false
+          timeout: 30
+      - model: authentik_outposts.outpost
+        identifiers:
+          name: authentik Embedded Outpost
+        attrs:
+          name: authentik Embedded Outpost
+          type: proxy
+          providers:
+            - !KeyOf romarr-proxy-provider
