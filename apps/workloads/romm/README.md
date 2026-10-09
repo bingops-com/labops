@@ -41,14 +41,13 @@ The generated Secret is runtime state, not an input that must be copied out of
 the cluster.
 
 The ROM library, downloaded metadata, saves and optional RomM configuration on
-`romm-data` are user data and are deliberately not committed or copied to the
-database backup. Their owner is the lab operator. Keep legally obtained source
-media or an independent encrypted backup outside the cluster, then restore the
-expected `library`, `resources`, `assets` and `config` directories below
-`/romm`. An idempotent init container creates these directories, including
-`library/roms`, and repairs their ownership for RomM's UID/GID 1000 before each
-start. This is the only input that cannot be recovered from Git or the CNPG
-archive. A lost PVC without that external copy is an explicit data-loss gap.
+`romm-data` are user data and are not part of the database backup. During the
+blue/green move to namespace `rom`, `romm-files-r2-backup` synchronizes that PVC
+to `s3://bingops-cnpg-labprod/rom-files/current`; changed or removed objects are
+kept below `rom-files/archive`. Keep only legally obtained or freely
+distributable media. An idempotent init container creates the expected paths
+and repairs their ownership before each start. The old PVC and URL remain the
+rollback source until the new stack has passed a disposable restore test.
 
 ## Validation
 
@@ -64,6 +63,7 @@ Secret values:
 ```sh
 kubectl --context labprod get application romm-labprod -n argocd-system
 kubectl --context labprod get deployment,pod,pvc,cluster,scheduledbackup -n romm
+kubectl --context labprod get cronjob,job -n romm
 kubectl --context labprod exec -n romm deployment/romm -- test -w /romm/library/roms
 curl --fail --silent --show-error https://romm.lab.bingo/api/heartbeat >/dev/null
 curl --fail --silent --show-error https://auth.lab.bingo/application/o/romm/.well-known/openid-configuration >/dev/null

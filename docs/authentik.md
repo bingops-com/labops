@@ -8,8 +8,10 @@ The tracked blueprint owns four OIDC applications: confidential Argo CD at
 `https://argocd.lab.bingo/auth/callback`, public-PKCE Grafana at
 `https://grafana.lab.bingo/login/generic_oauth`, the public-PKCE LabOps Portal
 at `https://lab.bingo/auth/callback`, and public-PKCE RomM at
-`https://romm.lab.bingo/api/oauth/openid`. RomM receives Authentik group names
-through a dedicated `groups` scope; `romm-admins` grants its administrator role.
+`https://rom.lab.bingo/api/oauth/openid` (with the former `romm.lab.bingo`
+redirect retained during migration). ROMarr uses an Authentik proxy provider
+at `https://romarr.lab.bingo`. RomM receives Authentik group names through a
+dedicated `groups` scope; `rom-admins` grants its administrator role.
 Its dedicated `email` scope emits the verified-email claim required by RomM on
 Authentik 2025.10 and later. Only the confidential Argo CD client secret and the
 Authentik bootstrap password are stored in the Bitwarden `labprod` project and
@@ -97,7 +99,7 @@ mounted blueprint is the source of truth.
 The blueprint owns the Authentik identity `bingops` with email
 `therealbingops@gmail.com`. It makes that identity the sole member of every
 relying-application privileged group: `argocd-admins`, `grafana-admins`,
-`portal-editors` and `romm-admins`. The bootstrap `akadmin` account is not a
+`portal-editors`, `romm-admins` and `rom-admins`. The bootstrap `akadmin` account is not a
 member of those groups and therefore does not receive administrator access to
 the relying applications. New SSO applications must follow the same model: a
 dedicated group with `bingops` as its only member, mapped to the application's
@@ -118,7 +120,9 @@ printing either credential.
 RomM skips its local setup wizard and creates the account automatically on the
 first OIDC login; no RomM bootstrap password is required. RomM is kept in the
 independent `romm.yaml` blueprint entry so a failure in the shared brand cannot
-block its OIDC provider, scopes, group or application.
+block its OIDC provider, scopes, groups or applications. That same entry owns
+the ROMarr proxy provider, Embedded Outpost assignment and an application
+policy that permits only `rom-admins`.
 
 After reconciliation, verify the Authentik discovery endpoint and each login
 through trusted HTTPS without printing tokens or Secret data. Also open an
@@ -132,5 +136,5 @@ This visual check is non-sensitive.
 
 For each relying application, log in as `bingops`, confirm the administrator
 role, then log in with one non-privileged test identity and confirm it does not
-receive that role. In Authentik, inspect the four privileged groups and confirm
+receive that role. In Authentik, inspect the five privileged groups and confirm
 that their only member is `bingops` with email `therealbingops@gmail.com`.

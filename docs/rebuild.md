@@ -39,10 +39,12 @@ configs are sensitive generated state, not documentation.
    privileged group. Store the password only in the operator's password
    manager; the reset is safe to repeat after a partial failure.
    RomM's OIDC client is public PKCE and adds no external credential. Its CNPG
-   archive reuses the existing bucket-scoped backup key. Restore the operator's
-   external, legally obtained RomM library backup to `romm-data` if that PVC was
-   lost; Git and the database archive cannot reconstruct those files. See
-   `apps/workloads/romm/README.md`.
+   archive and the ROM stack file backup reuse the existing bucket-scoped R2
+   key. Restore `rom-data` from `rom-files/current`, then restore the database
+   from the documented Barman generation. See `apps/workloads/rom/README.md`.
+   During the blue/green namespace migration, keep `romm` as the rollback source
+   and leave automated sync of `rom-labprod` disabled until its acceptance gate
+   passes.
 9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
    verify `https://lab.bingo` through LAN or Tailscale without publishing it
    through the public Cloudflare Tunnel. The portal image is built from

@@ -1,0 +1,215 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prowlarr
+  namespace: rom
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app.kubernetes.io/name: prowlarr }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: prowlarr }
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: initialize-config
+          image: python:3.13.7-alpine3.22
+          command: ["python", "/scripts/init.py"]
+          env:
+            - name: STACK_PASSWORD
+              valueFrom: { secretKeyRef: { name: rom-postgresql-app, key: password } }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"], add: ["CHOWN", "FOWNER"] }
+          volumeMounts:
+            - { name: data, mountPath: /data }
+            - { name: init, mountPath: /scripts, readOnly: true }
+      containers:
+        - name: prowlarr
+          image: lscr.io/linuxserver/prowlarr:2.6.5.5623-ls163
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: PUID, value: "1000" }
+            - { name: PGID, value: "1000" }
+            - { name: TZ, value: Europe/Paris }
+          ports:
+            - { name: http, containerPort: 9696 }
+          readinessProbe:
+            httpGet: { path: /ping, port: http }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            seccompProfile: { type: RuntimeDefault }
+          volumeMounts:
+            - { name: data, mountPath: /config, subPath: configs/prowlarr }
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: rom-data }
+        - name: init
+          configMap: { name: rom-config-init }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: prowlarr, namespace: rom }
+spec:
+  selector: { app.kubernetes.io/name: prowlarr }
+  ports:
+    - { name: http, port: 9696, targetPort: http }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbittorrent
+  namespace: rom
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app.kubernetes.io/name: qbittorrent }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: qbittorrent }
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 1800
+      initContainers:
+        - name: initialize-config
+          image: python:3.13.7-alpine3.22
+          command: ["python", "/scripts/init.py"]
+          env:
+            - name: STACK_PASSWORD
+              valueFrom: { secretKeyRef: { name: rom-postgresql-app, key: password } }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"], add: ["CHOWN", "FOWNER"] }
+          volumeMounts:
+            - { name: data, mountPath: /data }
+            - { name: init, mountPath: /scripts, readOnly: true }
+      containers:
+        - name: qbittorrent
+          image: lscr.io/linuxserver/qbittorrent:5.2.4_v2.0.15-ls479
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: PUID, value: "1000" }
+            - { name: PGID, value: "1000" }
+            - { name: TZ, value: Europe/Paris }
+            - { name: WEBUI_PORT, value: "8080" }
+            - { name: TORRENTING_PORT, value: "6881" }
+          ports:
+            - { name: http, containerPort: 8080 }
+            - { name: bittorrent-tcp, containerPort: 6881, protocol: TCP }
+            - { name: bittorrent-udp, containerPort: 6881, protocol: UDP }
+          readinessProbe:
+            tcpSocket: { port: http }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: "2", memory: 2Gi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"], add: ["CHOWN", "FOWNER"] }
+            seccompProfile: { type: RuntimeDefault }
+          volumeMounts:
+            - { name: data, mountPath: /config, subPath: configs/qbittorrent }
+            - { name: data, mountPath: /downloads, subPath: downloads }
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: rom-data }
+        - name: init
+          configMap: { name: rom-config-init }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: qbittorrent, namespace: rom }
+spec:
+  selector: { app.kubernetes.io/name: qbittorrent }
+  ports:
+    - { name: http, port: 8080, targetPort: http }
+    - { name: bittorrent-tcp, port: 6881, targetPort: bittorrent-tcp, protocol: TCP }
+    - { name: bittorrent-udp, port: 6881, targetPort: bittorrent-udp, protocol: UDP }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: romarr
+  namespace: rom
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app.kubernetes.io/name: romarr }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: romarr }
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: initialize-config
+          image: python:3.13.7-alpine3.22
+          command: ["python", "/scripts/init.py"]
+          env:
+            - name: STACK_PASSWORD
+              valueFrom: { secretKeyRef: { name: rom-postgresql-app, key: password } }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: data, mountPath: /data }
+            - { name: init, mountPath: /scripts, readOnly: true }
+      containers:
+        - name: romarr
+          image: ghcr.io/blizzhacker/romarr:0.9.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: PUID, value: "1000" }
+            - { name: PGID, value: "1000" }
+            - { name: UMASK, value: "002" }
+            - { name: TZ, value: Europe/Paris }
+            - { name: PROWLARR_URL, value: http://prowlarr:9696 }
+            - name: PROWLARR_API_KEY
+              valueFrom: { secretKeyRef: { name: rom-postgresql-app, key: password } }
+            - { name: LIBRARY_KIND, value: folder }
+            - { name: LIBRARY_PATH, value: /roms }
+            - { name: QBITTORRENT_URL, value: http://qbittorrent:8080 }
+            - { name: QBITTORRENT_USER, value: bingops }
+            - name: QBITTORRENT_PASS
+              valueFrom: { secretKeyRef: { name: rom-postgresql-app, key: password } }
+            - { name: ROMARR_AUTH, value: forward }
+            - { name: ROMARR_SSO_PROVIDER, value: authentik }
+            - { name: ROMARR_SSO_GROUP, value: rom-admins }
+            - { name: ROMARR_TRUSTED_PROXIES, value: 10.0.0.0/8 }
+          ports:
+            - { name: http, containerPort: 6868 }
+          readinessProbe:
+            tcpSocket: { port: http }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            seccompProfile: { type: RuntimeDefault }
+          volumeMounts:
+            - { name: data, mountPath: /config, subPath: configs/romarr }
+            - { name: data, mountPath: /downloads, subPath: downloads }
+            - { name: data, mountPath: /roms, subPath: library/roms }
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: rom-data }
+        - name: init
+          configMap: { name: rom-config-init }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: romarr, namespace: rom }
+spec:
+  selector: { app.kubernetes.io/name: romarr }
+  ports:
+    - { name: http, port: 6868, targetPort: http }

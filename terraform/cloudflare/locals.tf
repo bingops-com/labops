@@ -12,6 +12,8 @@ locals {
   lab_tunnel_hostnames = toset([
     "auth.lab.bingo",
     "portfolio.lab.bingo",
+    "rom.lab.bingo",
+    "romarr.lab.bingo",
     "romm.lab.bingo",
   ])
 

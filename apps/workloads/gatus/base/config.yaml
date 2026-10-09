@@ -39,6 +39,11 @@ endpoints:
     conditions: ["[STATUS] == 200", "[RESPONSE_TIME] < 2000", "[CERTIFICATE_EXPIRATION] > 168h"]
   - name: RomM
     group: Public
-    url: https://romm.lab.bingo/api/heartbeat
+    url: https://rom.lab.bingo/api/heartbeat
     interval: 60s
     conditions: ["[STATUS] == 200", "[RESPONSE_TIME] < 5000", "[CERTIFICATE_EXPIRATION] > 168h"]
+  - name: ROMarr
+    group: Public
+    url: https://romarr.lab.bingo/outpost.goauthentik.io/ping
+    interval: 60s
+    conditions: ["[STATUS] == 204", "[RESPONSE_TIME] < 5000", "[CERTIFICATE_EXPIRATION] > 168h"]
