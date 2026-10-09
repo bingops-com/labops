@@ -42,8 +42,12 @@ configs are sensitive generated state, not documentation.
    archive and the ROM stack file backup reuse the existing bucket-scoped R2
    key. Restore `rom-data` from `rom-files/current`, then restore the database
    from the documented Barman generation. See `apps/workloads/rom/README.md`.
-   Only RomM is published; ROMarr, Prowlarr and qBittorrent are internal
-   ClusterIP services and require neither public DNS nor Authentik providers.
+   RomM and the restricted request portal are published. The portal route is
+   `requests.rom.lab.bingo`, its Authentik proxy is open to every authenticated
+   identity, and it needs no credential beyond the runtime ROMarr key already
+   derived from `rom-postgresql-app`. ROMarr, Prowlarr and qBittorrent remain
+   internal ClusterIP services. RomM's filesystem watcher imports completed
+   downloads without a Client API Token or manual scan.
    During the blue/green namespace migration, keep `romm` as the rollback source
    and leave automated sync of `rom-labprod` disabled until its acceptance gate
    passes.

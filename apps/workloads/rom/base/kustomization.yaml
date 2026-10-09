@@ -10,4 +10,5 @@ resources:
   - valkey.yaml
   - romm.yaml
   - arr-stack.yaml
+  - request-portal.yaml
   - backup.yaml

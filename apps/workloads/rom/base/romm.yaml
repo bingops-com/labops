@@ -72,6 +72,8 @@ spec:
             - { name: OIDC_CLAIM_ROLES, value: groups }
             - { name: OIDC_ROLE_ADMIN, value: rom-admins }
             - { name: OIDC_ROLE_VIEWER, value: "*" }
+            - { name: ENABLE_RESCAN_ON_FILESYSTEM_CHANGE, value: "true" }
+            - { name: RESCAN_ON_FILESYSTEM_CHANGE_DELAY, value: "2" }
           readinessProbe:
             httpGet: { path: /api/heartbeat, port: http }
             initialDelaySeconds: 20

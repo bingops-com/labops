@@ -33,6 +33,7 @@ pages:
                     - { title: Grafana, url: "https://grafana.lab.bingo", description: Métriques et journaux, icon: "si:grafana", checkUrl: "http://monitoring-grafana.monitoring.svc.cluster.local/api/health" }
                     - { title: Authentik, url: "https://auth.lab.bingo", description: SSO, icon: "si:authentik", checkUrl: "https://auth.lab.bingo/-/health/live/" }
                     - { title: RomM, url: "https://rom.lab.bingo", description: Bibliothèque de jeux, icon: "si:nintendogamecube", checkUrl: "https://rom.lab.bingo/api/heartbeat" }
+                    - { title: Demandes ROM, url: "https://requests.rom.lab.bingo", description: Rechercher et télécharger, icon: "si:nintendogamecube", checkUrl: "http://rom-request-portal.rom.svc.cluster.local:8080/healthz" }
                     - { title: Portfolio, url: "https://www.bingops.com", description: Site public, checkUrl: "https://www.bingops.com" }
                 - title: Code
                   links:
