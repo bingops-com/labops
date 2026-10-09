@@ -15,9 +15,5 @@ spec:
     server: https://kubernetes.default.svc
     namespace: rom
   syncPolicy:
-    automated:
-      enabled: false
-      prune: true
-      selfHeal: true
     syncOptions:
       - CreateNamespace=true

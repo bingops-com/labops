@@ -3,8 +3,6 @@ kind: Job
 metadata:
   name: rom-files-r2-restore
   namespace: rom
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
   backoffLimit: 6
   template:

@@ -23,6 +23,21 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
+      initContainers:
+        - name: wait-for-r2-restore
+          image: busybox:1.37.0
+          command: ["/bin/sh", "-ec"]
+          args: ["until test -f /romm/.r2-migration-restored; do sleep 5; done"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            readOnlyRootFilesystem: true
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile: { type: RuntimeDefault }
+          volumeMounts:
+            - { name: data, mountPath: /romm, readOnly: true }
       containers:
         - name: romm
           image: rommapp/romm:5.3.1

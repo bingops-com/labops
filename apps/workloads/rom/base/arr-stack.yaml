@@ -14,6 +14,20 @@ spec:
     spec:
       automountServiceAccountToken: false
       initContainers:
+        - name: wait-for-r2-restore
+          image: busybox:1.37.0
+          command: ["/bin/sh", "-ec"]
+          args: ["until test -f /data/.r2-migration-restored; do sleep 5; done"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            readOnlyRootFilesystem: true
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile: { type: RuntimeDefault }
+          volumeMounts:
+            - { name: data, mountPath: /data, readOnly: true }
         - name: initialize-config
           image: python:3.13.7-alpine3.22
           command: ["python", "/scripts/init.py"]
@@ -79,6 +93,20 @@ spec:
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 1800
       initContainers:
+        - name: wait-for-r2-restore
+          image: busybox:1.37.0
+          command: ["/bin/sh", "-ec"]
+          args: ["until test -f /data/.r2-migration-restored; do sleep 5; done"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            readOnlyRootFilesystem: true
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile: { type: RuntimeDefault }
+          volumeMounts:
+            - { name: data, mountPath: /data, readOnly: true }
         - name: initialize-config
           image: python:3.13.7-alpine3.22
           command: ["python", "/scripts/init.py"]
@@ -150,6 +178,20 @@ spec:
     spec:
       automountServiceAccountToken: false
       initContainers:
+        - name: wait-for-r2-restore
+          image: busybox:1.37.0
+          command: ["/bin/sh", "-ec"]
+          args: ["until test -f /data/.r2-migration-restored; do sleep 5; done"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            readOnlyRootFilesystem: true
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile: { type: RuntimeDefault }
+          volumeMounts:
+            - { name: data, mountPath: /data, readOnly: true }
         - name: initialize-config
           image: python:3.13.7-alpine3.22
           command: ["python", "/scripts/init.py"]

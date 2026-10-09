@@ -4,7 +4,7 @@ metadata:
   name: rom-files-r2-backup
   namespace: rom
 spec:
-  schedule: "0 15 4 * * *"
+  schedule: "15 4 * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3

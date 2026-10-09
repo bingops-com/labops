@@ -51,8 +51,11 @@ After an authorized merge:
 
 1. Wait for `romm-files-r2-backup` in the old namespace, or create one Job from
    that CronJob after quiescing uploads. Verify only its completion status.
-2. Manually synchronize `rom-labprod`. Its sync-wave `-1` restore Job refuses
-   to mark the new PVC as restored when the R2 source is empty.
+2. If a previous synchronization is still running, terminate that stale Argo CD
+   operation, then manually synchronize `rom-labprod`. The PVC and restore Job
+   are created together so `WaitForFirstConsumer` can bind the volume. The Job
+   refuses to mark the PVC as restored when the R2 source is empty, and every
+   data-consuming Deployment waits for `.r2-migration-restored`.
 3. Verify the CNPG recovery, all four Deployments, both public logins, a file
    scan, a completed PVC backup, and a disposable R2 restore.
 4. Enable automated sync for `rom-labprod` in Git only after acceptance. Retire

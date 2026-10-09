@@ -4,7 +4,7 @@ metadata:
   name: romm-files-r2-backup
   namespace: romm
 spec:
-  schedule: "0 45 3 * * *"
+  schedule: "45 3 * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3
