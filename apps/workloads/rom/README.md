@@ -13,6 +13,9 @@ administrator role. ROMarr, Prowlarr and qBittorrent have cluster-internal
 Services only, so they have no public login surface or SSO provider. ROMarr's
 API is reachable only inside the cluster at
 `http://romarr.rom.svc.cluster.local:6868` and requires its seeded API key.
+Its pod disables Kubernetes service-link environment variables because the
+generated `ROMARR_PORT=tcp://...` value would override the image's numeric
+`ROMARR_PORT` setting and prevent startup.
 Their LinuxServer S6 entrypoints start as root only long enough to switch to
 UID/GID 1000; their containers drop every capability except the ownership and
 UID/GID-switch capabilities required for that transition.

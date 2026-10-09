@@ -181,6 +181,7 @@ spec:
       labels: { app.kubernetes.io/name: romarr }
     spec:
       automountServiceAccountToken: false
+      enableServiceLinks: false
       initContainers:
         - name: wait-for-r2-restore
           image: busybox:1.37.0
