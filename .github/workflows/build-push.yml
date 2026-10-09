@@ -78,6 +78,13 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          # Hosted runners share addresses that hit Docker Hub's anonymous
+          # pull limit (429). Base images are read from Google's public
+          # mirror of Docker Hub first; Dockerfiles keep their docker.io names.
+          buildkitd-config-inline: |
+            [registry."docker.io"]
+              mirrors = ["mirror.gcr.io"]
 
       - name: Log in to GHCR
         if: ${{ matrix.is_pr != 'true' }}
