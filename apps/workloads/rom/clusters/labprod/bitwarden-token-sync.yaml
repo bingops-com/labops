@@ -3,6 +3,8 @@ kind: ServiceAccount
 metadata:
   name: bitwarden-token-sync
   namespace: rom
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
 automountServiceAccountToken: true
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -10,6 +12,8 @@ kind: Role
 metadata:
   name: rom-bitwarden-token-source
   namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -21,6 +25,8 @@ kind: RoleBinding
 metadata:
   name: rom-bitwarden-token-source
   namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -35,6 +41,8 @@ kind: Role
 metadata:
   name: bitwarden-token-sync-target
   namespace: rom
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -49,6 +57,8 @@ kind: RoleBinding
 metadata:
   name: bitwarden-token-sync-target
   namespace: rom
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -63,6 +73,8 @@ kind: ConfigMap
 metadata:
   name: bitwarden-token-sync
   namespace: rom
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
 data:
   sync.py: |
     import json
@@ -101,12 +113,47 @@ data:
     print(f"{action} rom/bw-auth-token")
 ---
 apiVersion: batch/v1
+kind: Job
+metadata:
+  name: bitwarden-token-bootstrap
+  namespace: rom
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      serviceAccountName: bitwarden-token-sync
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: sync
+          image: python:3.13.7-alpine3.22
+          command: ["python", "/scripts/sync.py"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            readOnlyRootFilesystem: true
+          resources:
+            requests: { cpu: 10m, memory: 24Mi }
+            limits: { cpu: 100m, memory: 64Mi }
+          volumeMounts:
+            - { name: script, mountPath: /scripts, readOnly: true }
+      volumes:
+        - name: script
+          configMap: { name: bitwarden-token-sync }
+---
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: bitwarden-token-sync
   namespace: rom
   annotations:
-    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/sync-wave: "-2"
 spec:
   schedule: "*/5 * * * *"
   concurrencyPolicy: Forbid

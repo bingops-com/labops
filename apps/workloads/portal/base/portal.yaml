@@ -33,7 +33,6 @@ pages:
                     - { title: Grafana, url: "https://grafana.lab.bingo", description: Métriques et journaux, icon: "si:grafana", checkUrl: "http://monitoring-grafana.monitoring.svc.cluster.local/api/health" }
                     - { title: Authentik, url: "https://auth.lab.bingo", description: SSO, icon: "si:authentik", checkUrl: "https://auth.lab.bingo/-/health/live/" }
                     - { title: RomM, url: "https://rom.lab.bingo", description: Bibliothèque de jeux, icon: "si:nintendogamecube", checkUrl: "https://rom.lab.bingo/api/heartbeat" }
-                    - { title: ROMarr, url: "https://romarr.lab.bingo", description: Recherche de ROMs légales, icon: "si:retropie", checkUrl: "https://romarr.lab.bingo/outpost.goauthentik.io/ping" }
                     - { title: Portfolio, url: "https://www.bingops.com", description: Site public, checkUrl: "https://www.bingops.com" }
                 - title: Code
                   links:
@@ -70,7 +69,6 @@ pages:
                 - { from: traefik, to: portfolio }
                 - { from: traefik, to: authentik }
                 - { from: traefik, to: romm }
-                - { from: authentik, to: romarr }
                 - { from: traefik, to: portal }
                 - { from: traefik, to: argocd }
                 - { from: traefik, to: grafana }
