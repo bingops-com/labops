@@ -18,7 +18,8 @@ jobs:
       - name: Run ShellCheck
         run: find .github/scripts hacks -type f -name '*.sh' -print0 | sort -z | xargs -0 shellcheck
       - name: Run actionlint
-        uses: docker://rhysd/actionlint:1.7.7
+        # Google's public mirror of Docker Hub, which rate-limits hosted runners.
+        uses: docker://mirror.gcr.io/rhysd/actionlint:1.7.7
 
   kustomize:
     name: Render Kustomize overlays
