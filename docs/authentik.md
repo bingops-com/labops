@@ -72,11 +72,31 @@ ConfigMap: there is no uploaded media file, external font, CDN asset or manual
 Admin UI setting to recover during a rebuild. Change the blueprint rather than editing the brand in Authentik; the
 mounted blueprint is the source of truth.
 
-The blueprint makes `bingops` the sole member of `romm-admins`. RomM skips its
-local setup wizard and creates that account automatically on the first OIDC
-login; no RomM bootstrap password is required. RomM is kept in the independent
-`romm.yaml` blueprint entry so a failure in the shared brand cannot block its
-OIDC provider, scopes, group or application.
+The blueprint owns the Authentik identity `bingops` with email
+`therealbingops@gmail.com`. It makes that identity the sole member of every
+relying-application privileged group: `argocd-admins`, `grafana-admins`,
+`portal-editors` and `romm-admins`. The bootstrap `akadmin` account is not a
+member of those groups and therefore does not receive administrator access to
+the relying applications. New SSO applications must follow the same model: a
+dedicated group with `bingops` as its only member, mapped to the application's
+administrator role.
+
+The `bingops` password is a sensitive external prerequisite owned by the lab
+operator and stored in the operator's password manager; Git owns only the user,
+email and group assignments. After an empty-database rebuild, use the
+Bitwarden-delivered Authentik bootstrap account to set or reset the `bingops`
+password, save the replacement in the password manager, then leave the
+bootstrap account outside every relying-application privileged group. Repeating
+the reset after a partial failure is safe. Rotate the password in Authentik and
+the password manager together. Its only consumer is the operator signing in to
+Authentik; recovery uses the bootstrap account. Verify by signing in as
+`bingops` and checking the displayed email and group membership without
+printing either credential.
+
+RomM skips its local setup wizard and creates the account automatically on the
+first OIDC login; no RomM bootstrap password is required. RomM is kept in the
+independent `romm.yaml` blueprint entry so a failure in the shared brand cannot
+block its OIDC provider, scopes, group or application.
 
 After reconciliation, verify the Authentik discovery endpoint and each login
 through trusted HTTPS without printing tokens or Secret data. Also open an
@@ -86,3 +106,8 @@ absence of the vendor name, keyboard focus and the narrow-screen layout. Check
 both languages with the language selector ("Log in" / "Connexion" and their
 matching copy), and the browser tab: LabOps icon and `lab.bingo - LabOps SSO`.
 This visual check is non-sensitive.
+
+For each relying application, log in as `bingops`, confirm the administrator
+role, then log in with one non-privileged test identity and confirm it does not
+receive that role. In Authentik, inspect the four privileged groups and confirm
+that their only member is `bingops` with email `therealbingops@gmail.com`.

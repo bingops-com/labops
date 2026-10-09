@@ -49,6 +49,17 @@ Unrecoverable or manual prerequisites: <!-- Name purpose, owner, minimum permiss
 
 Documentation updated: <!-- Link the owning README/runbook, or explain why no documentation change is required. -->
 
+## Application acceptance gate
+
+<!-- Required when adding an application or changing its data/authentication model. Use N/A with a rationale where appropriate. -->
+
+- [ ] Database need is classified; applications needing PostgreSQL use CloudNativePG rather than an embedded or chart-managed database.
+- [ ] Database backups use a declared Barman `ObjectStore` and `ScheduledBackup` on Cloudflare R2, with non-sensitive success evidence.
+- [ ] Interactive or privileged access uses the tracked Authentik blueprint, or the absence of SSO is justified.
+- [ ] `bingops` (`therealbingops@gmail.com`) is the only member of every relying-application administrator group; a non-privileged login was checked.
+- [ ] Every non-database durable data set has an R2 backup and tested restore, or is explicitly classified as reproducible/disposable with its loss consequence.
+- [ ] The application README and the inventory in `docs/gitops-applications.md` reflect these decisions and safe verification commands.
+
 ## Delivery authorization
 
 <!-- Checking a box records what happened; it does not authorize a future live operation. -->
