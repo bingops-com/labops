@@ -15,9 +15,9 @@ The temporary `rom-labprod` blue/green target is the sole exception: automated
 sync remains disabled until its documented restore and acceptance checks pass.
 
 Production names under `lab.bingo` are explicit. Cloudflare Tunnel publishes
-`auth.lab.bingo`, `portfolio.lab.bingo`, `rom.lab.bingo`,
-`romarr.lab.bingo` and the migration fallback `romm.lab.bingo`; `bingops.com` and
-`www.bingops.com` reach the portfolio. Argo CD and Grafana remain private
+`auth.lab.bingo`, `portfolio.lab.bingo`, `rom.lab.bingo` and the migration
+fallback `romm.lab.bingo`; `bingops.com` and `www.bingops.com` reach the
+portfolio. Argo CD and Grafana remain private
 through exact-name Tailscale split-DNS routes, and the LabOps Portal is
 private at the `lab.bingo` apex. The private names resolve to `192.168.10.151`;
 the private DNS zone `lab.bingo` forwards every other name (for example

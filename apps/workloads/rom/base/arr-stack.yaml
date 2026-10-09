@@ -226,10 +226,8 @@ spec:
             - { name: QBITTORRENT_USER, value: bingops }
             - name: QBITTORRENT_PASS
               valueFrom: { secretKeyRef: { name: rom-postgresql-app, key: password } }
-            - { name: ROMARR_AUTH, value: forward }
-            - { name: ROMARR_SSO_PROVIDER, value: authentik }
-            - { name: ROMARR_SSO_GROUP, value: rom-admins }
-            - { name: ROMARR_TRUSTED_PROXIES, value: 10.0.0.0/8 }
+            - name: ROMARR_API_KEY
+              valueFrom: { secretKeyRef: { name: rom-postgresql-app, key: password } }
           ports:
             - { name: http, containerPort: 6868 }
           readinessProbe:
@@ -241,6 +239,9 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: ["ALL"] }
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
             seccompProfile: { type: RuntimeDefault }
           volumeMounts:
             - { name: data, mountPath: /config, subPath: configs/romarr }

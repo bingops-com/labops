@@ -13,7 +13,6 @@ locals {
     "auth.lab.bingo",
     "portfolio.lab.bingo",
     "rom.lab.bingo",
-    "romarr.lab.bingo",
     "romm.lab.bingo",
   ])
 

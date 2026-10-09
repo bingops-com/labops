@@ -7,11 +7,12 @@ downloaded. Git deliberately contains no indexer or content-source
 configuration.
 
 RomM is published at `https://rom.lab.bingo` and uses the Authentik OIDC
-client. ROMarr is published at `https://romarr.lab.bingo` through the Authentik
-proxy provider. The `rom-admins` group contains only `bingops`
-(`therealbingops@gmail.com`) and is the only privileged group mapped by either
-application. Prowlarr and qBittorrent have cluster-internal Services only, so
-they have no public login surface and no separate SSO provider.
+client. The `rom-admins` group contains only `bingops`
+(`therealbingops@gmail.com`) and is the only group mapped to RomM's
+administrator role. ROMarr, Prowlarr and qBittorrent have cluster-internal
+Services only, so they have no public login surface or SSO provider. ROMarr's
+API is reachable only inside the cluster at
+`http://romarr.rom.svc.cluster.local:6868` and requires its seeded API key.
 Their LinuxServer S6 entrypoints start as root only long enough to switch to
 UID/GID 1000; their containers drop every capability except the ownership and
 UID/GID-switch capabilities required for that transition.
@@ -23,11 +24,12 @@ the whole `/romm` tree. ROMarr writes to `downloads` and `library/roms`, while
 Prowlarr, qBittorrent and ROMarr keep configuration below `configs`. A pinned,
 idempotent init script creates those paths and seeds the Prowlarr API key and
 qBittorrent WebUI password only when their configuration does not already
-exist. Both are derived from the CNPG-generated `rom-postgresql-app` password;
-the plaintext value is consumed from the Secret at runtime and is never stored
-in Git or logs. Rotation requires deleting the two generated configuration
-files before restarting the workloads, otherwise their persisted credentials
-remain authoritative.
+exist. Those credentials and ROMarr's pinned API key are derived from the
+CNPG-generated `rom-postgresql-app` password; the plaintext value is consumed
+from the Secret at runtime and is never stored in Git or logs. Rotation
+requires deleting the two generated Prowlarr and qBittorrent configuration
+files before restarting those workloads; ROMarr reads its key from the Secret
+at every start.
 
 RomM uses the operator-managed CloudNativePG cluster `rom-postgresql`. The
 first bootstrap restores database `romm` and owner `romm` from Barman server
@@ -65,7 +67,8 @@ After an authorized merge:
    are created together so `WaitForFirstConsumer` can bind the volume. The Job
    refuses to mark the PVC as restored when the R2 source is empty, and every
    data-consuming Deployment waits for `.r2-migration-restored`.
-3. Verify the CNPG recovery, all four Deployments, both public logins, a file
+3. Verify the CNPG recovery, all four Deployments, the RomM public login, the
+   internal-only ROMarr Service, a file
    scan, a completed PVC backup, and a disposable R2 restore.
 4. Enable automated sync for `rom-labprod` in Git only after acceptance. Retire
    `romm-labprod`, `romm.lab.bingo`, namespace `romm`, its PVC and the old
@@ -104,11 +107,12 @@ curl --fail --silent --show-error https://rom.lab.bingo/api/heartbeat >/dev/null
 ```
 
 ```sh
-curl --fail --silent --show-error https://romarr.lab.bingo/outpost.goauthentik.io/ping >/dev/null
+kubectl --context labprod get service romarr -n rom -o jsonpath='{.spec.type}{"\n"}'
 ```
 
-Use an incognito session and a non-privileged test identity to confirm that
-ROMarr is denied and does not acquire administrator access. Sign in as
-`bingops` and confirm administrator access in RomM and ROMarr. Configure and
-test only lawful Prowlarr indexers through a controlled port-forward; those
-runtime choices are generated state backed up with the PVC, not Git inputs.
+Confirm that the command reports `ClusterIP` and that no Ingress targets
+ROMarr. Use an incognito session and a non-privileged test identity to confirm
+it does not acquire administrator access in RomM, then sign in as `bingops` and
+confirm administrator access. Configure and test ROMarr and only lawful
+Prowlarr indexers through controlled port-forwards; those runtime choices are
+generated state backed up with the PVC, not Git inputs.
