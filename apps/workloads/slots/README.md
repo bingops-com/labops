@@ -4,7 +4,7 @@ Slots is the public fictional-credit game at `https://slots.lab.bingo`. Argo CD
 combines the Helm chart and immutable application commit from
 `bingops-com/slots` with the production values and prerequisite resources in
 this directory. Merge the slots application PR first: its push workflow must
-publish the pinned `sha-28120bc88be47277d483ca659ba1d485edad93bc` image before
+publish the pinned `sha-bec1371942272699a238fdddc08ad11e5a910782` image before
 this deployment PR is merged. The GHCR package must be public because the pod
 has no registry credential.
 
