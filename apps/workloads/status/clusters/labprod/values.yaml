@@ -29,6 +29,9 @@ config:
     - name: RomM
       description: Bibliothèque de jeux
       url: https://rom.lab.bingo
+    - name: Slots
+      description: Jeux en crédits fictifs
+      url: https://slots.lab.bingo
   # Hand-written announcements, most recent first:
   #   - date: 2026-10-12
   #     title: Maintenance du stockage

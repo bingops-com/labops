@@ -25,5 +25,6 @@ resources:
   - gatus.yaml
   - portal.yaml
   - status.yaml
+  - slots.yaml
   - rom.yaml
   - pz-server.yaml

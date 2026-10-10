@@ -47,6 +47,11 @@ endpoints:
     url: https://rom.lab.bingo/api/heartbeat
     interval: 60s
     conditions: ["[STATUS] == 200", "[RESPONSE_TIME] < 5000", "[CERTIFICATE_EXPIRATION] > 168h"]
+  - name: Slots
+    group: Public
+    url: https://slots.lab.bingo/healthz
+    interval: 60s
+    conditions: ["[STATUS] == 200", "[RESPONSE_TIME] < 2000", "[CERTIFICATE_EXPIRATION] > 168h"]
   - name: ROMarr
     group: Services
     url: http://romarr.rom.svc.cluster.local:6868/api/health

@@ -19,7 +19,7 @@ file archive and Barman backup remain the recovery sources.
 
 Production names under `lab.bingo` are explicit. Cloudflare Tunnel publishes
 `auth.lab.bingo`, `portfolio.lab.bingo`, `rom-requests.lab.bingo`,
-`rom.lab.bingo` and `status.lab.bingo`; `bingops.com` and
+`rom.lab.bingo`, `slots.lab.bingo` and `status.lab.bingo`; `bingops.com` and
 `www.bingops.com` reach the portfolio. Argo CD and Grafana remain private
 through exact-name Tailscale split-DNS routes, and the LabOps Portal is
 private at the `lab.bingo` apex. The private names resolve to `192.168.10.151`;

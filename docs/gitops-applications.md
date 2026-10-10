@@ -30,6 +30,7 @@ The current application decisions are:
 | ROM stack (RomM, ROMarr, Prowlarr, qBittorrent) | `rom-postgresql` (CloudNativePG) for RomM; the other services do not require a relational database. | RomM OIDC required; `rom-admins`, only `bingops`. Every authenticated user may use the Authentik-protected request portal, which has no administrative routes. Native ROMarr, Prowlarr and qBittorrent interfaces remain internal. | Database to the `romm` R2 prefix; shared PVC to `rom-files` with 30-day changed-object retention. |
 | Gatus | None; seven-day SQLite history is disposable. | Not applicable; no exposed UI. | Loss resets history and is accepted. |
 | Status | None; a JSON file on its PVC holds 90 days of availability derived from Gatus. | Not applicable; public, read-only page with no login and no privileged function. | Loss resets the figures of the page and is accepted. |
+| Slots | `slots-postgresql` (CloudNativePG). | Not applicable; pseudonymous player accounts have no privileged role and there is no operator UI. | Database to the `slots` R2 prefix. |
 | Portfolio | None; stateless public site. | Not applicable; no privileged UI. | Rebuild from Git and the immutable image. |
 | Project Zomboid | None. | Not applicable; the game protocol does not use browser SSO. | Restic backup to the dedicated `bingops-pz-labprod` R2 bucket. |
 
