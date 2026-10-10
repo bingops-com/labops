@@ -5,6 +5,7 @@ resources:
   - namespace.yaml
   - pvc.yaml
   - deployment.yaml
+  - monitoring.yaml
   - service.yaml
 
 # The hash suffix restarts Gatus when its endpoints change.
