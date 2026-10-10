@@ -4,7 +4,7 @@ extraLabels:
 
 image:
   repository: ghcr.io/bingops-com/status
-  tag: 20261009-222721
+  tag: 20261010-105856
 
 persistence:
   storageClassName: local-path
