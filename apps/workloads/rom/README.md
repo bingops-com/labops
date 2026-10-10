@@ -15,7 +15,7 @@ Services only, so they have no public login surface or SSO provider. ROMarr's
 API is reachable only inside the cluster at
 `http://romarr.rom.svc.cluster.local:6868` and requires its seeded API key.
 The bilingual one-click catalogue is published at
-`https://requests.rom.lab.bingo` through an Authentik proxy and is available
+`https://rom-requests.lab.bingo` through an Authentik proxy and is available
 to every authenticated Authentik user. It exposes only the platform list,
 interactive search and release-grab operations; it cannot read or change
 ROMarr, Prowlarr or qBittorrent settings. The portal injects ROMarr's API key
@@ -41,7 +41,7 @@ ROM Hub plugins: `homebrew` (GB/GBC/GBA/NES), `libretro-content`,
 limited to homebrew, freely distributable content, or freeware; they do not
 provide commercial ROM sets. The same idempotent Job configures ROMarr's
 Direct HTTP client with `/downloads/sites` as its landing directory. A user
-therefore searches at `requests.rom.lab.bingo`, clicks a result once, and sees
+therefore searches at `rom-requests.lab.bingo`, clicks a result once, and sees
 the imported title appear at `rom.lab.bingo` after ROMarr completes the
 download and RomM's watcher scans it. Prowlarr and qBittorrent remain available
 for operator-configured lawful sources but are not required by these default
@@ -154,7 +154,7 @@ Confirm that the command reports `ClusterIP` and that no Ingress targets
 ROMarr.
 
 ```sh
-curl --head --silent --show-error https://requests.rom.lab.bingo
+curl --head --silent --show-error https://rom-requests.lab.bingo
 ```
 
 Confirm that an unauthenticated request is redirected to Authentik. Use an

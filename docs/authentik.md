@@ -10,7 +10,7 @@ The tracked blueprint owns four OIDC applications: confidential Argo CD at
 at `https://lab.bingo/auth/callback`, and public-PKCE RomM at
 `https://rom.lab.bingo/api/oauth/openid`. ROMarr is cluster-internal and therefore
 has no direct Authentik provider. The `ROM requests` proxy application publishes
-the restricted portal at `https://requests.rom.lab.bingo` to every authenticated
+the restricted portal at `https://rom-requests.lab.bingo` to every authenticated
 user; the portal has no administrative routes and keeps ROMarr's credential
 server-side. RomM receives Authentik group names through a
 dedicated `groups` scope; `rom-admins` grants its administrator role.

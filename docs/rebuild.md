@@ -43,7 +43,7 @@ configs are sensitive generated state, not documentation.
    key. Restore `rom-data` from `rom-files/current`, then restore the database
    from the documented Barman generation. See `apps/workloads/rom/README.md`.
    RomM and the restricted one-click catalogue are published. The catalogue
-   route is `requests.rom.lab.bingo`, its Authentik proxy is open to every
+   route is `rom-requests.lab.bingo`, its Authentik proxy is open to every
    authenticated identity, and it needs no credential beyond the runtime ROMarr
    key already derived from `rom-postgresql-app`. ROMarr, Prowlarr and
    qBittorrent remain internal ClusterIP services. RomM's filesystem watcher
