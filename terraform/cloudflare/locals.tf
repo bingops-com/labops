@@ -14,7 +14,6 @@ locals {
     "portfolio.lab.bingo",
     "requests.rom.lab.bingo",
     "rom.lab.bingo",
-    "romm.lab.bingo",
     "status.lab.bingo",
   ])
 

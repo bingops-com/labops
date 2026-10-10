@@ -70,4 +70,5 @@ available. Before relying on the backup, also verify a completed backup and a
 disposable restore without exposing application data or credentials.
 
 The retired `bingops-cnpg-labtest` bucket may be deleted only after explicit
-confirmation that its historical backups are no longer required.
+confirmation that its historical backups are no longer required. The
+[Cloudflare runbook](cloudflare.md) owns the required empty-bucket procedure.

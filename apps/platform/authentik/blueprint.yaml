@@ -678,8 +678,6 @@ data:
             - !KeyOf romm-groups-scope
           redirect_uris:
             - matching_mode: strict
-              url: https://romm.lab.bingo/api/oauth/openid
-            - matching_mode: strict
               url: https://rom.lab.bingo/api/oauth/openid
       - model: authentik_core.application
         identifiers:
