@@ -19,7 +19,7 @@ finalizer; remove it only through the destructive retirement procedure in the
 owning runbook.
 
 Production names under `lab.bingo` are explicit. Cloudflare Tunnel publishes
-`auth.lab.bingo`, `portfolio.lab.bingo`, `requests.rom.lab.bingo`,
+`auth.lab.bingo`, `portfolio.lab.bingo`, `rom-requests.lab.bingo`,
 `rom.lab.bingo` and `status.lab.bingo`; `bingops.com` and
 `www.bingops.com` reach the portfolio. Argo CD and Grafana remain private
 through exact-name Tailscale split-DNS routes, and the LabOps Portal is
