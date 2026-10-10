@@ -44,13 +44,12 @@ configs are sensitive generated state, not documentation.
    from the documented Barman generation. See `apps/workloads/rom/README.md`.
    RomM and the restricted one-click catalogue are published. The catalogue
    route is `rom-requests.lab.bingo`, its Authentik proxy is open to every
-   authenticated identity, and it needs no credential beyond the runtime ROMarr
-   key already derived from `rom-postgresql-app`. ROMarr, Prowlarr and
-   qBittorrent remain internal ClusterIP services. RomM's filesystem watcher
+   authenticated identity. It uses the ROM Hub code and generated plugin state
+   from the pinned ROMarr image, while keeping source URLs server-side. ROMarr,
+   Prowlarr and qBittorrent remain internal ClusterIP services. RomM's filesystem watcher
    imports completed downloads without a Client API Token or manual scan. A PostSync Job
-   idempotently installs the curated homebrew/freeware ROM Hub plugins and the
-   Direct HTTP client; their generated state is stored on the R2-backed
-   `rom-data` PVC.
+   idempotently installs the curated homebrew/freeware ROM Hub plugins; their
+   generated state is stored on the R2-backed `rom-data` PVC.
    The completed blue/green migration left `rom` as the automated production
    stack. The former `romm-labprod` Application, namespace and local volumes
    were retired after explicit confirmation; R2 and Barman remain the recovery

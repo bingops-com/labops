@@ -18,9 +18,10 @@ The bilingual one-click catalogue is published at
 `https://rom-requests.lab.bingo` through an Authentik proxy and is available
 to every authenticated Authentik user. It exposes only the platform list,
 interactive search and release-grab operations; it cannot read or change
-ROMarr, Prowlarr or qBittorrent settings. The portal injects ROMarr's API key
-server-side, so neither the browser nor Authentik receives it. ROMarr has no
-multi-user authorization model, which is why its native UI remains private.
+ROMarr, Prowlarr or qBittorrent settings. The portal invokes ROM Hub's pinned
+search and import libraries server-side; the browser receives only short-lived,
+opaque result identifiers and never receives source URLs or credentials. ROMarr
+has no multi-user authorization model, which is why its native UI remains private.
 Its pod disables Kubernetes service-link environment variables because the
 generated `ROMARR_PORT=tcp://...` value would override the image's numeric
 `ROMARR_PORT` setting and prevent startup.
@@ -28,28 +29,31 @@ Their LinuxServer S6 entrypoints start as root only long enough to switch to
 UID/GID 1000; their containers drop every capability except the ownership and
 UID/GID-switch capabilities required for that transition.
 
-ROMarr imports completed downloads into the shared `library/roms` tree. RomM's
+The request portal imports completed ROM Hub downloads into the shared
+`library/roms` tree. RomM's
 filesystem watcher is enabled declaratively with a two-minute debounce and
 performs a quick scan when those files arrive. This removes the need for a
 RomM Client API Token or an administrator-owned `tasks.run` credential. The
-request portal is stateless and uses the already-pinned Python runtime image;
-Git and the runtime Secret reconstruct it completely.
+request portal persists only ROM Hub's generated plugin and job state on the
+shared PVC and uses the already-pinned ROMarr image; Git and the bootstrap Job
+reconstruct it completely.
 
 The PostSync `rom-catalog-bootstrap` Job installs and enables four curated
 ROM Hub plugins: `homebrew` (GB/GBC/GBA/NES), `libretro-content`,
 `scummvm-freeware`, and `universal-db` (3DS/DS homebrew). These catalogues are
 limited to homebrew, freely distributable content, or freeware; they do not
-provide commercial ROM sets. The same idempotent Job configures ROMarr's
-Direct HTTP client with `/downloads/sites` as its landing directory. A user
+provide commercial ROM sets. The portal runs each plugin in ROM Hub's required
+seccomp sandbox, downloads a selected result into ROM Hub's job directory, and
+atomically imports it into the shared `library/roms/<platform>` tree. A user
 therefore searches at `rom-requests.lab.bingo`, clicks a result once, and sees
-the imported title appear at `rom.lab.bingo` after ROMarr completes the
-download and RomM's watcher scans it. Prowlarr and qBittorrent remain available
+the imported title appear at `rom.lab.bingo` after RomM's watcher scans it.
+Prowlarr and qBittorrent remain available
 for operator-configured lawful sources but are not required by these default
 catalogues.
 
 ## Storage and credentials
 
-All four applications mount the 200 Gi `rom-data` local-path PVC. RomM owns
+The workloads share the 200 Gi `rom-data` local-path PVC. RomM owns
 the whole `/romm` tree. ROMarr writes to `downloads` and `library/roms`, while
 Prowlarr, qBittorrent and ROMarr keep configuration below `configs`. A pinned,
 idempotent init script creates those paths and seeds the Prowlarr API key and
@@ -61,11 +65,11 @@ requires deleting the two generated Prowlarr and qBittorrent configuration
 files before restarting those workloads; ROMarr reads its key from the Secret
 at every start.
 
-The installed plugin code and ROMarr client configuration are generated state
-below `configs/romarr` on `rom-data`. They are reconstructed from the pinned
+The installed plugin code and ROM Hub job state are generated state below
+`configs/romarr/rom-hub` on `rom-data`. They are reconstructed from the pinned
 ROMarr image plus the declarative PostSync Job and are also included in the R2
 file backup. The bootstrap only logs plugin slugs and status; it never emits
-the API key or client configuration.
+the API key or plugin configuration.
 
 RomM uses the operator-managed CloudNativePG cluster `rom-postgresql`. The
 first bootstrap restores database `romm` and owner `romm` from Barman server

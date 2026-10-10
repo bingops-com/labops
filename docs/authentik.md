@@ -11,9 +11,10 @@ at `https://lab.bingo/auth/callback`, and public-PKCE RomM at
 `https://rom.lab.bingo/api/oauth/openid`. ROMarr is cluster-internal and therefore
 has no direct Authentik provider. The `ROM requests` proxy application publishes
 the restricted portal at `https://rom-requests.lab.bingo` to every authenticated
-user; the portal has no administrative routes and keeps ROMarr's credential
-server-side. RomM receives Authentik group names through a
-dedicated `groups` scope; `rom-admins` grants its administrator role.
+user; the portal has no administrative routes and needs no ROMarr credential.
+Its ROM Hub search results use opaque, short-lived IDs, so
+source URLs also remain server-side. RomM receives Authentik group names through
+a dedicated `groups` scope; `rom-admins` grants its administrator role.
 Its dedicated `email` scope emits the verified-email claim required by RomM on
 Authentik 2025.10 and later. Only the confidential Argo CD client secret and the
 Authentik bootstrap password are stored in the Bitwarden `labprod` project and

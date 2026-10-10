@@ -74,24 +74,6 @@ data:
         else:
             print(f"Catalog plugin already ready: {slug}", flush=True)
 
-    clients_response = request("/api/v1/downloadclient")
-    clients = clients_response.get("items", clients_response) if isinstance(clients_response, dict) else clients_response
-    direct_client = next((client for client in clients or [] if client.get("protocol") == "direct"), None)
-    if direct_client is None or not direct_client.get("configured", True):
-        print("Configuring the Direct HTTP download client", flush=True)
-        request(
-            "/api/v1/downloadclient",
-            "POST",
-            {
-                "type": "direct",
-                "name": "Direct HTTP",
-                "enable": True,
-                "save_path": "/downloads/sites",
-                "delay": 5,
-            },
-        )
-    else:
-        print("Direct HTTP download client already ready", flush=True)
 ---
 apiVersion: batch/v1
 kind: Job
