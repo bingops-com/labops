@@ -17,6 +17,8 @@ cloudflare:
       service: http://authentik-labprod-server.authentik.svc.cluster.local:80
     - hostname: rom.lab.bingo
       service: http://romm.rom.svc.cluster.local:80
+    - hostname: slots.lab.bingo
+      service: http://slots.slots.svc.cluster.local:80
     - hostname: status.lab.bingo
       service: http://status.status.svc.cluster.local:80
 

@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: slots-labprod
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: labops-labprod
+  sources:
+    - repoURL: https://github.com/bingops-com/slots.git
+      targetRevision: 28120bc88be47277d483ca659ba1d485edad93bc
+      path: chart
+      helm:
+        releaseName: slots
+        valueFiles:
+          - $values/apps/workloads/slots/clusters/labprod/values.yaml
+    - repoURL: https://github.com/bingops-com/labops.git
+      targetRevision: master
+      ref: values
+      path: apps/workloads/slots/clusters/labprod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: slots
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

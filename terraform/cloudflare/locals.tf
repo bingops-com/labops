@@ -14,6 +14,7 @@ locals {
     "portfolio.lab.bingo",
     "rom-requests.lab.bingo",
     "rom.lab.bingo",
+    "slots.lab.bingo",
     "status.lab.bingo",
   ])
 

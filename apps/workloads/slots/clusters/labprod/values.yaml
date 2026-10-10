@@ -1,0 +1,40 @@
+# labprod values for the chart pinned by the slots Argo CD Application.
+image:
+  repository: ghcr.io/bingops-com/slots
+  tag: sha-28120bc88be47277d483ca659ba1d485edad93bc
+  pullPolicy: IfNotPresent
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-cloudflare
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  host: slots.lab.bingo
+  tlsSecretName: slots-tls
+
+trustProxy: true
+
+database:
+  cnpg:
+    enabled: true
+    instances: 1
+    storage:
+      size: 2Gi
+      storageClass: local-path
+    backup:
+      enabled: true
+      objectStore: slots-postgresql
+      serverName: slots-postgresql-g1
+      schedule: "0 30 3 * * *"
+    podMonitor:
+      enabled: true
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 96Mi
+  limits:
+    cpu: 500m
+    memory: 384Mi

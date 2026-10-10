@@ -54,6 +54,12 @@ configs are sensitive generated state, not documentation.
    stack. The former `romm-labprod` Application, namespace and local volumes
    were retired after explicit confirmation; R2 and Barman remain the recovery
    sources documented in `apps/workloads/rom/README.md`.
+   Slots depends on the public `bingops-com/slots` repository and its public
+   GHCR image. Reconcile it only after the image tag pinned in
+   `apps/workloads/slots/clusters/labprod/values.yaml` exists. Its PostgreSQL
+   archive reuses the existing bucket-scoped R2 key under the dedicated
+   `slots` prefix; verify WAL archival and one completed backup before opening
+   ranked play. See `apps/workloads/slots/README.md`.
 9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
    verify `https://lab.bingo` through LAN or Tailscale without publishing it
    through the public Cloudflare Tunnel. The portal image is built from
