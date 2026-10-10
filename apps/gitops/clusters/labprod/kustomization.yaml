@@ -26,5 +26,4 @@ resources:
   - portal.yaml
   - status.yaml
   - rom.yaml
-  - romm.yaml
   - pz-server.yaml

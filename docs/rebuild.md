@@ -52,9 +52,9 @@ configs are sensitive generated state, not documentation.
    Direct HTTP client; their generated state is stored on the R2-backed
    `rom-data` PVC.
    The completed blue/green migration left `rom` as the automated production
-   stack. The former `romm` namespace is only a temporary, unpublished rollback
-   source; its final retirement requires the exact destructive confirmation
-   documented in `apps/workloads/rom/README.md`.
+   stack. The former `romm-labprod` Application, namespace and local volumes
+   were retired after explicit confirmation; R2 and Barman remain the recovery
+   sources documented in `apps/workloads/rom/README.md`.
 9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
    verify `https://lab.bingo` through LAN or Tailscale without publishing it
    through the public Cloudflare Tunnel. The portal image is built from
