@@ -7,18 +7,180 @@ data:
   server.py: |
     import json
     import os
+    import re
+    import secrets
+    import shutil
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
     from http import HTTPStatus
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
     from pathlib import Path
-    from urllib.error import HTTPError, URLError
-    from urllib.parse import parse_qs, urlencode, urlparse
-    from urllib.request import Request, urlopen
+    from urllib.parse import parse_qs, urlparse
 
-    INDEX = Path(os.environ.get("PORTAL_INDEX", "/app/index.html")).read_bytes()
-    ROMARR_URL = os.environ.get("ROMARR_URL", "http://romarr:6868").rstrip("/")
-    ROMARR_API_KEY = os.environ["ROMARR_API_KEY"]
+    from rom_hub.backends import IMPORT
+    from rom_hub.broker.fetcher import HttpxFetcher
+    from rom_hub.broker.host import PluginProcess
+    from rom_hub.cli import (
+        default_root,
+        downloads_dir,
+        jobs_db_path,
+        prepare_assets,
+        prepare_secrets,
+    )
+    from rom_hub.dispatcher import search_all
+    from rom_hub.importer import run_import
+    from rom_hub.jobs import JobQueue
+    from rom_hub.registry import Registry
+
+    INDEX = Path(os.environ.get("PORTAL_INDEX", "/portal/index.html")).read_bytes()
+    HUB_ROOT = default_root()
+    LIBRARY_ROOT = Path(os.environ.get("LIBRARY_PATH", "/roms"))
     MAX_BODY = 4096
-    MAX_RESPONSE = 2 * 1024 * 1024
+    MAX_CANDIDATES = 256
+    CANDIDATES = {}
+    CANDIDATE_ORDER = []
+    CANDIDATE_LOCK = threading.Lock()
+    IMPORT_POOL = ThreadPoolExecutor(max_workers=2)
+
+
+    class FolderBackend:
+        name = "Folder"
+
+        def capabilities(self):
+            return frozenset({IMPORT})
+
+        def authenticate(self):
+            if not LIBRARY_ROOT.is_dir():
+                raise RuntimeError("the shared ROM library is unavailable")
+
+        def platform_id(self, platform):
+            slug = str(platform or "").strip().lower()
+            if not re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,63}", slug):
+                raise ValueError("invalid platform slug")
+            return slug
+
+        def list_roms(self, platform_id):
+            directory = LIBRARY_ROOT / platform_id
+            if not directory.exists():
+                return []
+            return [
+                {"id": index, "fs_name": path.name}
+                for index, path in enumerate(sorted(directory.iterdir()), start=1)
+                if path.is_file() and not path.name.startswith(".import-")
+            ]
+
+        def upload_rom(self, path, platform_id):
+            directory = LIBRARY_ROOT / platform_id
+            directory.mkdir(parents=True, exist_ok=True)
+            destination = directory / path.name
+            if destination.exists():
+                raise FileExistsError("the destination already exists")
+            temporary = directory / f".import-{secrets.token_hex(12)}"
+            try:
+                with path.open("rb") as source, temporary.open("xb") as target:
+                    shutil.copyfileobj(source, target, length=1024 * 1024)
+                os.link(temporary, destination)
+            finally:
+                temporary.unlink(missing_ok=True)
+
+        def scan_platform(self, platform_id):
+            return None
+
+
+    def platform_directory():
+        platforms = set()
+        for plugin in Registry(HUB_ROOT).installed():
+            if plugin.enabled and "search" in plugin.manifest.capabilities:
+                platforms.update(plugin.manifest.platforms or [])
+        return [{"slug": slug, "name": slug.upper()} for slug in sorted(platforms)]
+
+
+    def search_catalog(game, platform):
+        plugins = Registry(HUB_ROOT).installed()
+        fetcher = HttpxFetcher()
+        try:
+            outcome = search_all(
+                plugins,
+                fetcher=fetcher,
+                query=game,
+                platform=platform or None,
+                limit=50,
+                allow_unsandboxed=False,
+                assets_for=lambda plugin: prepare_assets(plugin, HUB_ROOT),
+                secrets_for=lambda plugin: prepare_secrets(plugin, HUB_ROOT),
+            )
+        finally:
+            fetcher.close()
+
+        importers = {
+            plugin.slug
+            for plugin in plugins
+            if plugin.enabled and "importer" in plugin.manifest.capabilities
+        }
+        items = []
+        with CANDIDATE_LOCK:
+            for result in outcome.results:
+                if result.plugin not in importers:
+                    continue
+                candidate_id = secrets.token_urlsafe(24)
+                CANDIDATES[candidate_id] = result
+                CANDIDATE_ORDER.append(candidate_id)
+                items.append(
+                    {
+                        "id": candidate_id,
+                        "title": result.title,
+                        "size": result.size_bytes or 0,
+                        "seeders": 0,
+                        "indexer": result.plugin,
+                        "score": 100,
+                        "reasons": ["homebrew/freeware source"],
+                        "grabbable": True,
+                    }
+                )
+            while len(CANDIDATE_ORDER) > MAX_CANDIDATES:
+                CANDIDATES.pop(CANDIDATE_ORDER.pop(0), None)
+        return {
+            "items": items,
+            "sources": outcome.responded,
+            "sources_total": outcome.total,
+        }
+
+
+    def import_candidate(result):
+        try:
+            plugin = Registry(HUB_ROOT).get(result.plugin)
+            if not plugin.enabled or "importer" not in plugin.manifest.capabilities:
+                raise RuntimeError("the source is no longer enabled for import")
+            backend = FolderBackend()
+            backend.authenticate()
+            fetcher = HttpxFetcher()
+            try:
+                with (
+                    JobQueue(jobs_db_path(HUB_ROOT)) as queue,
+                    PluginProcess(
+                        plugin_dir=plugin.path,
+                        manifest=plugin.manifest,
+                        config=plugin.config,
+                        fetcher=fetcher,
+                        timeout=60,
+                        allow_unsandboxed=False,
+                        data_assets=prepare_assets(plugin, HUB_ROOT),
+                        secrets=prepare_secrets(plugin, HUB_ROOT),
+                    ) as process,
+                ):
+                    outcome = run_import(
+                        process,
+                        result,
+                        backend=backend,
+                        queue=queue,
+                        download_dir=downloads_dir(HUB_ROOT),
+                        warn_unplayable=False,
+                    )
+                print(f"ROM Hub import finished with state {outcome.state.value}", flush=True)
+            finally:
+                fetcher.close()
+        except Exception as error:
+            print(f"ROM Hub import failed: {type(error).__name__}", flush=True)
 
 
     class PortalHandler(BaseHTTPRequestHandler):
@@ -40,41 +202,26 @@ data:
             self._headers(status, content_type, len(raw))
             self.wfile.write(raw)
 
-        def _proxy(self, method, path, body=None):
-            headers = {"Accept": "application/json", "X-Api-Key": ROMARR_API_KEY}
-            raw = None
-            if body is not None:
-                raw = json.dumps(body).encode()
-                headers["Content-Type"] = "application/json"
-            request = Request(f"{ROMARR_URL}{path}", data=raw, headers=headers, method=method)
-            try:
-                with urlopen(request, timeout=45) as response:
-                    payload = response.read(MAX_RESPONSE + 1)
-                    if len(payload) > MAX_RESPONSE:
-                        return self._send(HTTPStatus.BAD_GATEWAY, {"error": "upstream response too large"})
-                    return self._send(response.status, payload, "application/json; charset=utf-8")
-            except HTTPError as error:
-                payload = error.read(MAX_RESPONSE)
-                return self._send(error.code, payload or b'{"error":"request refused"}')
-            except (TimeoutError, URLError, OSError):
-                return self._send(HTTPStatus.BAD_GATEWAY, {"error": "ROMarr is temporarily unavailable"})
-
         def do_GET(self):
             route = urlparse(self.path)
             if route.path == "/healthz":
-                return self._send(HTTPStatus.OK, {"ok": True})
+                ok = HUB_ROOT.is_dir() and LIBRARY_ROOT.is_dir()
+                return self._send(HTTPStatus.OK if ok else HTTPStatus.SERVICE_UNAVAILABLE, {"ok": ok})
             if route.path == "/":
                 return self._send(HTTPStatus.OK, INDEX, "text/html; charset=utf-8")
             if route.path == "/api/platforms":
-                return self._proxy("GET", "/api/platforms")
+                return self._send(HTTPStatus.OK, platform_directory())
             if route.path == "/api/releases":
                 query = parse_qs(route.query)
                 game = (query.get("game") or [""])[0].strip()
                 platform = (query.get("platform") or [""])[0].strip()
                 if not game or len(game) > 160 or len(platform) > 80:
                     return self._send(HTTPStatus.BAD_REQUEST, {"error": "invalid search"})
-                upstream_query = urlencode({"game": game, "platform": platform})
-                return self._proxy("GET", f"/api/v1/release?{upstream_query}")
+                try:
+                    return self._send(HTTPStatus.OK, search_catalog(game, platform))
+                except Exception as error:
+                    print(f"ROM Hub search failed: {type(error).__name__}", flush=True)
+                    return self._send(HTTPStatus.BAD_GATEWAY, {"error": "catalog search failed"})
             return self._send(HTTPStatus.NOT_FOUND, {"error": "not found"})
 
         def do_POST(self):
@@ -96,7 +243,14 @@ data:
             release_id = str(body.get("id", "")).strip() if isinstance(body, dict) else ""
             if not release_id or len(release_id) > 256:
                 return self._send(HTTPStatus.BAD_REQUEST, {"error": "invalid release"})
-            return self._proxy("POST", "/api/v1/release/grab", {"id": release_id})
+            with CANDIDATE_LOCK:
+                result = CANDIDATES.pop(release_id, None)
+                if release_id in CANDIDATE_ORDER:
+                    CANDIDATE_ORDER.remove(release_id)
+            if result is None:
+                return self._send(HTTPStatus.GONE, {"error": "search result expired"})
+            IMPORT_POOL.submit(import_candidate, result)
+            return self._send(HTTPStatus.ACCEPTED, {"ok": True, "queued": True})
 
         def log_message(self, pattern, *args):
             print(f'{self.client_address[0]} {self.command} {urlparse(self.path).path}', flush=True)
@@ -154,7 +308,7 @@ data:
         </main>
       </div>
       <script>
-        const copy={fr:{hero:"Trouvez votre prochain jeu.",heroText:"Recherchez une version disponible, choisissez-la, puis retrouvez-la automatiquement dans RomM après son import.",title:"Demander un jeu",lead:"La recherche consulte les sources configurées par l’administrateur. Les réglages et les identifiants restent privés.",game:"Jeu",platform:"Plateforme",anyPlatform:"Toutes les plateformes",search:"Rechercher",searching:"Recherche en cours…",none:"Aucune version disponible pour cette recherche.",found:n=>`${n} version${n>1?'s':''} trouvée${n>1?'s':''}.`,grab:"Télécharger",grabbing:"Envoi…",done:"Cap trouvé",failed:"La demande n’a pas pu être envoyée.",unavailable:"Le service de demandes est momentanément indisponible.",legal:"Téléchargez uniquement des contenus que vous avez le droit d’utiliser ou qui sont librement distribuables.",seeders:"sources",size:"Taille"},en:{hero:"Find your next game.",heroText:"Search the available releases, choose one, then find it automatically in RomM after import.",title:"Request a game",lead:"Search uses sources configured by the administrator. Settings and credentials stay private.",game:"Game",platform:"Platform",anyPlatform:"Any platform",search:"Search",searching:"Searching…",none:"No release is available for this search.",found:n=>`${n} release${n===1?'':'s'} found.`,grab:"Download",grabbing:"Sending…",done:"Course set",failed:"The request could not be sent.",unavailable:"The request service is temporarily unavailable.",legal:"Only download content you are entitled to use or that is freely distributable.",seeders:"seeders",size:"Size"}};
+        const copy={fr:{hero:"Trouvez votre prochain jeu.",heroText:"Recherchez une version disponible, choisissez-la, puis retrouvez-la automatiquement dans RomM après son import.",title:"Demander un jeu",lead:"La recherche consulte les sources configurées par l’administrateur. Les réglages et les identifiants restent privés.",game:"Jeu",platform:"Plateforme",anyPlatform:"Toutes les plateformes",search:"Rechercher",searching:"Recherche en cours…",none:"Aucune version disponible pour cette recherche.",found:n=>`${n} version${n>1?'s':''} trouvée${n>1?'s':''}.`,grab:"Télécharger",grabbing:"Envoi…",done:"Téléchargement lancé",failed:"La demande n’a pas pu être envoyée.",unavailable:"Le service de demandes est momentanément indisponible.",legal:"Téléchargez uniquement des contenus que vous avez le droit d’utiliser ou qui sont librement distribuables.",seeders:"sources",size:"Taille"},en:{hero:"Find your next game.",heroText:"Search the available releases, choose one, then find it automatically in RomM after import.",title:"Request a game",lead:"Search uses sources configured by the administrator. Settings and credentials stay private.",game:"Game",platform:"Platform",anyPlatform:"Any platform",search:"Search",searching:"Searching…",none:"No release is available for this search.",found:n=>`${n} release${n===1?'':'s'} found.`,grab:"Download",grabbing:"Sending…",done:"Download queued",failed:"The request could not be sent.",unavailable:"The request service is temporarily unavailable.",legal:"Only download content you are entitled to use or that is freely distributable.",seeders:"sources",size:"Size"}};
         let language=(navigator.language||'fr').toLowerCase().startsWith('fr')?'fr':'en';let last=[];
         const t=key=>copy[language][key];const status=document.querySelector('#status');const results=document.querySelector('#results');
         function setLanguage(next){language=next;document.documentElement.lang=next;document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));document.querySelectorAll('.lang').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.lang===next)));render(last)}
@@ -176,6 +330,7 @@ metadata:
   namespace: rom
 spec:
   replicas: 1
+  strategy: { type: Recreate }
   selector:
     matchLabels: { app.kubernetes.io/name: rom-request-portal }
   template:
@@ -186,12 +341,14 @@ spec:
       enableServiceLinks: false
       containers:
         - name: portal
-          image: python:3.13.7-alpine3.22
-          command: ["python", "/app/server.py"]
+          image: ghcr.io/blizzhacker/romarr:0.9.0
+          imagePullPolicy: IfNotPresent
+          command: ["python", "/portal/server.py"]
           env:
-            - { name: ROMARR_URL, value: http://romarr:6868 }
-            - name: ROMARR_API_KEY
-              valueFrom: { secretKeyRef: { name: rom-postgresql-app, key: password } }
+            - { name: HOME, value: /tmp }
+            - { name: LIBRARY_PATH, value: /roms }
+            - { name: PYTHONPATH, value: /app }
+            - { name: ROM_HUB_HOME, value: /config/rom-hub }
           ports:
             - { name: http, containerPort: 8080 }
           readinessProbe:
@@ -200,8 +357,8 @@ spec:
             httpGet: { path: /healthz, port: http }
             initialDelaySeconds: 10
           resources:
-            requests: { cpu: 20m, memory: 32Mi }
-            limits: { cpu: 200m, memory: 128Mi }
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: "1", memory: 1Gi }
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: ["ALL"] }
@@ -211,13 +368,17 @@ spec:
             runAsUser: 1000
             seccompProfile: { type: RuntimeDefault }
           volumeMounts:
-            - { name: app, mountPath: /app, readOnly: true }
+            - { name: app, mountPath: /portal, readOnly: true }
+            - { name: data, mountPath: /config, subPath: configs/romarr }
+            - { name: data, mountPath: /roms, subPath: library/roms }
             - { name: tmp, mountPath: /tmp }
       volumes:
         - name: app
           configMap: { name: rom-request-portal }
         - name: tmp
           emptyDir: {}
+        - name: data
+          persistentVolumeClaim: { claimName: rom-data }
 ---
 apiVersion: v1
 kind: Service

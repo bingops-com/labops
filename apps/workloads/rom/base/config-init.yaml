@@ -49,7 +49,6 @@ data:
     managed_paths = (
         "/data/configs/romarr",
         "/data/downloads",
-        "/data/downloads/sites",
         "/data/library/roms",
         "/data/resources",
         "/data/assets",
