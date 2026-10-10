@@ -36,7 +36,7 @@ data:
     HUB_ROOT = default_root()
     LIBRARY_ROOT = Path(os.environ.get("LIBRARY_PATH", "/roms"))
     MAX_BODY = 4096
-    MAX_CANDIDATES = 256
+    MAX_CANDIDATES = 4096
     CANDIDATES = {}
     CANDIDATE_ORDER = []
     CANDIDATE_LOCK = threading.Lock()
@@ -129,10 +129,9 @@ data:
                     {
                         "id": candidate_id,
                         "title": result.title,
+                        "platform": result.platform or "other",
                         "size": result.size_bytes or 0,
-                        "seeders": 0,
                         "indexer": result.plugin,
-                        "score": 100,
                         "reasons": ["homebrew/freeware source"],
                         "grabbable": True,
                     }
@@ -215,7 +214,7 @@ data:
                 query = parse_qs(route.query)
                 game = (query.get("game") or [""])[0].strip()
                 platform = (query.get("platform") or [""])[0].strip()
-                if not game or len(game) > 160 or len(platform) > 80:
+                if len(game) > 160 or len(platform) > 80:
                     return self._send(HTTPStatus.BAD_REQUEST, {"error": "invalid search"})
                 try:
                     return self._send(HTTPStatus.OK, search_catalog(game, platform))
@@ -277,7 +276,7 @@ data:
         .compass{position:relative;z-index:1;width:5rem;height:5rem;border:1px solid rgba(255,255,255,.4);border-radius:50%;display:grid;place-items:center}.compass:before{content:"";width:1.1rem;height:3.7rem;background:linear-gradient(to bottom,var(--mint) 0 48%,white 48%);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);transform:rotate(24deg)}
         main{padding:clamp(1.5rem,5vw,5rem);display:flex;align-items:flex-start}.workspace{width:min(100%,70rem);margin:auto}.toolbar{display:flex;justify-content:flex-end;margin-bottom:1.3rem}.lang{border:0;background:transparent;color:var(--soft);padding:.55rem}.lang[aria-pressed="true"]{color:var(--blue);font-weight:700}
         .search{background:var(--surface);border-radius:1rem;padding:clamp(1.4rem,3vw,2.5rem);box-shadow:0 1.4rem 4rem rgba(17,23,48,.09)}.search h2{font-family:"RedHatDisplay",ui-sans-serif,system-ui,sans-serif;font-size:clamp(1.7rem,3vw,2.4rem);letter-spacing:-.035em;margin:0 0 .5rem}.lead{color:var(--soft);line-height:1.55;margin:0 0 1.8rem;max-width:48rem}.form{display:grid;grid-template-columns:minmax(12rem,1.5fr) minmax(11rem,1fr) auto;gap:.85rem;align-items:end}.field label{display:block;font-weight:700;margin:0 0 .45rem}.field input,.field select{width:100%;height:3rem;border:1px solid var(--field);border-radius:.625rem;background:white;color:var(--ink);padding:0 .9rem}.primary{height:3rem;border:0;border-radius:.625rem;background:var(--blue);color:white;font-weight:800;padding:0 1.4rem}.primary:hover{background:var(--blue-hover)}:focus-visible{outline:3px solid rgba(20,67,214,.28);outline-offset:2px}
-        #status{min-height:1.6rem;margin:1rem 0 0;color:var(--soft)}#status.error{color:#9d2430}.results{margin-top:1.5rem;display:grid;gap:.75rem}.release{display:grid;grid-template-columns:5rem minmax(0,1fr) auto;gap:1rem;align-items:center;background:white;border:1px solid var(--line);border-radius:.75rem;padding:1rem 1.1rem}.score{font-family:"RedHatDisplay",ui-sans-serif,system-ui,sans-serif;font-weight:900;color:var(--blue);font-size:1.3rem}.release h3{font-size:1rem;margin:0 0 .35rem;overflow-wrap:anywhere}.meta{color:var(--soft);font-size:.86rem;line-height:1.5}.why{margin-top:.35rem;color:var(--soft);font-size:.82rem}.grab{border:1px solid var(--blue);border-radius:.625rem;background:white;color:var(--blue);font-weight:800;padding:.7rem 1rem}.grab:hover{background:#eef2ff}.grab.done{border-color:var(--mint);background:#eafff3;color:#125f3a}.empty{border:1px dashed var(--field);border-radius:.75rem;padding:2rem;text-align:center;color:var(--soft)}.legal{margin:1.2rem 0 0;color:var(--soft);font-size:.78rem;line-height:1.5}
+        #status{min-height:1.6rem;margin:1rem 0 0;color:var(--soft)}#status.error{color:#9d2430}.results{margin-top:1.5rem;display:grid;gap:.75rem}.release{display:grid;grid-template-columns:5rem minmax(0,1fr) auto;gap:1rem;align-items:center;background:white;border:1px solid var(--line);border-radius:.75rem;padding:1rem 1.1rem}.platform-tag{font-family:"RedHatDisplay",ui-sans-serif,system-ui,sans-serif;font-weight:900;color:var(--blue);font-size:.82rem;text-transform:uppercase;overflow-wrap:anywhere}.release h3{font-size:1rem;margin:0 0 .35rem;overflow-wrap:anywhere}.meta{color:var(--soft);font-size:.86rem;line-height:1.5}.why{margin-top:.35rem;color:var(--soft);font-size:.82rem}.grab,.more{border:1px solid var(--blue);border-radius:.625rem;background:white;color:var(--blue);font-weight:800;padding:.7rem 1rem}.grab:hover,.more:hover{background:#eef2ff}.grab.done{border-color:var(--mint);background:#eafff3;color:#125f3a}.more{justify-self:center;margin-top:.75rem;padding-inline:1.5rem}.empty{border:1px dashed var(--field);border-radius:.75rem;padding:2rem;text-align:center;color:var(--soft)}.legal{margin:1.2rem 0 0;color:var(--soft);font-size:.78rem;line-height:1.5}
         @media(max-width:850px){.shell{grid-template-columns:1fr}.mast{min-height:16rem;padding:1.6rem 1.5rem;gap:2rem}.intro h1{font-size:2.8rem;margin-bottom:.8rem}.compass{display:none}main{padding:1.2rem}.form{grid-template-columns:1fr}.primary{width:100%}.release{grid-template-columns:3.5rem minmax(0,1fr)}.release .grab{grid-column:1/-1;width:100%}}
         @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
       </style>
@@ -293,10 +292,10 @@ data:
           <div class="workspace">
             <div class="toolbar" aria-label="Language"><button class="lang" data-lang="fr" aria-pressed="true">FR</button><button class="lang" data-lang="en" aria-pressed="false">EN</button></div>
             <section class="search">
-              <h2 data-i18n="title">Demander un jeu</h2>
-              <p class="lead" data-i18n="lead">La recherche consulte les sources configurées par l’administrateur. Les réglages et les identifiants restent privés.</p>
+              <h2 data-i18n="title">Catalogue de jeux</h2>
+              <p class="lead" data-i18n="lead">Parcourez les homebrews et freewares disponibles, ou filtrez le catalogue par nom et plateforme.</p>
               <form class="form" id="search-form">
-                <div class="field"><label for="game" data-i18n="game">Jeu</label><input id="game" name="game" maxlength="160" required autocomplete="off" placeholder="Phantasy Star IV"></div>
+                <div class="field"><label for="game" data-i18n="game">Nom du jeu (facultatif)</label><input id="game" name="game" maxlength="160" autocomplete="off" placeholder="2048"></div>
                 <div class="field"><label for="platform" data-i18n="platform">Plateforme</label><select id="platform" name="platform"><option value="" data-i18n="anyPlatform">Toutes les plateformes</option></select></div>
                 <button class="primary" type="submit" data-i18n="search">Rechercher</button>
               </form>
@@ -308,17 +307,27 @@ data:
         </main>
       </div>
       <script>
-        const copy={fr:{hero:"Trouvez votre prochain jeu.",heroText:"Recherchez une version disponible, choisissez-la, puis retrouvez-la automatiquement dans RomM après son import.",title:"Demander un jeu",lead:"La recherche consulte les sources configurées par l’administrateur. Les réglages et les identifiants restent privés.",game:"Jeu",platform:"Plateforme",anyPlatform:"Toutes les plateformes",search:"Rechercher",searching:"Recherche en cours…",none:"Aucune version disponible pour cette recherche.",found:n=>`${n} version${n>1?'s':''} trouvée${n>1?'s':''}.`,grab:"Télécharger",grabbing:"Envoi…",done:"Téléchargement lancé",failed:"La demande n’a pas pu être envoyée.",unavailable:"Le service de demandes est momentanément indisponible.",legal:"Téléchargez uniquement des contenus que vous avez le droit d’utiliser ou qui sont librement distribuables.",seeders:"sources",size:"Taille"},en:{hero:"Find your next game.",heroText:"Search the available releases, choose one, then find it automatically in RomM after import.",title:"Request a game",lead:"Search uses sources configured by the administrator. Settings and credentials stay private.",game:"Game",platform:"Platform",anyPlatform:"Any platform",search:"Search",searching:"Searching…",none:"No release is available for this search.",found:n=>`${n} release${n===1?'':'s'} found.`,grab:"Download",grabbing:"Sending…",done:"Download queued",failed:"The request could not be sent.",unavailable:"The request service is temporarily unavailable.",legal:"Only download content you are entitled to use or that is freely distributable.",seeders:"sources",size:"Size"}};
-        let language=(navigator.language||'fr').toLowerCase().startsWith('fr')?'fr':'en';let last=[];
-        const t=key=>copy[language][key];const status=document.querySelector('#status');const results=document.querySelector('#results');
-        function setLanguage(next){language=next;document.documentElement.lang=next;document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));document.querySelectorAll('.lang').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.lang===next)));render(last)}
+        const copy={fr:{hero:"Trouvez votre prochain jeu.",heroText:"Parcourez les jeux libres disponibles, téléchargez-en un, puis retrouvez-le automatiquement dans RomM.",title:"Catalogue de jeux",lead:"Parcourez les homebrews et freewares disponibles, ou filtrez le catalogue par nom et plateforme.",game:"Nom du jeu (facultatif)",platform:"Plateforme",anyPlatform:"Toutes les plateformes",search:"Filtrer",searching:"Chargement du catalogue…",none:"Aucun jeu disponible pour ces critères.",found:n=>`${n} jeu${n>1?'x':''} disponible${n>1?'s':''}.`,more:"Afficher plus",grab:"Télécharger",grabbing:"Envoi…",done:"Téléchargement lancé",failed:"Le téléchargement n’a pas pu être lancé.",unavailable:"Le catalogue est momentanément indisponible.",legal:"Téléchargez uniquement des contenus que vous avez le droit d’utiliser ou qui sont librement distribuables.",source:"Source",size:"Taille"},en:{hero:"Find your next game.",heroText:"Browse the available free games, download one, then find it automatically in RomM.",title:"Game catalogue",lead:"Browse available homebrew and freeware, or filter the catalogue by name and platform.",game:"Game name (optional)",platform:"Platform",anyPlatform:"Any platform",search:"Filter",searching:"Loading catalogue…",none:"No game is available for these filters.",found:n=>`${n} game${n===1?'':'s'} available.`,more:"Show more",grab:"Download",grabbing:"Sending…",done:"Download queued",failed:"The download could not be queued.",unavailable:"The catalogue is temporarily unavailable.",legal:"Only download content you are entitled to use or that is freely distributable.",source:"Source",size:"Size"}};
+        let language=(navigator.language||'fr').toLowerCase().startsWith('fr')?'fr':'en';
+        let last=[];
+        let visible=24;
+        const queued=new Set();
+        const t=key=>copy[language][key];
+        const status=document.querySelector('#status');
+        const results=document.querySelector('#results');
+        const form=document.querySelector('#search-form');
+        const platform=document.querySelector('#platform');
+        function setLanguage(next){language=next;document.documentElement.lang=next;document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));document.querySelectorAll('.lang').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.lang===next)));render()}
         function bytes(value){if(!value)return '—';const units=['B','KB','MB','GB','TB'];let n=Number(value),i=0;while(n>=1024&&i<units.length-1){n/=1024;i++}return `${n.toFixed(i>1?1:0)} ${units[i]}`}
         function element(tag,className,text){const el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=text;return el}
-        function render(items){last=items;results.replaceChildren();for(const item of items){const row=element('article','release');row.append(element('div','score',String(item.score??'—')));const body=element('div');body.append(element('h3','',item.title||'—'));body.append(element('div','meta',`${t('size')}: ${bytes(item.size)} · ${item.seeders??0} ${t('seeders')} · ${item.indexer||'—'}`));if(Array.isArray(item.reasons)&&item.reasons.length)body.append(element('div','why',item.reasons.join(' · ')));row.append(body);const button=element('button','grab',t('grab'));button.type='button';button.disabled=!item.grabbable;button.addEventListener('click',()=>grab(item,button));row.append(button);results.append(row)}}
-        async function grab(item,button){button.disabled=true;button.textContent=t('grabbing');try{const response=await fetch('/api/grab',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:item.id})});const data=await response.json();if(!response.ok||!data.ok)throw new Error(data.error||'failed');button.classList.add('done');button.textContent=t('done');status.className='';status.textContent=t('done')}catch(error){button.disabled=false;button.textContent=t('grab');status.className='error';status.textContent=error.message||t('failed')}}
+        function render(){results.replaceChildren();for(const item of last.slice(0,visible)){const row=element('article','release');row.append(element('div','platform-tag',item.platform||'—'));const body=element('div');body.append(element('h3','',item.title||'—'));body.append(element('div','meta',`${t('source')}: ${item.indexer||'—'} · ${t('size')}: ${bytes(item.size)}`));if(Array.isArray(item.reasons)&&item.reasons.length)body.append(element('div','why',item.reasons.join(' · ')));row.append(body);const done=queued.has(item.id);const button=element('button',done?'grab done':'grab',done?t('done'):t('grab'));button.type='button';button.disabled=done||!item.grabbable;button.addEventListener('click',()=>grab(item,button));row.append(button);results.append(row)}if(last.length>visible){const more=element('button','more',t('more'));more.type='button';more.addEventListener('click',()=>{visible+=24;render()});results.append(more)}}
+        async function grab(item,button){button.disabled=true;button.textContent=t('grabbing');try{const response=await fetch('/api/grab',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:item.id})});const data=await response.json();if(!response.ok||!data.ok)throw new Error(data.error||'failed');queued.add(item.id);button.classList.add('done');button.textContent=t('done');status.className='';status.textContent=t('done')}catch(error){button.disabled=false;button.textContent=t('grab');status.className='error';status.textContent=error.message||t('failed')}}
+        async function loadCatalogue(){results.replaceChildren();status.className='';status.textContent=t('searching');const params=new URLSearchParams(new FormData(form));try{const response=await fetch('/api/releases?'+params);const data=await response.json();if(!response.ok||data.error)throw new Error(data.error||'failed');last=data.items||[];visible=24;render();status.textContent=last.length?t('found')(last.length):t('none')}catch(error){last=[];status.className='error';status.textContent=error.message||t('unavailable')}}
         document.querySelectorAll('.lang').forEach(button=>button.addEventListener('click',()=>setLanguage(button.dataset.lang)));
-        document.querySelector('#search-form').addEventListener('submit',async event=>{event.preventDefault();results.replaceChildren();status.className='';status.textContent=t('searching');const params=new URLSearchParams(new FormData(event.currentTarget));try{const response=await fetch('/api/releases?'+params);const data=await response.json();if(!response.ok||data.error)throw new Error(data.error||'failed');render(data.items||[]);status.textContent=data.items?.length?t('found')(data.items.length):t('none')}catch(error){status.className='error';status.textContent=error.message||t('unavailable')}});
-        fetch('/api/platforms').then(response=>response.json()).then(items=>{const select=document.querySelector('#platform');for(const item of items){const option=document.createElement('option');option.value=item.slug;option.textContent=item.name;select.append(option)}}).catch(()=>{});setLanguage(language);
+        form.addEventListener('submit',event=>{event.preventDefault();loadCatalogue()});
+        platform.addEventListener('change',loadCatalogue);
+        fetch('/api/platforms').then(response=>response.json()).then(items=>{for(const item of items){const option=document.createElement('option');option.value=item.slug;option.textContent=item.name;platform.append(option)}}).catch(()=>{}).finally(loadCatalogue);
+        setLanguage(language);
       </script>
     </body>
     </html>

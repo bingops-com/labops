@@ -16,8 +16,10 @@ API is reachable only inside the cluster at
 `http://romarr.rom.svc.cluster.local:6868` and requires its seeded API key.
 The bilingual one-click catalogue is published at
 `https://rom-requests.lab.bingo` through an Authentik proxy and is available
-to every authenticated Authentik user. It exposes only the platform list,
-interactive search and release-grab operations; it cannot read or change
+to every authenticated Authentik user. It loads a browsable snapshot from all
+four curated sources on arrival and supports optional name and platform
+filters. It exposes only the platform list, catalogue search and release-grab
+operations; it cannot read or change
 ROMarr, Prowlarr or qBittorrent settings. The portal invokes ROM Hub's pinned
 search and import libraries server-side; the browser receives only short-lived,
 opaque result identifiers and never receives source URLs or credentials. ROMarr
@@ -47,6 +49,8 @@ seccomp sandbox, downloads a selected result into ROM Hub's job directory, and
 atomically imports it into the shared `library/roms/<platform>` tree. A user
 therefore searches at `rom-requests.lab.bingo`, clicks a result once, and sees
 the imported title appear at `rom.lab.bingo` after RomM's watcher scans it.
+RomM lists only imported local files, so a remote catalogue entry appears there
+after its one-click download, not before.
 Prowlarr and qBittorrent remain available
 for operator-configured lawful sources but are not required by these default
 catalogues.
@@ -161,9 +165,10 @@ curl --head --silent --show-error https://rom-requests.lab.bingo
 ```
 
 Confirm that an unauthenticated request is redirected to Authentik. Use an
-incognito session and a non-privileged test identity to search and request a
-freely distributable test file, then verify that it appears in RomM after the
-watcher delay without a manual scan. Confirm the same identity cannot reach the
+incognito session and a non-privileged test identity to confirm the unfiltered
+catalogue loads without entering a game name, then request a freely
+distributable test file and verify that it appears in RomM after the watcher
+delay without a manual scan. Confirm the same identity cannot reach the
 native ROMarr UI or acquire administrator access in RomM; sign in as `bingops`
 and confirm administrator access. Configure and test only lawful Prowlarr
 indexers through controlled port-forwards; those optional runtime choices are
