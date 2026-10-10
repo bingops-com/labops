@@ -1,0 +1,53 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: gatus
+  namespace: gatus
+  labels:
+    app.kubernetes.io/name: gatus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gatus
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: gatus-endpoints
+  namespace: gatus
+  labels:
+    app.kubernetes.io/name: gatus
+spec:
+  groups:
+    - name: labops.gatus.rules
+      interval: 30s
+      rules:
+        - alert: GatusEndpointDown
+          expr: |-
+            sum by (key, name, group) (increase(gatus_results_total{namespace="gatus", success="false"}[3m])) >= 2
+            unless on (key, name, group)
+            sum by (key, name, group) (increase(gatus_results_total{namespace="gatus", success="true"}[2m])) > 0
+          for: 1m
+          labels:
+            severity: warning
+            namespace: gatus
+            component: endpoint
+          annotations:
+            summary: "Le service {{ $labels.name }} est indisponible"
+            description: "Gatus a observé au moins deux échecs consécutifs pour {{ $labels.group }}/{{ $labels.name }}. L’alerte se résout automatiquement après le retour d’un contrôle réussi."
+            dashboard_url: https://status.lab.bingo
+        - alert: GatusMetricsMissing
+          expr: absent(up{namespace="gatus", service="gatus"}) or max(up{namespace="gatus", service="gatus"}) == 0
+          for: 5m
+          labels:
+            severity: critical
+            namespace: gatus
+            component: gatus
+          annotations:
+            summary: Gatus n’est plus collecté par Prometheus
+            description: Prometheus ne reçoit plus les métriques de Gatus depuis au moins cinq minutes. L’état des services affiché par status.lab.bingo peut être obsolète.
+            dashboard_url: https://status.lab.bingo

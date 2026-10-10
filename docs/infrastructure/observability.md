@@ -32,6 +32,13 @@ count, summary, description, and dashboard or runbook links when supplied by
 the alert. No additional Discord channel is required until a separate on-call
 audience or retention policy is needed.
 
+Gatus endpoint failures reuse the `applications` receiver instead of copying a
+Discord webhook into the `gatus` namespace. Prometheus scrapes Gatus through
+the workload-owned `ServiceMonitor`; two consecutive failed checks raise
+`GatusEndpointDown`, and the next successful check produces the resolved
+notification. A separate critical alert detects missing Gatus metrics. The
+existing Bitwarden `applications-url` mapping remains the only non-Git input.
+
 Elasticsearch runs as a single node. The bootstrap Job therefore installs the
 `logs-labprod` index template (priority 200, above the built-in `logs`
 template, which Elasticsearch refuses to overwrite) with
