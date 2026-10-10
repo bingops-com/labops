@@ -8,9 +8,11 @@ The tracked blueprint owns four OIDC applications: confidential Argo CD at
 `https://argocd.lab.bingo/auth/callback`, public-PKCE Grafana at
 `https://grafana.lab.bingo/login/generic_oauth`, the public-PKCE LabOps Portal
 at `https://lab.bingo/auth/callback`, and public-PKCE RomM at
-`https://rom.lab.bingo/api/oauth/openid` (with the former `romm.lab.bingo`
-redirect retained during migration). ROMarr is cluster-internal and therefore
-has no Authentik provider. RomM receives Authentik group names through a
+`https://rom.lab.bingo/api/oauth/openid`. ROMarr is cluster-internal and therefore
+has no direct Authentik provider. The `ROM requests` proxy application publishes
+the restricted portal at `https://requests.rom.lab.bingo` to every authenticated
+user; the portal has no administrative routes and keeps ROMarr's credential
+server-side. RomM receives Authentik group names through a
 dedicated `groups` scope; `rom-admins` grants its administrator role.
 Its dedicated `email` scope emits the verified-email claim required by RomM on
 Authentik 2025.10 and later. Only the confidential Argo CD client secret and the
@@ -121,9 +123,13 @@ RomM skips its local setup wizard and creates the account automatically on the
 first OIDC login; no RomM bootstrap password is required. RomM is kept in the
 independent `romm.yaml` blueprint entry so a failure in the shared brand cannot
 block its OIDC provider, scopes, groups or application. The entry also removes
-the retired ROMarr proxy provider and application; deleting the provider clears
-its Embedded Outpost assignment. The cleanup is safe to repeat after an upgrade
-or empty-database rebuild.
+the retired full-access ROMarr proxy provider and application, then assigns the
+restricted request provider to the Embedded Outpost. The cleanup and assignment
+are safe to repeat after an upgrade or empty-database rebuild. The request
+application binds an expression policy that accepts every authenticated user;
+all signed-in users have the same request-only surface and no administrative
+operation exists there. `rom-admins` still contains only `bingops` and remains
+the sole source of the RomM administrator role.
 
 After reconciliation, verify the Authentik discovery endpoint and each login
 through trusted HTTPS without printing tokens or Secret data. Also open an

@@ -13,8 +13,8 @@ cloudflare:
       service: http://blog.bingops.svc.cluster.local:80
     - hostname: portfolio.lab.bingo
       service: http://portfolio.portfolio.svc.cluster.local:80
-    - hostname: romm.lab.bingo
-      service: http://romm.romm.svc.cluster.local:80
+    - hostname: requests.rom.lab.bingo
+      service: http://authentik-labprod-server.authentik.svc.cluster.local:80
     - hostname: rom.lab.bingo
       service: http://romm.rom.svc.cluster.local:80
     - hostname: status.lab.bingo

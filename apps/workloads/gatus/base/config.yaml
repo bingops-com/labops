@@ -52,3 +52,8 @@ endpoints:
     url: http://romarr.rom.svc.cluster.local:6868/api/health
     interval: 60s
     conditions: ["[STATUS] == 200", "[RESPONSE_TIME] < 5000"]
+  - name: Demandes ROM
+    group: Services
+    url: http://rom-request-portal.rom.svc.cluster.local:8080/healthz
+    interval: 60s
+    conditions: ["[STATUS] == 200", "[RESPONSE_TIME] < 2000"]

@@ -1,0 +1,141 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rom-catalog-bootstrap
+  namespace: rom
+data:
+  bootstrap.py: |
+    import json
+    import os
+    import time
+    import urllib.error
+    import urllib.request
+
+    base_url = "http://romarr:6868"
+    api_key = os.environ["ROMARR_API_KEY"]
+    plugin_slugs = (
+        "homebrew",
+        "libretro-content",
+        "scummvm-freeware",
+        "universal-db",
+    )
+
+    def request(path, method="GET", payload=None):
+        data = None if payload is None else json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            f"{base_url}{path}",
+            data=data,
+            method=method,
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-Api-Key": api_key,
+            },
+        )
+        with urllib.request.urlopen(req, timeout=60) as response:
+            body = response.read()
+            return json.loads(body) if body else None
+
+    deadline = time.monotonic() + 600
+    while True:
+        try:
+            request("/api/health")
+            break
+        except (OSError, urllib.error.HTTPError, urllib.error.URLError):
+            if time.monotonic() >= deadline:
+                raise RuntimeError("ROMarr did not become ready within 10 minutes")
+            time.sleep(5)
+
+    catalog_response = request("/api/v1/hub/plugins")
+    catalog = catalog_response.get("items", catalog_response) if isinstance(catalog_response, dict) else catalog_response
+    plugins = {plugin.get("slug"): plugin for plugin in catalog or []}
+    missing = [slug for slug in plugin_slugs if slug not in plugins]
+    if missing:
+        raise RuntimeError(f"Required ROM Hub plugins are absent from the catalog: {', '.join(missing)}")
+
+    for slug in plugin_slugs:
+        plugin = plugins[slug]
+        if not plugin.get("installed"):
+            print(f"Installing lawful catalog plugin: {slug}", flush=True)
+            request("/api/v1/hub/plugin", "POST", {"slug": slug, "action": "install"})
+        else:
+            print(f"Catalog plugin already installed: {slug}", flush=True)
+
+    catalog_response = request("/api/v1/hub/plugins")
+    catalog = catalog_response.get("items", catalog_response) if isinstance(catalog_response, dict) else catalog_response
+    plugins = {plugin.get("slug"): plugin for plugin in catalog or []}
+    for slug in plugin_slugs:
+        plugin = plugins.get(slug, {})
+        if not plugin.get("installed"):
+            raise RuntimeError(f"ROM Hub plugin installation did not complete: {slug}")
+        if not plugin.get("enabled"):
+            print(f"Enabling lawful catalog plugin: {slug}", flush=True)
+            request("/api/v1/hub/plugin", "POST", {"slug": slug, "action": "enable"})
+        else:
+            print(f"Catalog plugin already ready: {slug}", flush=True)
+
+    clients_response = request("/api/v1/downloadclient")
+    clients = clients_response.get("items", clients_response) if isinstance(clients_response, dict) else clients_response
+    direct_client = next((client for client in clients or [] if client.get("protocol") == "direct"), None)
+    if direct_client is None or not direct_client.get("configured", True):
+        print("Configuring the Direct HTTP download client", flush=True)
+        request(
+            "/api/v1/downloadclient",
+            "POST",
+            {
+                "type": "direct",
+                "name": "Direct HTTP",
+                "enable": True,
+                "save_path": "/downloads/sites",
+                "delay": 5,
+            },
+        )
+    else:
+        print("Direct HTTP download client already ready", flush=True)
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rom-catalog-bootstrap
+  namespace: rom
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rom-catalog-bootstrap
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: python:3.13.7-alpine3.22
+          imagePullPolicy: IfNotPresent
+          command: ["python", "/scripts/bootstrap.py"]
+          env:
+            - { name: HOME, value: /tmp }
+            - { name: PYTHONDONTWRITEBYTECODE, value: "1" }
+            - name: ROMARR_API_KEY
+              valueFrom: { secretKeyRef: { name: rom-postgresql-app, key: password } }
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { cpu: 250m, memory: 128Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            readOnlyRootFilesystem: true
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile: { type: RuntimeDefault }
+          volumeMounts:
+            - { name: scripts, mountPath: /scripts, readOnly: true }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: scripts
+          configMap: { name: rom-catalog-bootstrap }
+        - name: tmp
+          emptyDir: {}

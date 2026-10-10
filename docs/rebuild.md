@@ -42,11 +42,19 @@ configs are sensitive generated state, not documentation.
    archive and the ROM stack file backup reuse the existing bucket-scoped R2
    key. Restore `rom-data` from `rom-files/current`, then restore the database
    from the documented Barman generation. See `apps/workloads/rom/README.md`.
-   Only RomM is published; ROMarr, Prowlarr and qBittorrent are internal
-   ClusterIP services and require neither public DNS nor Authentik providers.
-   During the blue/green namespace migration, keep `romm` as the rollback source
-   and leave automated sync of `rom-labprod` disabled until its acceptance gate
-   passes.
+   RomM and the restricted one-click catalogue are published. The catalogue
+   route is `requests.rom.lab.bingo`, its Authentik proxy is open to every
+   authenticated identity, and it needs no credential beyond the runtime ROMarr
+   key already derived from `rom-postgresql-app`. ROMarr, Prowlarr and
+   qBittorrent remain internal ClusterIP services. RomM's filesystem watcher
+   imports completed downloads without a Client API Token or manual scan. A PostSync Job
+   idempotently installs the curated homebrew/freeware ROM Hub plugins and the
+   Direct HTTP client; their generated state is stored on the R2-backed
+   `rom-data` PVC.
+   The completed blue/green migration left `rom` as the automated production
+   stack. The former `romm` namespace is only a temporary, unpublished rollback
+   source; its final retirement requires the exact destructive confirmation
+   documented in `apps/workloads/rom/README.md`.
 9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
    verify `https://lab.bingo` through LAN or Tailscale without publishing it
    through the public Cloudflare Tunnel. The portal image is built from
@@ -73,10 +81,11 @@ For total VM-disk loss, follow the Proxmox recovery procedure. Never replace
 
 Retire in this order: confirm the test database backup retention decision,
 delete the `labtest` CAPI Cluster while `labmgmt` is available, verify VM 152
-and CAPI objects are gone, apply the reviewed Cloudflare plan only after
-confirming deletion of `bingops-cnpg-labtest`, and apply the reviewed Tailscale
-DNS plan to remove `test.lab.bingo`. Remove obsolete Bitwarden and external R2
-credentials only after all consumers are gone.
+and CAPI objects are gone, empty `bingops-cnpg-labtest` with the explicitly
+destructive procedure in the [Cloudflare runbook](infrastructure/cloudflare.md),
+apply a new reviewed Cloudflare plan to remove the bucket, and apply the
+reviewed Tailscale DNS plan to remove `test.lab.bingo`. Remove obsolete
+Bitwarden and external R2 credentials only after all consumers are gone.
 
 The operations are idempotent when an already-absent cluster, DNS route or
 bucket is treated as absent. Safe verification is based on resource existence,
