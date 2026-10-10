@@ -91,10 +91,10 @@ CronJob keeps the token current after bootstrap and rotation.
 
 Kubernetes cannot rename a namespace or PVC. The `rom-labprod` restore,
 database, backup and availability gates passed, so it is the automated
-production stack. The former `romm` Application, namespace and volumes remain
-temporarily as an unpublished rollback source. Its Application has the Argo CD
-resources finalizer so its eventual deletion cascades through the resources it
-owns instead of leaving an orphaned namespace.
+production stack. The former `romm-labprod` Application was given the Argo CD
+resources finalizer in a separate, successfully reconciled phase before its
+removal. Deleting that Application therefore cascaded through namespace `romm`
+instead of leaving orphaned resources.
 
 The migration was accepted with these non-sensitive checks:
 
@@ -104,12 +104,11 @@ The migration was accepted with these non-sensitive checks:
 3. The public route and certificate target only `rom.lab.bingo`; ROMarr remains
    an internal ClusterIP service.
 
-The public tunnel and OIDC redirect for `romm.lab.bingo` are removed in this
-change. Retiring `romm-labprod` then deletes namespace `romm`, PVCs
-`romm-data` and `romm-postgresql-1`, the old database and every remaining
-namespaced object. That final step is intentionally separate and requires
-explicit confirmation of those exact targets and of the loss of the local
-rollback copy. The R2 file archive and Barman backup remain the recovery source.
+The public tunnel and OIDC redirect for `romm.lab.bingo`, Application
+`romm-labprod`, namespace `romm`, PVCs `romm-data` and
+`romm-postgresql-1`, the old database and every remaining namespaced object
+were retired after explicit confirmation. The R2 file archive and Barman backup
+remain the recovery source.
 
 Repeating the R2 export is safe. The restore Job is idempotent because it
 writes `.r2-migration-restored` only after a successful copy. Remove that
@@ -127,7 +126,7 @@ kubectl kustomize apps/workloads/rom/clusters/labprod >/dev/null
 After authorized reconciliation, verify without displaying Secret values:
 
 ```sh
-kubectl --context labprod get application -n argocd-system rom-labprod romm-labprod
+kubectl --context labprod get application -n argocd-system rom-labprod
 ```
 
 ```sh
@@ -139,7 +138,7 @@ kubectl --context labprod get job rom-catalog-bootstrap -n rom
 ```
 
 ```sh
-kubectl --context labprod get cronjob,job -n romm
+kubectl --context labprod get namespace romm --ignore-not-found
 ```
 
 ```sh

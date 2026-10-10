@@ -13,10 +13,9 @@ Application `apps/gitops/bootstrap/labprod.yaml`. The root reconciles
 and workloads use wave zero. Automated pruning and self-healing are enabled.
 The `rom-labprod` migration target passed its restore and acceptance gates and
 is now the production ROM stack, including its one-click catalogue of curated
-homebrew and freely distributable games. The former `romm-labprod` Application
-remains temporarily as an unpublished rollback source with an Argo CD resources
-finalizer; remove it only through the destructive retirement procedure in the
-owning runbook.
+homebrew and freely distributable games. The former `romm-labprod` Application,
+namespace and local volumes were retired after the accepted migration; the R2
+file archive and Barman backup remain the recovery sources.
 
 Production names under `lab.bingo` are explicit. Cloudflare Tunnel publishes
 `auth.lab.bingo`, `portfolio.lab.bingo`, `rom-requests.lab.bingo`,
