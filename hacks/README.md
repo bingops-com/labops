@@ -9,6 +9,10 @@
   CD Applications. Deployment asks for explicit confirmation.
 - `retire-lost-kube-vms.sh` is reserved for the documented total-disk-loss
   recovery and must receive the exact approved VM IDs.
+- `purge-r2-bucket.py` reports whether an R2 bucket contains objects and purges
+  it only when `--purge` and an exact `--confirm-bucket` value are both given.
+  It consumes the ignored Cloudflare Terraform credential without printing the
+  token or object names.
 
 Examples:
 
@@ -16,6 +20,7 @@ Examples:
 ./hacks/cluster-setup.sh --management-only
 ./hacks/cluster-setup.sh
 ./hacks/deploy.sh status prod
+./hacks/purge-r2-bucket.py bingops-cnpg-labtest
 ```
 
 Kubeconfigs and Talos configs are sensitive generated artifacts installed with
