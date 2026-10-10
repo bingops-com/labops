@@ -12,7 +12,8 @@ at `https://lab.bingo/auth/callback`, and public-PKCE RomM at
 has no direct Authentik provider. The `ROM requests` proxy application publishes
 the restricted portal at `https://rom-requests.lab.bingo` to every authenticated
 user; the portal has no administrative routes and needs no ROMarr credential.
-Its ROM Hub search results use opaque, short-lived IDs, so
+It loads a browsable catalogue from the curated ROM Hub sources and its search
+results use opaque, short-lived IDs, so
 source URLs also remain server-side. RomM receives Authentik group names through
 a dedicated `groups` scope; `rom-admins` grants its administrator role.
 Its dedicated `email` scope emits the verified-email claim required by RomM on
