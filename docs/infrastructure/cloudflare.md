@@ -21,26 +21,20 @@ Use a saved, reviewed Terraform plan before apply. The pinned Cloudflare
 provider cannot delete a non-empty R2 bucket and has no force-delete option.
 
 Removing the former test bucket is destructive. After explicitly confirming
-that every `bingops-cnpg-labtest` backup may be lost, obtain or create an R2 S3
-Object Read & Write token restricted to that bucket. The token is a temporary
-sensitive input owned by the lab operator: keep it only in the password manager
-or process environment, never in Git or shell history, and revoke it in the
-Cloudflare dashboard after the bucket is gone. If the old bucket-scoped token
-cannot be recovered, issue a replacement there; no Git or Terraform state is a
-recovery source for its secret key.
-
-With that credential exported as the standard AWS environment variables, empty
-the bucket without printing object names, then verify only its object count:
+that every `bingops-cnpg-labtest` backup may be lost, inspect it through the
+Cloudflare REST API with the existing ignored Terraform credential:
 
 ```sh
-aws s3 rm s3://bingops-cnpg-labtest --recursive --only-show-errors --endpoint-url https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com
-aws s3api list-objects-v2 --bucket bingops-cnpg-labtest --max-keys 1 --query KeyCount --output text --endpoint-url https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com
+./hacks/purge-r2-bucket.py bingops-cnpg-labtest
 ```
 
-Both commands contact live R2, and the first permanently deletes every object
-in the named bucket. It is safe to retry while the bucket still exists; a
-successful verification prints `0`. Then create a new reviewed Terraform plan
-and apply it to remove the empty bucket. If the bucket is already absent,
-skip the AWS commands and let Terraform refresh the absent resource. Revoke the
-temporary token after confirming the bucket is absent in a non-sensitive
-Terraform plan or the Cloudflare dashboard.
+The helper prints only `empty`, `nonempty`, or `absent`; it never prints the API
+token or object names. After exact destructive confirmation, empty the bucket:
+
+```sh
+./hacks/purge-r2-bucket.py bingops-cnpg-labtest --purge --confirm-bucket bingops-cnpg-labtest
+```
+
+The purge is safe to retry while the bucket exists. Then create a new reviewed
+Terraform plan and apply it to remove the empty bucket. If the helper reports
+`absent`, skip the purge and let Terraform refresh the absent resource.
