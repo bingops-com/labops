@@ -1,7 +1,7 @@
 # labprod values for the chart pinned by the slots Argo CD Application.
 image:
   repository: ghcr.io/bingops-com/slots
-  tag: sha-bec1371942272699a238fdddc08ad11e5a910782
+  tag: sha-b37487be2bdea84294f6e63c32105c3bceb48d98
   pullPolicy: IfNotPresent
 
 ingress:
