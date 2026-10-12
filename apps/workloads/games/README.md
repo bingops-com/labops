@@ -15,9 +15,14 @@ sync. Enable automation in a later reviewed change after acceptance.
 
 1. Rebuild the platform: local-path storage, Bitwarden Secrets Manager operator,
    CloudNativePG, Barman Cloud, monitoring and the Cloudflare connector. The CNI
-   must enforce NetworkPolicy; the repository does not currently establish that
-   capability. Default Flannel alone is insufficient. Identify the actual CNI
-   and demonstrate enforcement before publishing Games.
+   must enforce NetworkPolicy. The read-only check on 2026-10-12 found only
+   `kube-flannel` (`ghcr.io/siderolabs/flannel:v0.28.4`) and `kube-proxy`, with
+   no policy controller or Flannel policy sidecar. Isolation is therefore a
+   **blocking prerequisite**, not an existing protection. Prepare and review a
+   policy controller compatible with Talos, keeping Flannel routing and
+   kube-proxy, or a separately planned CNI migration; then demonstrate actual
+   enforcement before publishing Games. Do not replace the live CNI as part
+   of an application sync. See [Flannel policy support](https://github.com/flannel-io/flannel/blob/master/Documentation/netpol.md).
 2. Publish the Games commit image through its security-gated CI. GHCR visibility
    is separate from repository visibility: the package owner must set the Games
    package to public. The pod uses no registry credential. Verify an anonymous
@@ -133,5 +138,6 @@ are separate infrastructure operations requiring explicit authorization.
 
 An operator can reconstruct from this runbook and Git once the documented SMTP
 metadata is supplied. Missing inputs are tracked here rather than in chat;
-ownership, ordering, retry behavior and checks are explicit. Actual CNI
-enforcement and the runtime acceptance checks remain unverified until deployment.
+ownership, ordering, retry behavior and checks are explicit. Policy enforcement
+is currently absent; installing and proving it, plus runtime acceptance checks,
+remain required before deployment to players.

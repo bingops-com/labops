@@ -63,7 +63,9 @@ configs are sensitive generated state, not documentation.
    Games is prepared with manual synchronization. Recover its R2 mapping,
    complete the Resend domain DNS and Bitwarden SMTP UUID, publish the pinned
    public Games image, and demonstrate NetworkPolicy enforcement before an
-   authorized sync. Verify email, backup and isolated restore before public use.
+   authorized sync. The current Flannel installation has no policy controller;
+   review its addition separately before relying on isolation. Verify email,
+   backup and isolated restore before public use.
    Ownership and repeatable setup: `apps/workloads/games/README.md`.
 9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
    verify `https://lab.bingo` through LAN or Tailscale without publishing it
