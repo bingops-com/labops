@@ -11,5 +11,6 @@ resources:
   - romm.yaml
   - arr-stack.yaml
   - catalog-bootstrap.yaml
+  - metadata-bootstrap.yaml
   - request-portal.yaml
   - backup.yaml

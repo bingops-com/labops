@@ -51,8 +51,8 @@ configs are sensitive generated state, not documentation.
    idempotently installs the curated homebrew/freeware ROM Hub plugins; their
    generated state is stored on the R2-backed `rom-data` PVC.
    RomM's enabled metadata providers are separate from that download catalogue.
-   Wait for the automatic LaunchBox import into its disposable Valkey cache;
-   repeat RomM startup after an independent cache loss, as documented in
+   Wait for the PostSync LaunchBox import into its disposable Valkey cache;
+   repeat a full ROM application sync after an independent cache loss, as documented in
    `apps/workloads/rom/README.md`.
    The completed blue/green migration left `rom` as the automated production
    stack. The former `romm-labprod` Application, namespace and local volumes

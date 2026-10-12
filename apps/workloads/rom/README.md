@@ -70,20 +70,29 @@ separate from the ROM Hub download catalogue at `rom-requests.lab.bingo`:
 enabling a metadata provider adds descriptions and artwork to imported games.
 Steam covers PC platforms; Demozoo, Pouët and CSDb cover demoscene productions.
 
-LaunchBox's remote metadata lives in the internal Valkey cache. RomM 5.3.1
-queues its initial import automatically when its cache schema is missing or
-outdated. The first import must finish before its metadata heartbeat succeeds;
+LaunchBox's remote metadata lives in the internal Valkey cache. The idempotent
+`base/metadata-bootstrap.yaml` PostSync Job checks its public metadata heartbeat
+and queues RomM 5.3.1's own import task when necessary. It reuses RomM's pinned
+image, low-priority queue and bootstrap job ID, waits for an active import,
+and retries a failed attempt. RomM's startup rebuilds outdated stores but does
+not initialize an entirely empty cache by itself.
+The first import must finish before its metadata heartbeat succeeds;
 enabling the provider alone does not mean its database is ready. The scheduled
 refresh runs daily at `0 4 * * *` with RomM's `TZ=Europe/Paris`. Valkey reserves
 256 MiB and may use up to 2 GiB for the imported metadata; its former 256 MiB
 limit was sized for the smaller cache without LaunchBox.
 Argo CD replaces the single Valkey instance in wave `-1`, before RomM in
-wave `0`, so startup imports target the new cache. Valkey uses `Recreate`
+wave `0`, then runs the PostSync bootstrap against the new cache. Valkey uses `Recreate`
 to keep a single cache behind its Service during a rollout.
 
 The cache is disposable generated state, with persistence disabled. Losing it
-does not lose ROMs or PostgreSQL data. Restart RomM after an independent Valkey
-restart to enqueue missing metadata again, then wait for LaunchBox's heartbeat.
+does not lose ROMs or PostgreSQL data. After an independent Valkey restart,
+reconcile `rom-labprod` with an authorized full Argo CD sync to rerun the
+PostSync bootstrap, then wait for LaunchBox's heartbeat. Selective resource
+syncs do not run hooks. The daily refresh also reconstructs an empty cache.
+The bootstrap makes no API-authentication request and reads no Secret; it
+only accesses the internal cache and public metadata heartbeat. Its failed
+Job remains visible for diagnosis; a full sync replaces it and safely retries.
 If the import fails, the administrator can retry the **LaunchBox metadata
 update** in RomM's administration tasks. Retries rebuild cache data and do not
 download game binaries or change credentials. No extra bootstrap Secret or
