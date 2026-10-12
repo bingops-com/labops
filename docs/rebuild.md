@@ -73,8 +73,9 @@ configs are sensitive generated state, not documentation.
    prerequisites listed in `docker/status/README.md`, its DNS record comes
    from `terraform/cloudflare` and its route from the Cloudflare Tunnel
    values. Its history lives only on the `status-data` PVC and is not
-   restored: after a rebuild the page starts again without past days. See
-   `apps/workloads/status/README.md`.
+   restored: after a rebuild the page starts again without past days. If an
+   existing unreadable history prevents startup, use the authorized quarantine
+   procedure in `apps/workloads/status/README.md` before verifying availability.
 10. Create the bucket-scoped Project Zomboid R2 token in Bitwarden, reconcile
     its mappings and the workload, then verify a Restic snapshot and a
     disposable restore before retiring the Build 41 VM.
