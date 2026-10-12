@@ -97,10 +97,26 @@ operation. Existing migrations are preserved; schema migration 8 is additive.
 
 Rebuild order: Authentik including the existing `bingops` identity and the new
 blueprint, then the published Games commit image and matching chart, then the
-already-authorized Games synchronization. Advance both pins only after the
-merged Games image exists anonymously; the current `062021c` pin predates the
-panel and must be replaced before accepting this administration rollout. Keep
-the LabOps PR as a draft until that image and pin update are verified.
+authorized Games synchronization. Both pins now select merged Games commit
+`0b9458ac3e48488724fbf5d5d15ee3bfc26aaed2`. Its public Linux/amd64 image was
+verified anonymously with digest
+`sha256:8129c282d7120b01e4076ebf21380777dcbe706a66cab77cef0a374b8aa704ed`
+on 2026-10-12. For future releases, verify publication before advancing both pins.
+
+Before the first migration to schema 8, create the release-specific on-demand
+backup below and require phase `completed`. The manifest is an operator action,
+deliberately outside the Argo CD Kustomization; the resulting backup and R2 objects
+are generated recovery state. Reapplying the same manifest is idempotent and does
+not create a second backup. Future upgrades must use a new reviewed checkpoint
+name rather than reusing this completed backup. This checkpoint does not replace
+the declared daily ScheduledBackup or a tested isolated restore. The checkpoint
+completed successfully on 2026-10-12 before the administrator upgrade, with
+`LastBackupSucceeded=True` and `ContinuousArchiving=True`.
+
+```sh
+kubectl --context labprod apply -f apps/workloads/games/operations/pre-admin-0b9458ac-backup.yaml
+kubectl --context labprod get backup games-pre-admin-0b9458ac -n games -o jsonpath='{.status.phase}'
+```
 
 `networkPolicy.adminTo` follows [Cloudflare's IPv4 ranges](https://www.cloudflare.com/ips-v4),
 reviewed on 2026-10-12. Review changes to those ranges declaratively. The server's
@@ -164,8 +180,8 @@ be recovered; never re-enable historical mail recovery to bypass this rule.
 
 Roll back image and chart together only to a release compatible with the schema.
 This release adds migration 8; earlier binaries, including the recovery-code
-release, reject the newer
-schema and is not a valid image-only rollback. Database restoration is a separate
+release, reject the newer schema and are not valid image-only rollbacks.
+Database restoration is a separate
 operation with its own recovery point and acceptance checks. CNPG is protected
 by Helm keep; do not delete namespace, PVC or R2 archives to roll back app code.
 
@@ -173,5 +189,9 @@ Git/runbooks own reconstruction and dependency order. R2 credentials recover
 from Bitwarden; CNPG regenerates application credentials. Recovery hashes follow
 database backups and the mandatory post-restore invalidation above. Bootstrap
 can retry after partial failure; live cleanup is explicitly separate. Remaining
-production gates are publication of the pinned image, NetworkPolicy enforcement
-and runtime/backup/restore acceptance. SMTP delivery is no longer a gate.
+production gates are NetworkPolicy enforcement and runtime/isolated-restore
+acceptance. The pinned image is published and the pre-upgrade base backup is
+complete. The authorized application upgrade does not replace Flannel or claim
+that its declared NetworkPolicy is enforced; that existing cluster limitation
+still needs a separately reviewed policy-controller change. SMTP delivery is no
+longer a gate.

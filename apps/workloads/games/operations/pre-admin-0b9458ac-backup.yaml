@@ -1,0 +1,14 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Backup
+metadata:
+  name: games-pre-admin-0b9458ac
+  namespace: games
+  labels:
+    app.kubernetes.io/part-of: games
+    games.lab.bingo/release: 0b9458ac
+spec:
+  cluster:
+    name: games-postgresql
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
