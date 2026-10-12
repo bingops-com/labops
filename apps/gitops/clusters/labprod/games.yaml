@@ -9,7 +9,7 @@ spec:
   project: labops-labprod
   sources:
     - repoURL: https://github.com/bingops-com/games.git
-      targetRevision: 3167e72db9bf1a08c113ba1ee1a1001ab584ebdc
+      targetRevision: 1fa5c6a4a1eb29c175d2b7e406a17f7a3888723e
       path: chart
       helm:
         releaseName: games

@@ -105,11 +105,11 @@ The previous administrator release, Games commit
 `0b9458ac3e48488724fbf5d5d15ee3bfc26aaed2`, was verified anonymously as a
 public Linux/amd64 image with digest
 `sha256:8129c282d7120b01e4076ebf21380777dcbe706a66cab77cef0a374b8aa704ed`
-on 2026-10-12. It is the rollback reference for the following preparation.
+on 2026-10-12. It is the rollback reference for the following release.
 
-### Analytics and Bombermat release preparation
+### Analytics and Bombermat release
 
-This deployment PR depends on [Games PR #4](https://github.com/bingops-com/games/pull/4).
+The pinned release comes from merged [Games PR #4](https://github.com/bingops-com/games/pull/4).
 It restores the four Bombermat arenas and adds the administrator dashboard with
 real PostgreSQL aggregates, UTC registration/report charts for 7/30/90 days,
 cumulative account participation totals, live room metadata and moderation.
@@ -119,11 +119,15 @@ counted per room. There is no new secret, external analytics service or database
 migration: the schema remains 8. Recovery inputs and ownership remain those
 documented above and in `docs/authentik.md` and the CNPG recovery runbook.
 
-Keep the deployment PR **draft** while Games is unmerged or its image is
-unpublished. Its candidate pins are preparation, not proof of an available
-release. Merge Games first, wait for its master image workflow to succeed, then
-replace both candidate pins with the resulting published commit. Never merge
-this LabOps preparation with an unpublished candidate image.
+The pinned chart and image use merge commit
+`1fa5c6a4a1eb29c175d2b7e406a17f7a3888723e`. Its master image workflow passed
+builds, tests and the vulnerability scan; anonymous GHCR access and Linux/amd64
+support were verified on 2026-10-12.
+
+For future upgrades, keep the deployment PR draft while Games is unmerged or
+its image is unpublished. Merge Games first, wait for its master image workflow
+to succeed, then replace both pins with the resulting published commit. Require
+the release check to pass before merging LabOps.
 
 The `Published Games release` CI check verifies matching chart/image pins,
 membership of the commit in Games master, anonymous GHCR access and Linux/amd64
