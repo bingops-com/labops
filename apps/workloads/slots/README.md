@@ -4,9 +4,16 @@ Slots is the public fictional-credit game at `https://slots.lab.bingo`. Argo CD
 combines the Helm chart and immutable application commit from
 `bingops-com/slots` with the production values and prerequisite resources in
 this directory. Merge the slots application PR first: its push workflow must
-publish the pinned `sha-74476cddc5a39cb892c5a47133aa5686dd87343f` image before
+publish the pinned `sha-8139c3c3a9a26e5ef0e5daa7542c4da37536357d` image before
 this deployment PR is merged. The GHCR package must be public because the pod
 has no registry credential.
+
+This version removes the continuous sea ambience when a game opens and after
+free spins. Action effects, reel/coin sounds and bonus melodies remain available.
+The chart, server and database schema are unchanged by this audio fix. Argo CD
+replaces the single Slots instance when its image changes, briefly interrupting
+play; PostgreSQL accounts, balances and backups are preserved. After an
+authorized rollout, reload the page so the service worker updates the cached UI.
 
 ## Acceptance gate
 

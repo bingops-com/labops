@@ -9,7 +9,7 @@ spec:
   project: labops-labprod
   sources:
     - repoURL: https://github.com/bingops-com/slots.git
-      targetRevision: 74476cddc5a39cb892c5a47133aa5686dd87343f
+      targetRevision: 8139c3c3a9a26e5ef0e5daa7542c4da37536357d
       path: chart
       helm:
         releaseName: slots
