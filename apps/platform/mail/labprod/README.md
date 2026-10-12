@@ -20,8 +20,12 @@ requires STARTTLS and authentication even if NetworkPolicy is not enforced.
    `docker/postfix/VERSION` for a new production build and update the image
    reference together. The package owner must set GHCR visibility to public;
    verify an anonymous pull before synchronization.
-3. The operator creates two independent secrets in Bitwarden Secrets Manager's
-   existing `labprod` project: a random SMTP password (at least 32 bytes, base64url;
+3. Recover the existing `games-smtp-password` and `games-dkim-private-key`
+   entries from Bitwarden Secrets Manager's `labprod` project. Their real UUIDs
+   are tracked in [`smtp-secret.yaml`](smtp-secret.yaml) and
+   [`dkim-secret.yaml`](dkim-secret.yaml); the password mapping is also tracked
+   in Games. If replacement is necessary, the operator creates two independent
+   secrets: a random SMTP password (at least 32 bytes, base64url;
    no colon, comma or whitespace), and the PEM RSA DKIM private key (2048 bits or
    more). The machine account needs read access; only the operator needs write
    access. Neither value belongs in Git, command arguments, chat or logs.
@@ -144,4 +148,7 @@ test and NetworkPolicy enforcement proof remain required before production.
 Reconstruction is documented here; UUIDs/public DNS live in Git and secret
 recovery in Bitwarden. Bootstrap and the helper are idempotent, ownership and
 dependency order are explicit, and verification does not disclose secrets.
-The currently missing inputs are the two UUIDs and public mail DNS metadata.
+The UUIDs are configured. Public mail DNS metadata remains unset; machine-account
+access to both entries and secret values still need runtime validation without
+disclosure. Direct delivery, policy enforcement and production acceptance remain
+required before public use.

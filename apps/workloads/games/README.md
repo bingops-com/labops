@@ -39,8 +39,15 @@ python3 apps/workloads/games/configure-smtp.py SMTP_PASSWORD_UUID DKIM_PRIVATE_K
 It creates three Bitwarden mappings: the shared SMTP password in Games and
 Mail, and the DKIM private key only in Mail. Repeated runs do not duplicate
 resources. Its optional public DNS flags populate Terraform configuration.
-No fake UUID, invented IP or private key is committed; missing inputs keep this
-PR in draft and prevent startup.
+The real identifiers are now tracked in
+[`clusters/labprod/smtp-secret.yaml`](clusters/labprod/smtp-secret.yaml) and
+Mail's SMTP/DKIM mappings. Recover the existing `games-smtp-password` and
+`games-dkim-private-key` entries from Bitwarden during reconstruction; rerun
+the helper only when their identifiers change. The machine account must have
+read access to both entries in `labprod`; configuration alone does not prove
+that access or the secret values are valid.
+No invented IP or private key is committed. Public SMTP DNS metadata remains
+unset, and delivery, isolation and runtime acceptance still block public use.
 
 ## Production acceptance
 
@@ -97,5 +104,6 @@ Restore creation, DNS cutover and cleanup are separate authorized operations.
 Git/runbooks describe reconstruction, ownership and dependency order. R2/SMTP/
 DKIM secrets recover from Bitwarden; CNPG and cert-manager regenerate their
 application/TLS credentials. Helpers and controllers can retry after partial
-failure. Safe verification is documented above. Remaining gaps are actual mail
-inputs, direct deliverability, NetworkPolicy enforcement and runtime acceptance.
+failure. Safe verification is documented above. Remaining gaps are public mail
+DNS metadata, Bitwarden access/value validation, direct deliverability,
+NetworkPolicy enforcement and runtime acceptance.
