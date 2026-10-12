@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: relay
+  namespace: mail
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: relay
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: relay
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        fsGroup: 103
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postfix
+          image: ghcr.io/bingops-com/postfix:1.0.0
+          command: ["/bin/bash", "/opt/labops/run.sh"]
+          envFrom:
+            - configMapRef:
+                name: relay-settings
+          env:
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mail-smtp
+                  key: password
+            - name: SMTPD_SASL_USERS
+              value: games@games.lab.bingo:$(SMTP_PASSWORD)
+          ports:
+            - name: submission
+              containerPort: 587
+          volumeMounts:
+            - name: tls
+              mountPath: /etc/postfix/tls
+              readOnly: true
+            - name: dkim
+              mountPath: /etc/opendkim/keys
+              readOnly: true
+            - name: spool
+              mountPath: /var/spool/postfix
+            - name: runtime
+              mountPath: /opt/labops
+              readOnly: true
+          startupProbe:
+            exec:
+              command: ["/scripts/healthcheck.sh"]
+            periodSeconds: 3
+            failureThreshold: 40
+          readinessProbe:
+            exec:
+              command: ["/scripts/healthcheck.sh"]
+            periodSeconds: 15
+          livenessProbe:
+            exec:
+              command: ["/scripts/healthcheck.sh"]
+            periodSeconds: 60
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 10m, memory: 96Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+              add: [CHOWN, DAC_OVERRIDE, FOWNER, SETUID, SETGID, SYS_CHROOT]
+      volumes:
+        - name: tls
+          secret:
+            secretName: relay-tls
+            defaultMode: 0440
+        - name: dkim
+          secret:
+            secretName: mail-dkim
+            defaultMode: 0440
+        - name: spool
+          persistentVolumeClaim:
+            claimName: relay-spool
+        - name: runtime
+          configMap:
+            name: relay-runtime

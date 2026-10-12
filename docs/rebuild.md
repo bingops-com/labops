@@ -64,6 +64,18 @@ configs are sensitive generated state, not documentation.
    archive reuses the existing bucket-scoped R2 key under the dedicated
    `slots` prefix; verify WAL archival and one completed backup before opening
    ranked play. See `apps/workloads/slots/README.md`.
+   Games is prepared with manual synchronization. Recover its R2 and tracked
+   SMTP/DKIM mappings from Bitwarden; use the owning helper if their UUIDs
+   change. Public SMTP egress IP and DKIM DNS metadata remain to be configured
+   through that helper. Publish the
+   verified Postfix and pinned Games images, then reconcile the manual mail
+   Application after cert-manager and Bitwarden are ready. Verify outbound
+   port 25, reverse DNS and real delivery; see `apps/platform/mail/labprod/README.md`.
+   Demonstrate NetworkPolicy enforcement before an authorized Games sync.
+   The current Flannel installation has no policy controller;
+   review its addition separately before relying on isolation. Verify email,
+   backup and isolated restore before public use.
+   Ownership and repeatable setup: `apps/workloads/games/README.md`.
 9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
    verify `https://lab.bingo` through LAN or Tailscale without publishing it
    through the public Cloudflare Tunnel. The portal image is built from
@@ -80,6 +92,9 @@ configs are sensitive generated state, not documentation.
    restored: after a rebuild the page starts again without past days. If an
    existing unreadable history prevents startup, use the authorized quarantine
    procedure in `apps/workloads/status/README.md` before verifying availability.
+   If the workload is healthy but its public name returns `NXDOMAIN`, use the
+   Terraform DNS recovery procedure in `docs/infrastructure/cloudflare.md`;
+   reconciling the tunnel Application does not create DNS records.
 10. Create the bucket-scoped Project Zomboid R2 token in Bitwarden, reconcile
     its mappings and the workload, then verify a Restic snapshot and a
     disposable restore before retiring the Build 41 VM.

@@ -9,12 +9,16 @@ on:
       - master
     paths:
       - 'docker/**'
+      - 'apps/platform/mail/**'
+      - '.github/workflows/build-push.yml'
 
   pull_request:
     branches:
       - master
     paths:
       - 'docker/**'
+      - 'apps/platform/mail/**'
+      - '.github/workflows/build-push.yml'
 
 jobs:
   hadolint:
@@ -128,9 +132,28 @@ jobs:
         with:
           context: ${{ env.BUILD_CONTEXT }}
           file: ${{ env.DOCKERFILE_PATH }}
-          push: ${{ matrix.is_pr != 'true' }}
+          push: ${{ matrix.is_pr != 'true' && matrix.image != 'postfix' }}
+          load: ${{ matrix.image == 'postfix' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Test and scan Postfix before publication
+        if: ${{ matrix.image == 'postfix' }}
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          candidate=${TAGS%%$'\n'*}
+          python3 apps/platform/mail/tests/check.py "$candidate"
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro mirror.gcr.io/aquasec/trivy:0.66.0 image --image-src docker --scanners vuln --severity HIGH,CRITICAL --exit-code 1 "$candidate"
+
+      - name: Publish verified Postfix image
+        if: ${{ matrix.image == 'postfix' && matrix.is_pr != 'true' }}
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          while IFS= read -r tag; do
+            docker push "$tag"
+          done <<< "$TAGS"
 
       - name: Open deployment pull request
         if: ${{ matrix.is_pr != 'true' && hashFiles(format('docker/{0}/deploy-target', matrix.image)) != '' }}

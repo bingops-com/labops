@@ -26,6 +26,14 @@ else
     fi
   done
 
+  # Mail configuration/tests must exercise Postfix even when its Dockerfile
+  # did not change. Avoid duplicating a context already selected above.
+  if git diff --name-only "$BEFORE_SHA" "${GITHUB_SHA}" | grep -Eq '^(apps/platform/mail/|\.github/workflows/build-push\.yml$)'; then
+    if [[ " $modified_dirs " != *" postfix "* && -f docker/postfix/Dockerfile ]]; then
+      modified_dirs+="postfix "
+    fi
+  fi
+
   if [ -z "$modified_dirs" ]; then
     echo "::warning:: No modified Docker contexts detected."
     echo '{"include":[]}' > matrix.json

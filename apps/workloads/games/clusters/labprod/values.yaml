@@ -1,0 +1,49 @@
+# Chart and image commit are pinned together by the Argo CD Application.
+production: true
+publicUrl: https://games.lab.bingo
+trustProxy: true
+image:
+  repository: ghcr.io/bingops-com/games
+  tag: sha-45b139864ed0e58c4184a36a0e7ef9283725c65c
+mail:
+  relay: relay.mail.svc:587
+  serverName: smtp.games.lab.bingo
+  from: noreply@games.lab.bingo
+  envelope: bounces@smtp.games.lab.bingo
+  username: games@games.lab.bingo
+  existingSecret: games-smtp
+networkPolicy:
+  enabled: true
+  ingressFrom:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: cloudflare
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: cloudflare-tunnel
+          app.kubernetes.io/instance: bingops
+  smtpTo:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: mail
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: relay
+  smtpPort: 587
+database:
+  cnpg:
+    enabled: true
+    instances: 1
+    storage:
+      size: 2Gi
+      storageClass: local-path
+    backup:
+      enabled: true
+      destinationPath: s3://bingops-cnpg-labprod/games
+      endpointURL: https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com
+      credentialsSecret: games-r2-credentials
+      serverName: games-postgresql-g1
+      schedule: "0 30 3 * * *"
+      retentionPolicy: 14d
+    podMonitor:
+      enabled: true

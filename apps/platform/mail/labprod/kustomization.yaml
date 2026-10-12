@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - dkim-secret.yaml
+  - smtp-secret.yaml
+  - namespace.yaml
+  - bitwarden-token-sync.yaml
+  - certificate.yaml
+  - queue.yaml
+  - runtime.yaml
+  - deployment.yaml
+  - service.yaml
+  - networkpolicy.yaml
+configMapGenerator:
+  - name: relay-runtime
+    namespace: mail
+    files:
+      - run.sh
+generatorOptions:
+  disableNameSuffixHash: false

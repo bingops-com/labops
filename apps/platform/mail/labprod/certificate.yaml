@@ -1,0 +1,21 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: relay-tls
+  namespace: mail
+spec:
+  secretName: relay-tls
+  dnsNames:
+    - smtp.games.lab.bingo
+  issuerRef:
+    name: letsencrypt-cloudflare
+    kind: ClusterIssuer
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Always
+  renewBefore: 720h
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
