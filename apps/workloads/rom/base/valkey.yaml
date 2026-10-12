@@ -3,8 +3,13 @@ kind: Deployment
 metadata:
   name: romm-valkey
   namespace: rom
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   replicas: 1
+  # One cache instance; replace it before RomM starts its metadata import.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: romm-valkey
@@ -38,10 +43,11 @@ spec:
           resources:
             requests:
               cpu: 10m
-              memory: 32Mi
+              memory: 256Mi
             limits:
               cpu: 200m
-              memory: 256Mi
+              # LaunchBox imports hundreds of thousands of metadata entries.
+              memory: 2Gi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
