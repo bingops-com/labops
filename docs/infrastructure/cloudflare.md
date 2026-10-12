@@ -20,12 +20,13 @@ if lost. The endpoint is
 Use a saved, reviewed Terraform plan before apply. The pinned Cloudflare
 provider cannot delete a non-empty R2 bucket and has no force-delete option.
 
-Games mail DNS is owned by `games-mail.tf`, separately from the website tunnel
-record. The helper in `apps/workloads/games/configure-smtp.py` writes only public
-egress/DKIM metadata into `games-mail-settings.tf`; its initial null value
-creates no mail records. Postfix credentials, TLS, DNS creation/rotation and
-provider-owned reverse DNS prerequisites are documented in
-[the mail runbook](../../apps/platform/mail/labprod/README.md).
+Games accounts recover through offline codes and require no mail DNS. Keep
+`games-mail-settings.tf` at `games_mail = null`: the legacy `games-mail.tf`
+resources then create no SMTP/SPF/DKIM/DMARC records. The website CNAME and
+Cloudflare Tunnel remain independently owned. Do not apply the abandoned
+direct-SMTP preparation from another checkout. No mail DNS or Bitwarden secret
+deletion is part of this change; any future cleanup requires checking live
+ownership and separate authorization.
 
 ## Recover missing public DNS
 
