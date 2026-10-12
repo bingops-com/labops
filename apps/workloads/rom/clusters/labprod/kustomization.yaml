@@ -5,12 +5,40 @@ resources:
   - ../../base
   - bitwarden-token-sync.yaml
   - r2-secret.yaml
+  - screenscraper-secret.yaml
 
 labels:
   - pairs:
       environment: labprod
 
 patches:
+  - target:
+      kind: Deployment
+      name: romm
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: romm
+      spec:
+        template:
+          metadata:
+            annotations:
+              labops.bingo/screenscraper-credentials-revision: "1"
+          spec:
+            containers:
+              - name: romm
+                env:
+                  - name: SCREENSCRAPER_USER
+                    valueFrom:
+                      secretKeyRef:
+                        name: rom-screenscraper-credentials
+                        key: SCREENSCRAPER_USER
+                  - name: SCREENSCRAPER_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        name: rom-screenscraper-credentials
+                        key: SCREENSCRAPER_PASSWORD
   - target:
       kind: Namespace
       name: rom

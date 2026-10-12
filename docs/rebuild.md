@@ -51,6 +51,11 @@ configs are sensitive generated state, not documentation.
    idempotently installs the curated homebrew/freeware ROM Hub plugins; their
    generated state is stored on the R2-backed `rom-data` PVC.
    RomM's enabled metadata providers are separate from that download catalogue.
+   Before reconciling RomM, recover its ScreenScraper account username and
+   password from the two Bitwarden secrets referenced by the `labprod` overlay.
+   The namespace token bootstrap must precede their Bitwarden mapping. The
+   [ROM runbook](../apps/workloads/rom/README.md#screenscraper-credentials)
+   owns account creation, recovery, rotation and safe provider verification.
    Wait for the PostSync LaunchBox import into its disposable Valkey cache;
    repeat a full ROM application sync after an independent cache loss, as documented in
    `apps/workloads/rom/README.md`.
