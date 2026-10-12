@@ -54,11 +54,13 @@ disabled. The abandoned WAN-IP preparation in other checkouts must not be applie
 
 ## Production acceptance
 
-- Accounts have no administrator role or operator UI; Authentik is not applicable.
+- Player accounts have no administrator role. The separate operator UI requires
+  Authentik as described below; ordinary and bootstrap accounts must be denied.
 - Ingress selects only the `bingops` Cloudflare connector in `cloudflare`.
   Check actual labels, prove unrelated pods cannot reach Games and verify that
   an untrusted caller cannot supply trusted proxy headers. Server egress is DNS
-  and PostgreSQL only; backup networking belongs to the CNPG/Barman operators.
+  and PostgreSQL, plus TCP/443 to declared Cloudflare ranges for Authentik;
+  backup networking belongs to the CNPG/Barman operators.
 - Verify registration without email, code download, count after use, rejection
   of a used code, regeneration, old-code rejection and HTTP/WebSocket revocation.
   Codes must not be collected in screenshots, logs or support tickets.
@@ -72,12 +74,57 @@ disabled. The abandoned WAN-IP preparation in other checkouts must not be applie
 - Verify HTTPS, secure cookies, eight-letter joins, every game, reconnection,
   host handover and bounded load before public use.
 
+## Administration
+
+`https://games.lab.bingo/admin/` uses Authentik's `games-admin` public PKCE
+provider, declared in `apps/platform/authentik/blueprint.yaml`. The sole
+administrator is `bingops`, also required to belong to `games-admins` and have
+an active account. `akadmin` and ordinary Authentik users are denied. Games
+checks current userinfo on each protected request. Issuer, audience, signature,
+expiry, nonce and browser-bound single-use state are verified; forwarded identity
+headers and player cookies confer no administrator rights. The opaque, Secure,
+HttpOnly administrator cookie lasts at most 15 minutes, with no refresh token.
+Tokens and pending PKCE verifiers live only in bounded server memory and vanish
+on restart. Local logout ends the Games administrator session, not Authentik SSO.
+
+The panel lists bounded pages of players, room metadata and reports. Operator
+actions can resolve/dismiss reports or revoke player sessions and WebSockets;
+they require a CSRF token and a written reason, committed with the action to
+`admin_audit`. No API edits or deletes this journal. Revocation is not a ban:
+the player may sign in again. Passwords, historical email and recovery codes are
+never exposed to the panel. There is no password-reset bypass or room-close
+operation. Existing migrations are preserved; schema migration 8 is additive.
+
+Rebuild order: Authentik including the existing `bingops` identity and the new
+blueprint, then the published Games commit image and matching chart, then the
+already-authorized Games synchronization. Advance both pins only after the
+merged Games image exists anonymously; the current `062021c` pin predates the
+panel and must be replaced before accepting this administration rollout. Keep
+the LabOps PR as a draft until that image and pin update are verified.
+
+`networkPolicy.adminTo` follows [Cloudflare's IPv4 ranges](https://www.cloudflare.com/ips-v4),
+reviewed on 2026-10-12. Review changes to those ranges declaratively. The server's
+OIDC client permits only the issuer's HTTPS origin and refuses redirects.
+Authentik outages deny administration while public play stays available. No
+new secret is introduced: the operator password and Authentik signing key use
+their existing recovery process in `docs/authentik.md`. Group removal is the
+declarative revocation path; repeating it or blueprint reconciliation is safe.
+
+After an authorized deployment, test `/admin/` as `bingops`, ordinary user and
+`akadmin`. Group-removal and inactive-account denial are covered by isolated
+signed-issuer tests; a live revocation test of the sole `bingops` identity needs
+separate authorization and a documented restoration path. Verify mutation reasons in the journal and player
+HTTP/WebSocket revocation without collecting any token or recovery code. Confirm
+the declared NetworkPolicy is enforced and that only TCP/443 to the issuer
+works. An Authentik failure must not affect `/healthz` or `/livez`.
+
 ## Safe verification
 
 ```sh
 helm template games /path/to/games/chart --namespace games --values apps/workloads/games/clusters/labprod/values.yaml >/dev/null
 kubectl kustomize apps/workloads/games/clusters/labprod >/dev/null
 kubectl kustomize apps/gitops/clusters/labprod >/dev/null
+python3 apps/platform/authentik/tests/check_games_admin.py
 terraform -chdir=terraform/cloudflare fmt -check
 ```
 
@@ -116,7 +163,8 @@ fresh codes. A forgotten password with no surviving recovery credential cannot
 be recovered; never re-enable historical mail recovery to bypass this rule.
 
 Roll back image and chart together only to a release compatible with the schema.
-This release adds a migration; the prior mail-based binary rejects the newer
+This release adds migration 8; earlier binaries, including the recovery-code
+release, reject the newer
 schema and is not a valid image-only rollback. Database restoration is a separate
 operation with its own recovery point and acceptance checks. CNPG is protected
 by Helm keep; do not delete namespace, PVC or R2 archives to roll back app code.

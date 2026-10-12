@@ -2,11 +2,36 @@
 production: true
 publicUrl: https://games.lab.bingo
 trustProxy: true
+admin:
+  enabled: true
+  issuer: https://auth.lab.bingo/application/o/games-admin/
+  clientId: games-admin
+  username: bingops
+  group: games-admins
 image:
   repository: ghcr.io/bingops-com/games
   tag: sha-062021cb8beb43765f180648dad4f06e94ebd80e
 networkPolicy:
   enabled: true
+  # Authentik's public issuer is served by Cloudflare. Restrict TCP/443 to
+  # https://www.cloudflare.com/ips-v4 (reviewed 2026-10-12); Go also enforces
+  # HTTPS, the exact issuer origin and no redirects. No access to other ports.
+  adminTo:
+    - ipBlock: {cidr: 173.245.48.0/20}
+    - ipBlock: {cidr: 103.21.244.0/22}
+    - ipBlock: {cidr: 103.22.200.0/22}
+    - ipBlock: {cidr: 103.31.4.0/22}
+    - ipBlock: {cidr: 141.101.64.0/18}
+    - ipBlock: {cidr: 108.162.192.0/18}
+    - ipBlock: {cidr: 190.93.240.0/20}
+    - ipBlock: {cidr: 188.114.96.0/20}
+    - ipBlock: {cidr: 197.234.240.0/22}
+    - ipBlock: {cidr: 198.41.128.0/17}
+    - ipBlock: {cidr: 162.158.0.0/15}
+    - ipBlock: {cidr: 104.16.0.0/13}
+    - ipBlock: {cidr: 104.24.0.0/14}
+    - ipBlock: {cidr: 172.64.0.0/13}
+    - ipBlock: {cidr: 131.0.72.0/22}
   ingressFrom:
     - namespaceSelector:
         matchLabels:
