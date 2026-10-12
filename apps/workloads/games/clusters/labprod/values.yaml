@@ -4,7 +4,7 @@ publicUrl: https://games.lab.bingo
 trustProxy: true
 image:
   repository: ghcr.io/bingops-com/games
-  tag: sha-451101e6af84935bd9e0bd1495aa0457af24f6f1
+  tag: sha-6f3c031e8eae86cbd85148edfcbcbdaf42fa5d7b
 mail:
   relay: smtp.resend.com:587
   from: noreply@mail.games.lab.bingo
