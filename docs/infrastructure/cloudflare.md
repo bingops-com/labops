@@ -42,8 +42,10 @@ state; do not initialize a second state or apply an old saved plan. When using
 the local backend from another checkout, pass the same explicit `-state` path
 to both plan and apply. State and saved plans contain secrets and remain outside
 Git in protected storage. Recovery of the provider credential is owned by the
-LabOps operator; only the DNS write permission for the existing lab zone is
-needed for record restoration. Existing tunnel state supplies the CNAME target.
+LabOps operator. Record restoration needs DNS read/write access scoped to the
+existing lab zone and read access to the existing tunnel when Terraform refreshes
+its dependencies. Existing tunnel state supplies the CNAME target; the reviewed
+recovery plan must not change the tunnel.
 
 After deployment authorization, generate and inspect a fresh saved plan. For
 incident recovery, targeting only the missing record instances is acceptable
