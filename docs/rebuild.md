@@ -64,17 +64,16 @@ configs are sensitive generated state, not documentation.
    archive reuses the existing bucket-scoped R2 key under the dedicated
    `slots` prefix; verify WAL archival and one completed backup before opening
    ranked play. See `apps/workloads/slots/README.md`.
-   Games is prepared with manual synchronization. Recover its R2 and tracked
-   SMTP/DKIM mappings from Bitwarden; use the owning helper if their UUIDs
-   change. Public SMTP egress IP and DKIM DNS metadata remain to be configured
-   through that helper. Publish the
-   verified Postfix and pinned Games images, then reconcile the manual mail
-   Application after cert-manager and Bitwarden are ready. Verify outbound
-   port 25, reverse DNS and real delivery; see `apps/platform/mail/labprod/README.md`.
+   Games is prepared with manual synchronization. Recover its bucket-scoped
+   R2 key from Bitwarden and publish the pinned Games commit image before sync.
+   Accounts use pseudonyms, passwords and offline single-use recovery codes;
+   no SMTP, SMS, mail DNS or Postfix deployment is needed. Recovery-code hashes
+   live in PostgreSQL and follow the same backup/restore lifecycle as accounts.
    Demonstrate NetworkPolicy enforcement before an authorized Games sync.
    The current Flannel installation has no policy controller;
-   review its addition separately before relying on isolation. Verify email,
-   backup and isolated restore before public use.
+   review its addition separately before relying on isolation. Verify recovery
+   codes, backup and isolated restore before public use. Existing accounts
+   create their own codes from “Mon compte” using their current password.
    Ownership and repeatable setup: `apps/workloads/games/README.md`.
 9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
    verify `https://lab.bingo` through LAN or Tailscale without publishing it

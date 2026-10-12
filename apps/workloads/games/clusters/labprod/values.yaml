@@ -4,14 +4,7 @@ publicUrl: https://games.lab.bingo
 trustProxy: true
 image:
   repository: ghcr.io/bingops-com/games
-  tag: sha-45b139864ed0e58c4184a36a0e7ef9283725c65c
-mail:
-  relay: relay.mail.svc:587
-  serverName: smtp.games.lab.bingo
-  from: noreply@games.lab.bingo
-  envelope: bounces@smtp.games.lab.bingo
-  username: games@games.lab.bingo
-  existingSecret: games-smtp
+  tag: sha-aeb30c58e4ec1405a600818c37db430bb705add2
 networkPolicy:
   enabled: true
   ingressFrom:
@@ -22,14 +15,6 @@ networkPolicy:
         matchLabels:
           app.kubernetes.io/name: cloudflare-tunnel
           app.kubernetes.io/instance: bingops
-  smtpTo:
-    - namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: mail
-      podSelector:
-        matchLabels:
-          app.kubernetes.io/name: relay
-  smtpPort: 587
 database:
   cnpg:
     enabled: true
