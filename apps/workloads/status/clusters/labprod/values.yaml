@@ -32,6 +32,9 @@ config:
     - name: Slots
       description: Jeux en crédits fictifs
       url: https://slots.lab.bingo
+    - name: Games
+      description: Jeux multijoueurs entre amis
+      url: https://games.lab.bingo
   # Hand-written announcements, most recent first:
   #   - date: 2026-10-12
   #     title: Maintenance du stockage

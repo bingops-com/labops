@@ -44,6 +44,10 @@ put a service on the page, add its endpoint to that group in
 address under `config.services` in `clusters/labprod/values.yaml`. Moving an endpoint out of the group removes it
 from the page at the next reading.
 
+Games belongs to this public group; its description and link are declared in
+`config.services`. Its history starts when Gatus first observes the endpoint;
+adding it does not reconstruct earlier availability.
+
 From a check the page keeps the service name, the outcome and the duration.
 Probed addresses, conditions, Gatus error messages and the Gatus address are
 neither stored nor sent to visitors. Endpoints of the `Plateforme` group,

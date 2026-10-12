@@ -103,11 +103,22 @@ mounted blueprint is the source of truth.
 The blueprint owns the Authentik identity `bingops` with email
 `therealbingops@gmail.com`. It makes that identity the sole member of every
 relying-application privileged group: `argocd-admins`, `grafana-admins`,
-`portal-editors`, `romm-admins` and `rom-admins`. The bootstrap `akadmin` account is not a
+`portal-editors`, `romm-admins`, `rom-admins` and `games-admins`. The bootstrap `akadmin` account is not a
 member of those groups and therefore does not receive administrator access to
 the relying applications. New SSO applications must follow the same model: a
 dedicated group with `bingops` as its only member, mapped to the application's
 administrator role.
+
+Games administration uses the `games-admin` public OIDC provider and strict
+callback `https://games.lab.bingo/api/admin/callback`, with authorization code
+and PKCE. Its independent `games-admin.yaml` blueprint requires the `bingops`
+identity created by the existing Argo CD blueprint; reconciliation retries if
+that user does not exist yet. Only `bingops` belongs to `games-admins`; the
+application policy and Games backend both enforce the exact username and group.
+The `groups` mapping also returns `games_admin`, false for inactive identities.
+Games re-reads userinfo before every protected request, so removing this group
+or disabling the user denies further access. No client secret or new Bitwarden
+input is needed. See [Games administration](../apps/workloads/games/README.md#administration).
 
 The `bingops` password is a sensitive external prerequisite owned by the lab
 operator and stored in the operator's password manager; Git owns only the user,

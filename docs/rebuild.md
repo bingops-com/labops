@@ -66,6 +66,10 @@ configs are sensitive generated state, not documentation.
    ranked play. See `apps/workloads/slots/README.md`.
    Games is prepared with manual synchronization. Recover its bucket-scoped
    R2 key from Bitwarden and publish the pinned Games commit image before sync.
+   Reconcile Authentik's `games-admin` blueprint after the existing `bingops`
+   identity, then verify its strict Games callback and dedicated `games-admins`
+   group. The public PKCE client needs no additional secret. Review the declared
+   Cloudflare TCP/443 egress peers before enabling administrator access.
    Accounts use pseudonyms, passwords and offline single-use recovery codes;
    no SMTP, SMS, mail DNS or Postfix deployment is needed. Recovery-code hashes
    live in PostgreSQL and follow the same backup/restore lifecycle as accounts.

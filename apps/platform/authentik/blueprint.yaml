@@ -4,6 +4,91 @@ metadata:
   name: authentik-blueprints
   namespace: authentik
 data:
+  games-admin.yaml: |
+    version: 1
+    metadata:
+      name: games-admin-oidc
+    entries:
+      - model: authentik_core.group
+        id: games-admins
+        identifiers:
+          name: games-admins
+        attrs:
+          is_superuser: false
+          users:
+            - !Find [authentik_core.user, [username, bingops]]
+      - model: authentik_providers_oauth2.scopemapping
+        id: games-admin-scope
+        identifiers:
+          name: Games administrator membership
+        attrs:
+          scope_name: groups
+          description: Current Games administrator identity and membership
+          expression: |
+            return {
+                "groups": [group.name for group in user.all_groups()],
+                "games_admin": (
+                    user.is_active
+                    and user.username == "bingops"
+                    and user.all_groups().filter(name="games-admins").exists()
+                ),
+            }
+      - model: authentik_providers_oauth2.oauth2provider
+        id: games-admin-provider
+        identifiers:
+          name: Games administrator production
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: public
+          client_id: games-admin
+          grant_types:
+            - authorization_code
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          access_token_validity: minutes=15
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, profile]]
+            - !KeyOf games-admin-scope
+          redirect_uris:
+            - matching_mode: strict
+              url: https://games.lab.bingo/api/admin/callback
+      - model: authentik_policies_expression.expressionpolicy
+        id: games-admin-policy
+        identifiers:
+          name: Games administrator only
+        attrs:
+          expression: |
+            return (
+                request.user.is_authenticated
+                and request.user.is_active
+                and request.user.username == "bingops"
+                and request.user.all_groups().filter(name="games-admins").exists()
+            )
+      - model: authentik_core.application
+        id: games-admin-application
+        identifiers:
+          slug: games-admin
+        attrs:
+          name: Games administration
+          provider: !KeyOf games-admin-provider
+          meta_launch_url: https://games.lab.bingo/admin/
+          policy_engine_mode: all
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !KeyOf games-admin-application
+          policy: !KeyOf games-admin-policy
+          order: 0
+        attrs:
+          target: !KeyOf games-admin-application
+          policy: !KeyOf games-admin-policy
+          order: 0
+          enabled: true
+          negate: false
+          timeout: 30
   branding.yaml: |
     version: 1
     metadata:

@@ -40,6 +40,12 @@ Wide columns hold what is read (lists, charts), narrow ones what is glanced at
 widgets below it when a page grows. A layout saved from the browser takes
 precedence over this file until "Revenir au YAML" is used.
 
+Games is declared in the Accueil application bookmarks and topology, with the
+`Games` Gatus endpoint and `games-labprod` Argo CD Application. If a saved
+browser layout exists, export it before using "Revenir au YAML", or add the
+Games entries to that layout in the editor; a Git change does not override
+saved customizations.
+
 ## Access and data
 
 - Reading is open to the LAN and tailnet (Traefik allowlist). Editing the
