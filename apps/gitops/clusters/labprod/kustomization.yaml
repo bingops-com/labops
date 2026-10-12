@@ -26,5 +26,6 @@ resources:
   - portal.yaml
   - status.yaml
   - slots.yaml
+  - games.yaml
   - rom.yaml
   - pz-server.yaml

@@ -1,0 +1,52 @@
+# Chart and image commit are pinned together by the Argo CD Application.
+production: true
+publicUrl: https://games.lab.bingo
+trustProxy: true
+image:
+  repository: ghcr.io/bingops-com/games
+  tag: sha-451101e6af84935bd9e0bd1495aa0457af24f6f1
+mail:
+  relay: smtp.resend.com:587
+  from: noreply@mail.games.lab.bingo
+  envelope: bounces@mail.games.lab.bingo
+  username: resend
+  existingSecret: games-smtp
+networkPolicy:
+  enabled: true
+  ingressFrom:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: cloudflare
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: cloudflare-tunnel
+          app.kubernetes.io/instance: bingops
+  # Resend has changing public addresses; only public IPv4 SMTP on port 587.
+  # STARTTLS authenticates smtp.resend.com against the system trust store.
+  smtpTo:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+          - 10.0.0.0/8
+          - 172.16.0.0/12
+          - 192.168.0.0/16
+          - 127.0.0.0/8
+          - 169.254.0.0/16
+  smtpPort: 587
+database:
+  cnpg:
+    enabled: true
+    instances: 1
+    storage:
+      size: 2Gi
+      storageClass: local-path
+    backup:
+      enabled: true
+      destinationPath: s3://bingops-cnpg-labprod/games
+      endpointURL: https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com
+      credentialsSecret: games-r2-credentials
+      serverName: games-postgresql-g1
+      schedule: "0 30 3 * * *"
+      retentionPolicy: 14d
+    podMonitor:
+      enabled: true

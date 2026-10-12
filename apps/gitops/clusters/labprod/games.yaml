@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: games-labprod
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: labops-labprod
+  sources:
+    - repoURL: https://github.com/bingops-com/games.git
+      targetRevision: 451101e6af84935bd9e0bd1495aa0457af24f6f1
+      path: chart
+      helm:
+        releaseName: games
+        valueFiles:
+          - $values/apps/workloads/games/clusters/labprod/values.yaml
+    - repoURL: https://github.com/bingops-com/labops.git
+      targetRevision: master
+      ref: values
+      path: apps/workloads/games/clusters/labprod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: games
+  # Manual until SMTP prerequisites and the production acceptance gate pass.
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

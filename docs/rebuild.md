@@ -60,6 +60,11 @@ configs are sensitive generated state, not documentation.
    archive reuses the existing bucket-scoped R2 key under the dedicated
    `slots` prefix; verify WAL archival and one completed backup before opening
    ranked play. See `apps/workloads/slots/README.md`.
+   Games is prepared with manual synchronization. Recover its R2 mapping,
+   complete the Resend domain DNS and Bitwarden SMTP UUID, publish the pinned
+   public Games image, and demonstrate NetworkPolicy enforcement before an
+   authorized sync. Verify email, backup and isolated restore before public use.
+   Ownership and repeatable setup: `apps/workloads/games/README.md`.
 9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
    verify `https://lab.bingo` through LAN or Tailscale without publishing it
    through the public Cloudflare Tunnel. The portal image is built from

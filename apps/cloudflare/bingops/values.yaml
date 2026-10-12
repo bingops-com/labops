@@ -19,6 +19,8 @@ cloudflare:
       service: http://romm.rom.svc.cluster.local:80
     - hostname: slots.lab.bingo
       service: http://slots.slots.svc.cluster.local:80
+    - hostname: games.lab.bingo
+      service: http://games.games.svc.cluster.local:80
     - hostname: status.lab.bingo
       service: http://status.status.svc.cluster.local:80
 
