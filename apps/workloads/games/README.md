@@ -95,13 +95,62 @@ the player may sign in again. Passwords, historical email and recovery codes are
 never exposed to the panel. There is no password-reset bypass or room-close
 operation. Existing migrations are preserved; schema migration 8 is additive.
 
-Rebuild order: Authentik including the existing `bingops` identity and the new
+Rebuild order: Authentik including the existing `bingops` identity and its
 blueprint, then the published Games commit image and matching chart, then the
-authorized Games synchronization. Both pins now select merged Games commit
-`0b9458ac3e48488724fbf5d5d15ee3bfc26aaed2`. Its public Linux/amd64 image was
-verified anonymously with digest
+authorized Games synchronization. The current release pins live only in
+`apps/gitops/clusters/labprod/games.yaml` and
+`apps/workloads/games/clusters/labprod/values.yaml`.
+
+The previous administrator release, Games commit
+`0b9458ac3e48488724fbf5d5d15ee3bfc26aaed2`, was verified anonymously as a
+public Linux/amd64 image with digest
 `sha256:8129c282d7120b01e4076ebf21380777dcbe706a66cab77cef0a374b8aa704ed`
-on 2026-10-12. For future releases, verify publication before advancing both pins.
+on 2026-10-12. It is the rollback reference for the following preparation.
+
+### Analytics and Bombermat release preparation
+
+This deployment PR depends on [Games PR #4](https://github.com/bingops-com/games/pull/4).
+It restores the four Bombermat arenas and adds the administrator dashboard with
+real PostgreSQL aggregates, UTC registration/report charts for 7/30/90 days,
+cumulative account participation totals, live room metadata and moderation.
+The existing administrator permissions and CSRF/audit protections still apply.
+Guest play is excluded from historical participation totals; room presences are
+counted per room. There is no new secret, external analytics service or database
+migration: the schema remains 8. Recovery inputs and ownership remain those
+documented above and in `docs/authentik.md` and the CNPG recovery runbook.
+
+Keep the deployment PR **draft** while Games is unmerged or its image is
+unpublished. Its candidate pins are preparation, not proof of an available
+release. Merge Games first, wait for its master image workflow to succeed, then
+replace both candidate pins with the resulting published commit. Never merge
+this LabOps preparation with an unpublished candidate image.
+
+The `Published Games release` CI check verifies matching chart/image pins,
+membership of the commit in Games master, anonymous GHCR access and Linux/amd64
+support. It fails while the release is unavailable. It is read-only, does not
+configure branch protection and never synchronizes Argo CD. A maintainer can
+repeat the same check after publication; failures change no application state.
+CI uses only its ephemeral, read-only `github.token` for GitHub metadata; GHCR
+verification is anonymous and no credential is persisted or logged.
+
+```sh
+python3 apps/workloads/games/tests/check_release.py --offline
+python3 -m unittest discover -s apps/workloads/games/tests -p test_release.py
+```
+
+After Games publication, run the online check (GitHub/GHCR metadata only):
+
+```sh
+python3 apps/workloads/games/tests/check_release.py
+```
+
+Before a separately authorized deployment, verify backup/WAL health and account
+for the single-replica Recreate interruption. After deployment, check the real
+administrator metrics, all four arenas and their eight WebP assets, plus
+health/readiness and ordinary-user denial. An application rollback can restore
+both pins to the published `0b9458ac3e48488724fbf5d5d15ee3bfc26aaed2`
+release because both versions use schema 8; database restore is unnecessary for
+this UI/arena change. Earlier pre-administrator binaries remain incompatible.
 
 Before the first migration to schema 8, create the release-specific on-demand
 backup below and require phase `completed`. The manifest is an operator action,
@@ -179,7 +228,7 @@ fresh codes. A forgotten password with no surviving recovery credential cannot
 be recovered; never re-enable historical mail recovery to bypass this rule.
 
 Roll back image and chart together only to a release compatible with the schema.
-This release adds migration 8; earlier binaries, including the recovery-code
+The first administrator release added migration 8; earlier binaries, including the recovery-code
 release, reject the newer schema and are not valid image-only rollbacks.
 Database restoration is a separate
 operation with its own recovery point and acceptance checks. CNPG is protected
@@ -190,8 +239,9 @@ from Bitwarden; CNPG regenerates application credentials. Recovery hashes follow
 database backups and the mandatory post-restore invalidation above. Bootstrap
 can retry after partial failure; live cleanup is explicitly separate. Remaining
 production gates are NetworkPolicy enforcement and runtime/isolated-restore
-acceptance. The pinned image is published and the pre-upgrade base backup is
-complete. The authorized application upgrade does not replace Flannel or claim
+acceptance. The previous administrator image is published and its pre-upgrade
+base backup is complete. Candidate upgrades must pass `Published Games release`
+before their LabOps PR is finalized. An authorized application upgrade does not replace Flannel or claim
 that its declared NetworkPolicy is enforced; that existing cluster limitation
 still needs a separately reviewed policy-controller change. SMTP delivery is no
 longer a gate.
