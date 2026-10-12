@@ -98,8 +98,8 @@ update** in RomM's administration tasks. Retries rebuild cache data and do not
 download game binaries or change credentials. No extra bootstrap Secret or
 manually generated database is needed for an empty rebuild.
 
-IGDB, MobyGames and ScreenScraper still require separately supplied sensitive
-credentials; this workload does not configure them. Their missing-key messages
+IGDB and MobyGames still require separately supplied sensitive credentials;
+this workload does not configure them. Their missing-key messages
 do not mean the credential-free providers or the download catalogue are down.
 See the [upstream metadata guide](https://docs.romm.app/latest/getting-started/metadata-providers/)
 and the [pinned environment reference](https://github.com/rommapp/romm/blob/5.3.1/env.template).
@@ -115,6 +115,62 @@ curl -fsS https://rom.lab.bingo/api/heartbeat/metadata/launchbox
 Verify enabled providers in the matching dialog after refreshing the page.
 An enabled provider can still fail its health check because its upstream is
 unreachable; a ready LaunchBox cache is specifically required for that source.
+
+### ScreenScraper credentials
+
+The `labprod` overlay connects ScreenScraper through
+`screenscraper-secret.yaml`. Bitwarden Secrets Manager owns the sensitive
+account inputs; Git owns only their identifiers and the Kubernetes references.
+The Bitwarden controller materializes `rom-screenscraper-credentials`, and
+RomM reads its `SCREENSCRAPER_USER` and `SCREENSCRAPER_PASSWORD` keys as
+environment variables. The official pinned `rommapp/romm:5.3.1` image already
+contains the application's ScreenScraper developer credentials; no developer
+secret or API-key generation is required for this deployment.
+
+The lab operator owns the external ScreenScraper account. Create a free account
+at <https://www.screenscraper.fr/membreinscription.php> and verify it as required
+by ScreenScraper. Store its username as `rom-screenscraper-user` and its
+password as `rom-screenscraper-password` in the existing LabOps Bitwarden
+project. The existing namespace machine account needs read access to that
+project and these two secrets; no write or administrative Bitwarden permission
+is needed. Record only the two secret UUIDs in `screenscraper-secret.yaml`.
+Keep account recovery email access in the operator's password manager.
+
+These credentials cannot be recovered from Git. Restore them from Bitwarden;
+if the password is lost, reset it through ScreenScraper and update the same
+Bitwarden secret. If either secret is recreated, update its UUID in the owning
+manifest. During rotation, wait for a new successful Bitwarden synchronization
+timestamp after the credential update, then increment
+`labops.bingo/screenscraper-credentials-revision` in the
+overlay and use the authorized GitOps delivery workflow. RomM reads these
+variables only at startup, so updating Bitwarden alone does not update a running
+process. Reusing the same secret IDs and revision after a partial failure is
+safe; the controllers retry without modifying ROM files or PostgreSQL data.
+
+Reconstruction order is the existing namespace token bootstrap, the
+ScreenScraper Bitwarden mapping in wave `-1`, then RomM. Missing mapped keys
+prevent its container from starting until the Secret becomes available. An
+initial rollout or rotation replaces the single RomM instance and briefly
+interrupts access. ScreenScraper enforces account quotas; a false provider
+heartbeat can also mean account validation, an upstream outage or a quota
+problem. Never diagnose by printing Secret values, process environment or
+credential-bearing request URLs.
+
+After authorized deployment, these read-only checks disclose only the
+controller's readiness boolean, provider flags and metadata health:
+
+```sh
+kubectl --context labprod get bitwardensecret rom-screenscraper-credentials -n rom -o jsonpath='{.status.conditions[?(@.type=="SuccessfulSync")].status}{"\n"}{.status.lastSuccessfulSyncTime}{"\n"}'
+curl -fsS https://rom.lab.bingo/api/heartbeat | python3 -c 'import json,sys; d=json.load(sys.stdin)["METADATA_SOURCES"]; print("ScreenScraper enabled:", d["SS_API_ENABLED"]); print("Developer credentials available:", d["SS_DEV_CREDENTIALS_SET"])'
+curl -fsS https://rom.lab.bingo/api/heartbeat/metadata/ss
+```
+
+An enabled flag confirms configuration, not successful authentication; require
+the provider health check before declaring the connection ready. Refresh RomM
+and select ScreenScraper in a metadata scan of an existing ROM. This enriches
+local games and does not search for or download missing ROM files. Roll back by
+reverting this connector change through GitOps; keep the account and Bitwarden
+values for recovery rather than deleting them as part of a rollback.
 
 ## Storage and credentials
 
