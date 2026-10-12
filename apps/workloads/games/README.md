@@ -12,11 +12,13 @@ routing and DNS. `games-labprod` and `mail-labprod` remain manually synchronized
    v0.28.4 and kube-proxy without any NetworkPolicy controller. Adding/reviewing
    enforcement and proving isolation remain blocking requirements for public
    Games. Do not replace the live CNI during an application sync.
-2. Publish the pinned Games commit image through its security-gated CI and make
-   its GHCR package public. Repository and package visibility are independent.
-   Verify anonymous pulls of both the Games and Postfix images before sync.
-   After merging Games, publish the exact pinned branch commit manually, or
-   update chart/image together if the merge produces a different SHA.
+2. The chart and image use merged Games commit
+   `45b139864ed0e58c4184a36a0e7ef9283725c65c`; its security-gated publication
+   succeeded and the image is publicly available. For future releases, publish
+   the pinned commit image and verify its exact tag before updating chart/image
+   together. Repository and package visibility are independent. Verify anonymous
+   pulls of both the Games and Postfix images before sync; Postfix is published
+   by LabOps CI after merge.
 3. Recover the existing bucket-scoped R2 key from Bitwarden `labprod`. The tracked
    mapping exposes identifiers only. CNPG generates the database URI; Games
    owns R2 prefix `games`, continuous WAL archiving and daily 14-day backups.
