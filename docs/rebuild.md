@@ -91,6 +91,9 @@ configs are sensitive generated state, not documentation.
    restored: after a rebuild the page starts again without past days. If an
    existing unreadable history prevents startup, use the authorized quarantine
    procedure in `apps/workloads/status/README.md` before verifying availability.
+   If the workload is healthy but its public name returns `NXDOMAIN`, use the
+   Terraform DNS recovery procedure in `docs/infrastructure/cloudflare.md`;
+   reconciling the tunnel Application does not create DNS records.
 10. Create the bucket-scoped Project Zomboid R2 token in Bitwarden, reconcile
     its mappings and the workload, then verify a Restic snapshot and a
     disposable restore before retiring the Build 41 VM.

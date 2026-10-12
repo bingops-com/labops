@@ -27,6 +27,59 @@ creates no mail records. Postfix credentials, TLS, DNS creation/rotation and
 provider-owned reverse DNS prerequisites are documented in
 [the mail runbook](../../apps/platform/mail/labprod/README.md).
 
+## Recover missing public DNS
+
+Terraform owns the public lab CNAME records through
+`cloudflare_record.lab_tunnel_routes` and the hostname set in
+`terraform/cloudflare/locals.tf`. The tunnel ingress routes in Kubernetes do
+not recreate missing DNS records. A healthy pod and Argo CD Application can
+therefore coexist with a public `NXDOMAIN` outage.
+
+Before planning, fetch and compare against current `origin/master`. Use an
+isolated checkout when the operator checkout is on an older branch or has
+unrelated changes. Reuse the existing protected credential inputs and Terraform
+state; do not initialize a second state or apply an old saved plan. When using
+the local backend from another checkout, pass the same explicit `-state` path
+to both plan and apply. State and saved plans contain secrets and remain outside
+Git in protected storage. Recovery of the provider credential is owned by the
+LabOps operator; only the DNS write permission for the existing lab zone is
+needed for record restoration. Existing tunnel state supplies the CNAME target.
+
+After deployment authorization, generate and inspect a fresh saved plan. For
+incident recovery, targeting only the missing record instances is acceptable
+after verifying that their tunnel dependencies have no changes. Apply only a
+plan that creates the approved names and has no unrelated updates or deletions.
+Keep the declared hostnames in Git and reconcile the existing state; an API-only
+record repair would leave Terraform ownership unresolved. Repeating recovery
+after success must produce no further changes for those instances.
+
+On 2026-10-12, `status`, `slots`, `rom` and `rom-requests.lab.bingo` were missing
+while `auth`, `portfolio` and the old `romm` name remained. That matched an older
+local branch's hostname set; current master already declared all four missing
+names. An authorized Terraform plan from current master recreated exactly those
+four CNAME records, with no other resource changes, and the old checkout's
+hostname set was aligned with master. The stale configuration is the likely
+cause; the available credential cannot read Cloudflare audit logs, so the actor
+and deletion time were not established. Old local saved plans did not establish
+the deletion either. No application restart or tunnel replacement was needed.
+
+Verify the authoritative nameservers, public resolvers, and HTTPS separately:
+
+```sh
+dig @kenneth.ns.cloudflare.com status.lab.bingo A
+dig @1.1.1.1 status.lab.bingo A
+dig @8.8.8.8 status.lab.bingo A
+curl -fsS https://status.lab.bingo/healthz
+```
+
+Repeat DNS checks for every restored name. Negative responses can remain cached
+for the zone's SOA negative TTL (1800 seconds observed during this incident);
+authoritative recovery does not immediately invalidate those caches. These
+checks disclose no credentials. DNS and tunnel ownership remain Terraform and
+Argo CD respectively; credential recovery stays with the existing operator.
+
+## Retire the former test bucket
+
 Removing the former test bucket is destructive. After explicitly confirming
 that every `bingops-cnpg-labtest` backup may be lost, inspect it through the
 Cloudflare REST API with the existing ignored Terraform credential:
