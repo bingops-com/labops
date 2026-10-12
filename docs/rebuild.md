@@ -70,6 +70,11 @@ configs are sensitive generated state, not documentation.
    identity, then verify its strict Games callback and dedicated `games-admins`
    group. The public PKCE client needs no additional secret. Review the declared
    Cloudflare TCP/443 egress peers before enabling administrator access.
+   For a Games upgrade, merge Games and wait for image publication before
+   finalizing its LabOps deployment PR. The `Published Games release` check
+   verifies that chart/image pins match a merged commit with a public Linux/amd64
+   image. Candidate pins in a draft PR are not a published release. The owning
+   runbook documents the repeatable read-only check and schema-compatible rollback.
    Accounts use pseudonyms, passwords and offline single-use recovery codes;
    no SMTP, SMS, mail DNS or Postfix deployment is needed. Recovery-code hashes
    live in PostgreSQL and follow the same backup/restore lifecycle as accounts.
