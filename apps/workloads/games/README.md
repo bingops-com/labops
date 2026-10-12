@@ -5,6 +5,11 @@ the public Games chart at an immutable commit, with the matching commit image.
 LabOps owns namespace, values, Bitwarden mappings, database backups, Cloudflare
 routing and DNS. `games-labprod` and `mail-labprod` remain manually synchronized.
 
+Merging the LabOps PR integrates preparation and publishes the Postfix image;
+it does not authorize synchronization or public opening. Keep both Applications
+manual until the prerequisites and acceptance checks below pass. The tunnel
+configuration is managed separately and may reconcile after merge.
+
 ## Reconstruction and inputs
 
 1. Rebuild storage, Bitwarden, CloudNativePG/Barman, cert-manager, monitoring and
