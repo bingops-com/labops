@@ -35,6 +35,7 @@ pages:
                     - { title: RomM, url: "https://rom.lab.bingo", description: Bibliothèque de jeux, icon: "si:nintendogamecube", checkUrl: "https://rom.lab.bingo/api/heartbeat" }
                     - { title: Demandes ROM, url: "https://rom-requests.lab.bingo", description: Rechercher et télécharger, icon: "si:nintendogamecube", checkUrl: "http://rom-request-portal.rom.svc.cluster.local:8080/healthz" }
                     - { title: Portfolio, url: "https://www.bingops.com", description: Site public, checkUrl: "https://www.bingops.com" }
+                    - {title: Games, url: "https://games.lab.bingo", description: Jeux multijoueurs entre amis, checkUrl: "https://games.lab.bingo/healthz"}
                 - title: Code
                   links:
                     - { title: LabOps, url: "https://github.com/bingops-com/labops", description: Source de vérité, icon: "si:github" }
@@ -53,6 +54,7 @@ pages:
                 - { id: tunnel, label: Cloudflare Tunnel, layer: 1, app: cloudflare-tunnel-labprod }
                 - { id: traefik, label: Traefik, layer: 1, app: traefik-labprod }
                 - { id: portfolio, label: Portfolio, layer: 2, app: portfolio-labprod, endpoint: Portfolio }
+                - {id: games, label: Games, layer: 2, app: games-labprod, endpoint: Games}
                 - { id: authentik, label: Authentik, layer: 2, app: authentik-labprod, endpoint: Authentik }
                 - { id: romm, label: RomM, layer: 2, app: rom-labprod, endpoint: RomM }
                 - { id: romarr, label: ROMarr, layer: 2, app: rom-labprod, endpoint: ROMarr }
@@ -68,6 +70,7 @@ pages:
                 - { from: tailnet, to: traefik }
                 - { from: tunnel, to: traefik }
                 - { from: traefik, to: portfolio }
+                - {from: tunnel, to: games}
                 - { from: traefik, to: authentik }
                 - { from: traefik, to: romm }
                 - { from: traefik, to: portal }

@@ -8,6 +8,9 @@ readout of the [portal](../portal/README.md). It runs only on `labprod`.
   in-cluster.
 - `base/config.yaml` is the source of truth for the monitored endpoints. The
   generated ConfigMap name carries a content hash, so a change restarts Gatus.
+- Games is checked through `https://games.lab.bingo/healthz` in the `Public`
+  group, including its public HTTPS route and database readiness. The public
+  status page and portal consume this endpoint under the name `Games`.
 - No credentials and no Kubernetes API access. Check history is kept in SQLite
   on the `gatus-data` PVC (`local-path`), which lets the portal show
   availability over 7 days; it is not backed up, and losing it only resets
