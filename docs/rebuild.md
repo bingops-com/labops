@@ -50,6 +50,10 @@ configs are sensitive generated state, not documentation.
    imports completed downloads without a Client API Token or manual scan. A PostSync Job
    idempotently installs the curated homebrew/freeware ROM Hub plugins; their
    generated state is stored on the R2-backed `rom-data` PVC.
+   RomM's enabled metadata providers are separate from that download catalogue.
+   Wait for the automatic LaunchBox import into its disposable Valkey cache;
+   repeat RomM startup after an independent cache loss, as documented in
+   `apps/workloads/rom/README.md`.
    The completed blue/green migration left `rom` as the automated production
    stack. The former `romm-labprod` Application, namespace and local volumes
    were retired after explicit confirmation; R2 and Barman remain the recovery

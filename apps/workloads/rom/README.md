@@ -61,6 +61,52 @@ Prowlarr and qBittorrent remain available
 for operator-configured lawful sources but are not required by these default
 catalogues.
 
+## RomM metadata providers
+
+`base/romm.yaml` enables LaunchBox, Steam, Demozoo, Pouët, CSDb and Flashpoint
+alongside Hasheous. These providers require no user credential. Libretro is
+always enabled in RomM 5.3.1 and supplies artwork. This metadata selection is
+separate from the ROM Hub download catalogue at `rom-requests.lab.bingo`:
+enabling a metadata provider adds descriptions and artwork to imported games.
+Steam covers PC platforms; Demozoo, Pouët and CSDb cover demoscene productions.
+
+LaunchBox's remote metadata lives in the internal Valkey cache. RomM 5.3.1
+queues its initial import automatically when its cache schema is missing or
+outdated. The first import must finish before its metadata heartbeat succeeds;
+enabling the provider alone does not mean its database is ready. The scheduled
+refresh runs daily at `0 4 * * *` with RomM's `TZ=Europe/Paris`. Valkey reserves
+256 MiB and may use up to 2 GiB for the imported metadata; its former 256 MiB
+limit was sized for the smaller cache without LaunchBox.
+Argo CD replaces the single Valkey instance in wave `-1`, before RomM in
+wave `0`, so startup imports target the new cache. Valkey uses `Recreate`
+to keep a single cache behind its Service during a rollout.
+
+The cache is disposable generated state, with persistence disabled. Losing it
+does not lose ROMs or PostgreSQL data. Restart RomM after an independent Valkey
+restart to enqueue missing metadata again, then wait for LaunchBox's heartbeat.
+If the import fails, the administrator can retry the **LaunchBox metadata
+update** in RomM's administration tasks. Retries rebuild cache data and do not
+download game binaries or change credentials. No extra bootstrap Secret or
+manually generated database is needed for an empty rebuild.
+
+IGDB, MobyGames and ScreenScraper still require separately supplied sensitive
+credentials; this workload does not configure them. Their missing-key messages
+do not mean the credential-free providers or the download catalogue are down.
+See the [upstream metadata guide](https://docs.romm.app/latest/getting-started/metadata-providers/)
+and the [pinned environment reference](https://github.com/rommapp/romm/blob/5.3.1/env.template).
+
+After authorized reconciliation, these read-only checks contact live systems
+and print only provider flags and health booleans:
+
+```sh
+curl -fsS https://rom.lab.bingo/api/heartbeat | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["METADATA_SOURCES"]); print("LaunchBox scheduled:",d["TASKS"]["ENABLE_SCHEDULED_UPDATE_LAUNCHBOX_METADATA"])'
+curl -fsS https://rom.lab.bingo/api/heartbeat/metadata/launchbox
+```
+
+Verify enabled providers in the matching dialog after refreshing the page.
+An enabled provider can still fail its health check because its upstream is
+unreachable; a ready LaunchBox cache is specifically required for that source.
+
 ## Storage and credentials
 
 The workloads share the 200 Gi `rom-data` local-path PVC. RomM owns

@@ -62,6 +62,14 @@ spec:
             - { name: ROMM_BASE_URL, value: https://rom.lab.bingo }
             - { name: ROMM_SESSION_SECURE_COOKIE, value: "true" }
             - { name: HASHEOUS_API_ENABLED, value: "true" }
+            - { name: LAUNCHBOX_API_ENABLED, value: "true" }
+            - { name: STEAM_API_ENABLED, value: "true" }
+            - { name: DEMOZOO_API_ENABLED, value: "true" }
+            - { name: POUET_API_ENABLED, value: "true" }
+            - { name: CSDB_API_ENABLED, value: "true" }
+            - { name: FLASHPOINT_API_ENABLED, value: "true" }
+            - { name: ENABLE_SCHEDULED_UPDATE_LAUNCHBOX_METADATA, value: "true" }
+            - { name: SCHEDULED_UPDATE_LAUNCHBOX_METADATA_CRON, value: "0 4 * * *" }
             - { name: DISABLE_SETUP_WIZARD, value: "true" }
             - { name: OIDC_ENABLED, value: "true" }
             - { name: OIDC_ALLOW_REGISTRATION, value: "true" }
