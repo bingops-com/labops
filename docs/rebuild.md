@@ -61,9 +61,13 @@ configs are sensitive generated state, not documentation.
    `slots` prefix; verify WAL archival and one completed backup before opening
    ranked play. See `apps/workloads/slots/README.md`.
    Games is prepared with manual synchronization. Recover its R2 mapping,
-   complete the Resend domain DNS and Bitwarden SMTP UUID, publish the pinned
-   public Games image, and demonstrate NetworkPolicy enforcement before an
-   authorized sync. The current Flannel installation has no policy controller;
+   map the shared SMTP password and DKIM key from Bitwarden, and configure the
+   public SMTP egress IP and DKIM DNS through the owning helper. Publish the
+   verified Postfix and pinned Games images, then reconcile the manual mail
+   Application after cert-manager and Bitwarden are ready. Verify outbound
+   port 25, reverse DNS and real delivery; see `apps/platform/mail/labprod/README.md`.
+   Demonstrate NetworkPolicy enforcement before an authorized Games sync.
+   The current Flannel installation has no policy controller;
    review its addition separately before relying on isolation. Verify email,
    backup and isolated restore before public use.
    Ownership and repeatable setup: `apps/workloads/games/README.md`.

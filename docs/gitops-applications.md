@@ -32,6 +32,7 @@ The current application decisions are:
 | Status | None; a JSON file on its PVC holds 90 days of availability derived from Gatus. | Not applicable; public, read-only page with no login and no privileged function. | Loss resets the figures of the page and is accepted. |
 | Slots | `slots-postgresql` (CloudNativePG). | Not applicable; pseudonymous player accounts have no privileged role and there is no operator UI. | Database to the `slots` R2 prefix. |
 | Games (prepared, manual sync) | `games-postgresql` (CloudNativePG). | Not applicable; pseudonymous players, no privileged role or operator UI. | WAL and daily backups to the `games` R2 prefix; SMTP and runtime acceptance required before publication. |
+| Mail (prepared, manual sync) | No database; Postfix queue on `relay-spool` PVC. | Internal authenticated submission only; no public SMTP endpoint. | Bitwarden owns SMTP/DKIM credentials; cert-manager reissues TLS. Queue survives pod replacement but is disposable after disk loss. See `apps/platform/mail/labprod/README.md`. |
 | Portfolio | None; stateless public site. | Not applicable; no privileged UI. | Rebuild from Git and the immutable image. |
 | Project Zomboid | None. | Not applicable; the game protocol does not use browser SSO. | Restic backup to the dedicated `bingops-pz-labprod` R2 bucket. |
 

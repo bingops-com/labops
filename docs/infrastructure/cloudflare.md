@@ -20,6 +20,13 @@ if lost. The endpoint is
 Use a saved, reviewed Terraform plan before apply. The pinned Cloudflare
 provider cannot delete a non-empty R2 bucket and has no force-delete option.
 
+Games mail DNS is owned by `games-mail.tf`, separately from the website tunnel
+record. The helper in `apps/workloads/games/configure-smtp.py` writes only public
+egress/DKIM metadata into `games-mail-settings.tf`; its initial null value
+creates no mail records. Postfix credentials, TLS, DNS creation/rotation and
+provider-owned reverse DNS prerequisites are documented in
+[the mail runbook](../../apps/platform/mail/labprod/README.md).
+
 Removing the former test bucket is destructive. After explicitly confirming
 that every `bingops-cnpg-labtest` backup may be lost, inspect it through the
 Cloudflare REST API with the existing ignored Terraform credential:

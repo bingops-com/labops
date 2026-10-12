@@ -4,12 +4,13 @@ publicUrl: https://games.lab.bingo
 trustProxy: true
 image:
   repository: ghcr.io/bingops-com/games
-  tag: sha-6f3c031e8eae86cbd85148edfcbcbdaf42fa5d7b
+  tag: sha-c3510ac6d6f180020dc0183455f63e0f2707a56d
 mail:
-  relay: smtp.resend.com:587
-  from: noreply@mail.games.lab.bingo
-  envelope: bounces@mail.games.lab.bingo
-  username: resend
+  relay: relay.mail.svc:587
+  serverName: smtp.games.lab.bingo
+  from: noreply@games.lab.bingo
+  envelope: bounces@smtp.games.lab.bingo
+  username: games@games.lab.bingo
   existingSecret: games-smtp
 networkPolicy:
   enabled: true
@@ -21,17 +22,13 @@ networkPolicy:
         matchLabels:
           app.kubernetes.io/name: cloudflare-tunnel
           app.kubernetes.io/instance: bingops
-  # Resend has changing public addresses; only public IPv4 SMTP on port 587.
-  # STARTTLS authenticates smtp.resend.com against the system trust store.
   smtpTo:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-        except:
-          - 10.0.0.0/8
-          - 172.16.0.0/12
-          - 192.168.0.0/16
-          - 127.0.0.0/8
-          - 169.254.0.0/16
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: mail
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: relay
   smtpPort: 587
 database:
   cnpg:
