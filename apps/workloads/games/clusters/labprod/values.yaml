@@ -4,7 +4,7 @@ publicUrl: https://games.lab.bingo
 trustProxy: true
 image:
   repository: ghcr.io/bingops-com/games
-  tag: sha-aeb30c58e4ec1405a600818c37db430bb705add2
+  tag: sha-062021cb8beb43765f180648dad4f06e94ebd80e
 networkPolicy:
   enabled: true
   ingressFrom:

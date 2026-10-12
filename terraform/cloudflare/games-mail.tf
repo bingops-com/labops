@@ -22,7 +22,9 @@ resource "cloudflare_record" "games_mail_host" {
   zone_id = var.cloudflare_lab_zone_id
   name    = "smtp.games"
   type    = "A"
-  content = local.games_mail.egress_ipv4
+  # Even with count = 0, provider validation requires non-null content.
+  # This documentation-only address is never planned when mail is disabled.
+  content = local.games_mail == null ? "192.0.2.1" : local.games_mail.egress_ipv4
   proxied = false
   ttl     = 3600
 }
