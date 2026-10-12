@@ -28,6 +28,22 @@ direct-SMTP preparation from another checkout. No mail DNS or Bitwarden secret
 deletion is part of this change; any future cleanup requires checking live
 ownership and separate authorization.
 
+The optional A record must guard access to the null setting even when its
+`count` is zero; Terraform still validates the resource expression. Provider
+validation also requires non-null content, so the disabled expression uses a
+documentation-only address that is never planned (`count = 0`). An isolated
+fixture tests both disabled and enabled mail with mocked providers and synthetic
+inputs. It shares the owning configuration through a symlink, reads no operator
+credentials/state and never contacts Cloudflare:
+
+```sh
+terraform -chdir=terraform/cloudflare/tests/games-mail init -backend=false -input=false
+terraform -chdir=terraform/cloudflare/tests/games-mail test -no-color
+```
+
+Initialization downloads the declared provider if it is not already cached;
+the tests themselves perform only mocked plans. CI runs this regression check.
+
 ## Recover missing public DNS
 
 Terraform owns the public lab CNAME records through

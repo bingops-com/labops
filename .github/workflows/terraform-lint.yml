@@ -39,6 +39,13 @@ jobs:
       - name: Check Terraform formatting
         run: terraform fmt -check -recursive terraform
 
+      - name: Check optional Games mail DNS with mocked providers
+        run: |
+          terraform -chdir=terraform/cloudflare init -backend=false -input=false
+          terraform -chdir=terraform/cloudflare validate -no-color
+          terraform -chdir=terraform/cloudflare/tests/games-mail init -backend=false -input=false
+          terraform -chdir=terraform/cloudflare/tests/games-mail test -no-color
+
       - name: Run TFLint in all terraform subdirectories
         run: |
           find terraform -type f -name "*.tf" -exec dirname {} \; | sort -u | while read -r dir; do
