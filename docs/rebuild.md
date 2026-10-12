@@ -60,9 +60,10 @@ configs are sensitive generated state, not documentation.
    archive reuses the existing bucket-scoped R2 key under the dedicated
    `slots` prefix; verify WAL archival and one completed backup before opening
    ranked play. See `apps/workloads/slots/README.md`.
-   Games is prepared with manual synchronization. Recover its R2 mapping,
-   map the shared SMTP password and DKIM key from Bitwarden, and configure the
-   public SMTP egress IP and DKIM DNS through the owning helper. Publish the
+   Games is prepared with manual synchronization. Recover its R2 and tracked
+   SMTP/DKIM mappings from Bitwarden; use the owning helper if their UUIDs
+   change. Public SMTP egress IP and DKIM DNS metadata remain to be configured
+   through that helper. Publish the
    verified Postfix and pinned Games images, then reconcile the manual mail
    Application after cert-manager and Bitwarden are ready. Verify outbound
    port 25, reverse DNS and real delivery; see `apps/platform/mail/labprod/README.md`.
