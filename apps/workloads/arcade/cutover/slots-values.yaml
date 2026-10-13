@@ -1,0 +1,8 @@
+# Not referenced by GitOps. Requires the new chart and the verified cutover.
+database:
+  sharedAccounts: true
+  cnpg:
+    enabled: true
+  existingSecret:
+    name: arcade-database
+    key: uri

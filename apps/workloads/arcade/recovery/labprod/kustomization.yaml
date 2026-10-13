@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# For a NEW incarnation after loss; never patch bootstrap on a live cluster.
+resources:
+  - ../../staging/labprod
+patches:
+  - target:
+      group: postgresql.cnpg.io
+      version: v1
+      kind: Cluster
+      name: arcade-postgresql
+    patch: |-
+      - op: replace
+        path: /spec/bootstrap
+        value:
+          recovery:
+            source: arcade-recovery
+            database: arcade
+            owner: arcade
+      - op: add
+        path: /spec/externalClusters
+        value:
+          - name: arcade-recovery
+            plugin:
+              name: barman-cloud.cloudnative-pg.io
+              parameters:
+                barmanObjectName: arcade-postgresql
+                serverName: arcade-postgresql-g1
+      - op: replace
+        path: /spec/plugins/0/parameters/serverName
+        value: arcade-postgresql-g2

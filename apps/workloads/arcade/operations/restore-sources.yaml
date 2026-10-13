@@ -1,0 +1,48 @@
+# Disposable restore copies, never source primaries. Operator action only.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: arcade-games-restore
+  namespace: games
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie
+  instances: 1
+  bootstrap:
+    recovery:
+      source: games-source
+      database: games
+      owner: games
+  externalClusters:
+    - name: games-source
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: games-postgresql
+          serverName: games-postgresql-g1
+  storage: {size: 4Gi, storageClass: local-path}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: arcade-slots-restore
+  namespace: slots
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie
+  instances: 1
+  bootstrap:
+    recovery:
+      source: slots-source
+      database: slots
+      owner: slots
+  externalClusters:
+    - name: slots-source
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: slots-postgresql
+          serverName: slots-postgresql-g1
+  storage: {size: 4Gi, storageClass: local-path}

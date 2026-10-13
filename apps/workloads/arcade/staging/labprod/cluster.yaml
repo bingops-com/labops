@@ -1,0 +1,24 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: arcade-postgresql
+  namespace: games
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie
+  instances: 1
+  bootstrap:
+    initdb:
+      database: arcade
+      owner: arcade
+      dataChecksums: true
+  storage:
+    size: 8Gi
+    storageClass: local-path
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: arcade-postgresql
+        serverName: arcade-postgresql-g1
