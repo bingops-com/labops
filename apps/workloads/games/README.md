@@ -114,7 +114,7 @@ on 2026-10-12. It is the rollback reference for the following release.
 
 ### Analytics and Bombermat release
 
-The pinned release comes from merged [Games PR #4](https://github.com/bingops-com/games/pull/4).
+The previous analytics release came from merged [Games PR #4](https://github.com/bingops-com/games/pull/4).
 It restores the four Bombermat arenas and adds the administrator dashboard with
 real PostgreSQL aggregates, UTC registration/report charts for 7/30/90 days,
 cumulative account participation totals, live room metadata and moderation.
@@ -124,10 +124,46 @@ counted per room. There is no new secret, external analytics service or database
 migration: the schema remains 8. Recovery inputs and ownership remain those
 documented above and in `docs/authentik.md` and the CNPG recovery runbook.
 
-The pinned chart and image use merge commit
+That chart and image used merge commit
 `1fa5c6a4a1eb29c175d2b7e406a17f7a3888723e`. Its master image workflow passed
 builds, tests and the vulnerability scan; anonymous GHCR access and Linux/amd64
 support were verified on 2026-10-12.
+
+### Gameplay release and rollout ownership
+
+The candidate chart/image pair is now
+`33fb5d752b538db203b629483ad9fb8f85d4e444`, the published merge of
+[Games PR #5](https://github.com/bingops-com/games/pull/5). It removes Ono's
+active-player pointer, fixes one-card announcements and direction animation,
+restores held bomb placement in Bombermat and drawing fills, and adds the
+Codenoms clue/team announcements and common victory/defeat results. The
+administrator dashboard and four Bombermat arenas remain present. Shared
+accounts stay off; no consolidation, SQL migration or new credential is part
+of this application upgrade.
+
+Merging application source does not deploy it: both immutable pins above must
+advance together. Slots synchronizes automatically after its LabOps pins change;
+Games deliberately remains manual. A Games rollout therefore also requires an
+explicitly authorized sync of `games-labprod`, after Argo has observed the new
+Application specification. Do not enable automatic sync to bypass the existing
+production acceptance gate. Check the desired chart/image, Argo revisions and
+deployment image rather than restarting a pod running the previous pin.
+
+Before acceptance, require both app master image workflows and the Games
+publication check to pass, then follow the existing backup/rollout checks.
+After rollout, verify pointer removal, held Space bombing, drawing fill, the
+three-second clue and green/red results, and reload clients for fresh assets.
+Until repayment is deployed in Slots, the previous standalone application
+images remain rollback candidates; the repayment release has its own wallet
+compatibility condition in the Slots runbook.
+
+Reconstruction uses the declared source/image pair and the existing runbooks,
+without chat history. There are no new non-Git inputs; existing R2/Bitwarden
+recovery remains documented below. Reconciliation can retry the same immutable
+release after partial failure. LabOps owns version selection and Argo CD owns
+application reconciliation; application repositories own publication first.
+Safe verification reads only health, image tags, readiness and Argo status,
+never Secrets, recovery codes or wallet contents.
 
 For future upgrades, keep the deployment PR draft while Games is unmerged or
 its image is unpublished. Merge Games first, wait for its master image workflow

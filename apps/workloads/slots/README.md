@@ -7,17 +7,37 @@ CNPG resources declared throughout acceptance to prevent automated pruning.
 Slots is the public fictional-credit game at `https://slots.lab.bingo`. Argo CD
 combines the Helm chart and immutable application commit from
 `bingops-com/slots` with the production values and prerequisite resources in
-this directory. Merge the slots application PR first: its push workflow must
-publish the pinned `sha-8139c3c3a9a26e5ef0e5daa7542c4da37536357d` image before
-this deployment PR is merged. The GHCR package must be public because the pod
-has no registry credential.
+this directory. Application source merges do not change these pins. The candidate
+chart/image pair is `74ea2b0739177d5af60f2fa8730cb2d0d59621c5`, the published
+merge of [Slots PR #4](https://github.com/bingops-com/slots/pull/4). The GHCR
+package must be public because the pod has no registry credential.
 
-This version removes the continuous sea ambience when a game opens and after
-free spins. Action effects, reel/coin sounds and bonus melodies remain available.
-The chart, server and database schema are unchanged by this audio fix. Argo CD
+This release restores illustrations, multiplayer blackjack seat/multiple-hand
+selection and deal timing, fixes mobile/desktop dialogs and adds guarded opt-in
+shared accounts. Shared mode remains off, with the existing standalone CNPG
+database and backups. Continuous sea ambience stays removed; action effects,
+reel/coin sounds and bonus melodies remain available. Argo CD
 replaces the single Slots instance when its image changes, briefly interrupting
 play; PostgreSQL accounts, balances and backups are preserved. After an
 authorized rollout, reload the page so the service worker updates the cached UI.
+
+The deployment PR remains a draft while
+[Slots PR #5](https://github.com/bingops-com/slots/pull/5) adds advance repayment.
+Before marking it ready, merge that application PR, wait for its master image
+workflow, verify anonymous Linux/amd64 image access, and replace **both** Slots
+pins with the resulting published merge commit. Never select its unpublished or
+unmerged branch commit. Repayment transfers credits from balance to score while
+reducing debt and stores preserved points in `wallet.banked`, without a new SQL
+schema. After the first repayment, an older engine that ignores `banked` is not
+a safe rollback unless that wallet field is preserved. The source accounts and
+balances must not be reset to force a rollback.
+
+Slots retains automatic Argo synchronization: merging the finalized LabOps PR
+triggers the rollout. Games remains manual as documented in its runbook. No
+new external inputs or bootstrap actions are introduced. Application publication
+precedes LabOps version selection; Argo retries the declared pair idempotently.
+An operator can reconstruct it from Git and the existing CNPG/R2 recovery inputs
+below and verify health, immutable image tags and readiness without exposing data.
 
 ## Acceptance gate
 
