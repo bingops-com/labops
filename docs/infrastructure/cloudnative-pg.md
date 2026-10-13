@@ -18,6 +18,15 @@ owns the ObjectStore and scheduled backup; synchronize only after the prerequisi
 in [the Games runbook](../../apps/workloads/games/README.md) are complete. Slots
 similarly owns `slots-postgresql` in `slots` with the `slots` R2 prefix.
 
+The prepared common-account successor is `games/arcade-postgresql`, database
+`arcade`, with a dedicated `arcade` backup prefix. It is excluded from the active
+GitOps root until a reviewed provisioning/migration is authorized. Keep the
+existing Games/Slots clusters and archive generations during acceptance.
+The [Arcade runbook](../../apps/workloads/arcade/README.md) owns its double-login
+proofs, declarative write freeze, generated credential synchronization, initial
+merge and subsequent common-database recovery. CNPG still generates the app
+credential; the shared R2/Bitwarden credential is unchanged.
+
 During the completed namespace migration, `rom-postgresql` restored the `romm` database
 and owner from external server `romm-postgresql-g1`, archives as
 `rom-postgresql-g2`, and omits the application Secret. CNPG generates a fresh

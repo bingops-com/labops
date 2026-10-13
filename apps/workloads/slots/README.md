@@ -1,5 +1,9 @@
 # Slots
 
+The opt-in common account/database migration with Games is owned by
+[Arcade](../arcade/README.md). Existing values remain standalone; keep the source
+CNPG resources declared throughout acceptance to prevent automated pruning.
+
 Slots is the public fictional-credit game at `https://slots.lab.bingo`. Argo CD
 combines the Helm chart and immutable application commit from
 `bingops-com/slots` with the production values and prerequisite resources in

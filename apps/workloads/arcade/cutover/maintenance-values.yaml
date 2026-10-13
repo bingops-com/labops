@@ -1,0 +1,2 @@
+# Apply to both app value sets only during an explicitly authorized write freeze.
+maintenance: true

@@ -1,5 +1,10 @@
 # Games
 
+Shared player accounts and PostgreSQL consolidation with Slots are prepared
+separately in [Arcade](../arcade/README.md). These production values keep the
+existing standalone database until the reviewed migration/cutover; do not disable
+its CNPG resources when selecting common credentials.
+
 Prepared public multiplayer service at `https://games.lab.bingo`. Argo CD reads
 the public Games chart at an immutable commit, with the matching commit image.
 LabOps owns namespace, R2 mapping, database backups, Cloudflare routing and DNS.

@@ -89,6 +89,14 @@ configs are sensitive generated state, not documentation.
    codes, backup and isolated restore before public use. Existing accounts
    create their own codes from “Mon compte” using their current password.
    Ownership and repeatable setup: `apps/workloads/games/README.md`.
+   Common Games/Slots accounts are prepared but not activated by the GitOps
+   root. The reviewed candidate keeps the original clusters while introducing
+   `games/arcade-postgresql` and the `arcade` R2 prefix. First migration requires
+   proof of both passwords for collisions; reconstruction after cutover restores
+   the common backup instead. Ownership, maintenance write freeze, generated
+   credential recovery and the recovery overlay are in
+   `apps/workloads/arcade/README.md`. Never enable shared mode before the common
+   database is restored/prepared, or retire source storage during a cutover.
 9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
    verify `https://lab.bingo` through LAN or Tailscale without publishing it
    through the public Cloudflare Tunnel. The portal image is built from

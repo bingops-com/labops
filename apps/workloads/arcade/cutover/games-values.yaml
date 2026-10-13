@@ -1,0 +1,19 @@
+# Merge with the current production values only after a tested migration,
+# published application images and explicit rollout authorization.
+database:
+  sharedAccounts: true
+  # KEEP the source cluster declared. Retirement is a separate reviewed change.
+  cnpg:
+    enabled: true
+  existingSecret:
+    name: arcade-postgresql-app
+    key: uri
+    backupRunbook: apps/workloads/arcade/README.md
+networkPolicy:
+  databaseTo:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: games
+      podSelector:
+        matchLabels:
+          cnpg.io/cluster: arcade-postgresql

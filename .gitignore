@@ -23,3 +23,6 @@ apps/**/charts
 
 # Cluster API provider credentials
 capi/credentials.env
+
+# Generated Python cache; private account-link proofs must stay outside Git.
+__pycache__/

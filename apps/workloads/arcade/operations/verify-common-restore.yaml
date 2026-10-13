@@ -1,0 +1,24 @@
+# Read-only verification copy of the newly merged database backup.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: arcade-common-restore
+  namespace: games
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie
+  instances: 1
+  bootstrap:
+    recovery:
+      source: arcade-source
+      database: arcade
+      owner: arcade
+  externalClusters:
+    - name: arcade-source
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: arcade-postgresql
+          serverName: arcade-postgresql-g1
+  storage: {size: 8Gi, storageClass: local-path}

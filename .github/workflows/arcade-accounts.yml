@@ -1,0 +1,88 @@
+name: Shared player accounts
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - apps/workloads/arcade/**
+      - hacks/link-game-accounts.py
+      - hacks/arcade-pg-services.py
+      - .github/workflows/arcade-accounts.yml
+  push:
+    branches: [master]
+    paths:
+      - apps/workloads/arcade/**
+      - hacks/link-game-accounts.py
+      - hacks/arcade-pg-services.py
+      - .github/workflows/arcade-accounts.yml
+
+permissions:
+  contents: read
+
+jobs:
+  rehearsal:
+    name: Rehearse shared accounts and restore
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-retries 30
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout reviewed Games source
+        uses: actions/checkout@v4
+        with:
+          repository: bingops-com/games
+          ref: 4670a11f8d5deba82c870e48d82a4ab453fb1f33
+          path: sources/games
+          persist-credentials: false
+      - name: Checkout reviewed Slots source
+        uses: actions/checkout@v4
+        with:
+          repository: bingops-com/slots
+          ref: d2ffcdff42ec7541166ea23fdb4374e0a480a9bf
+          path: sources/slots
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: sources/games/go.mod
+          cache-dependency-path: |
+            sources/games/go.sum
+            sources/slots/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            sources/games/web/package-lock.json
+            sources/slots/web/package-lock.json
+      - name: Build Games
+        working-directory: sources/games
+        run: make web && CGO_ENABLED=0 go build -o "$RUNNER_TEMP/arcade-games" ./cmd/games
+      - name: Build Slots
+        working-directory: sources/slots
+        run: make web && CGO_ENABLED=0 go build -o "$RUNNER_TEMP/arcade-slots" ./cmd/slots
+      - name: Use compatible PostgreSQL 18 clients
+        # The host client may be older than the service. Reuse the exact
+        # already-pulled service image; mount only this job's disposable files.
+        run: |
+          mkdir -p "$RUNNER_TEMP/pg-bin"
+          for cli in psql pg_dump pg_restore createdb dropdb; do printf '%s\n' '#!/usr/bin/env bash' 'exec docker run --rm -i --network host -v "$RUNNER_TEMP:$RUNNER_TEMP" -e PGHOST -e PGPORT -e PGUSER -e PGPASSWORD -e PGDATABASE -e PGSERVICE -e PGSERVICEFILE -e PGPASSFILE --entrypoint "$(basename "$0")" postgres:18.4 "$@"' > "$RUNNER_TEMP/pg-bin/$cli"; chmod +x "$RUNNER_TEMP/pg-bin/$cli"; done
+          echo "$RUNNER_TEMP/pg-bin" >> "$GITHUB_PATH"
+      - name: Test private proof and client configuration helpers
+        run: python3 -B -m unittest discover -s apps/workloads/arcade/tests -p 'test_*.py'
+      - name: Rehearse import, merge, both applications and isolated restore
+        run: TMPDIR="$RUNNER_TEMP" ARCADE_GAMES_BINARY="$RUNNER_TEMP/arcade-games" ARCADE_SLOTS_BINARY="$RUNNER_TEMP/arcade-slots" python3 -B apps/workloads/arcade/tests/integration.py

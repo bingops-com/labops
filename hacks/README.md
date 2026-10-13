@@ -13,6 +13,14 @@
   it only when `--purge` and an exact `--confirm-bucket` value are both given.
   It consumes the ignored Cloudflare Terraform credential without printing the
   token or object names.
+- `link-game-accounts.py` is run by each player, not with collected player
+  passwords. It verifies both Games/Slots logins and saves a private proof for
+  the reviewed account migration.
+- `arcade-pg-services.py` generates mode-0600 libpq service/password files for
+  the two disposable restored copies and the new Arcade destination. It reads
+  only the three named generated Secrets, never source-primary credentials;
+  see [Arcade](../apps/workloads/arcade/README.md) for authorization, ports,
+  least privileges, credential recovery and cleanup.
 
 Examples:
 
