@@ -115,11 +115,10 @@ def temporary_session(connection, name, password):
                CODER_DISABLE_PASSWORD_AUTH="false", CODER_TELEMETRY_ENABLE="false",
                CODER_PROVISIONER_DAEMONS="0", CODER_UPDATE_CHECK="false",
                CODER_DERP_SERVER_ENABLE="false",
-               CODER_EXTERNAL_AUTH_GITHUB_DEFAULT_PROVIDER_ENABLE="false",
                CODER_CONFIG_DIR="/tmp/coder-recovery-config",
                CODER_CACHE_DIRECTORY="/tmp/coder-recovery-cache")
     with tempfile.TemporaryFile(mode="w+t") as output:
-        process = subprocess.Popen(["coder", "server"], env=env, cwd="/tmp", stdout=output, stderr=output)
+        process = subprocess.Popen(["coder", "server", "--external-auth-github-default-provider-enable=false"], env=env, cwd="/tmp", stdout=output, stderr=output)
         try:
             api = API(base=local)
             for _ in range(60):
