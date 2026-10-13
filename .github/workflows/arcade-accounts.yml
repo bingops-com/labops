@@ -80,6 +80,8 @@ jobs:
         # already-pulled service image; mount only this job's disposable files.
         run: |
           mkdir -p "$RUNNER_TEMP/pg-bin"
+          # Expand these variables when the generated wrappers run, not here.
+          # shellcheck disable=SC2016
           for cli in psql pg_dump pg_restore createdb dropdb; do printf '%s\n' '#!/usr/bin/env bash' 'exec docker run --rm -i --network host -v "$RUNNER_TEMP:$RUNNER_TEMP" -e PGHOST -e PGPORT -e PGUSER -e PGPASSWORD -e PGDATABASE -e PGSERVICE -e PGSERVICEFILE -e PGPASSFILE --entrypoint "$(basename "$0")" postgres:18.4 "$@"' > "$RUNNER_TEMP/pg-bin/$cli"; chmod +x "$RUNNER_TEMP/pg-bin/$cli"; done
           echo "$RUNNER_TEMP/pg-bin" >> "$GITHUB_PATH"
       - name: Test private proof and client configuration helpers
