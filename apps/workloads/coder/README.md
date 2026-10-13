@@ -6,7 +6,7 @@ Coder provides the private control plane at `https://coder.lab.bingo`. The `bing
 
 Argo CD owns the `coder-labprod` workload, the retained home PVC, SSH Service, secret mappings and backup schedules. Coder's Terraform template owns only the workspace Deployment. Terraform's network stack owns tailnet DNS. Authentik owns identity and authorization. Bitwarden owns the R2 credential.
 
-This change is prepared locally. Image publication, deployment, login, connectivity, backup and restore checks remain pending. Update this paragraph with dated runtime evidence after rollout; a successful local render does not establish operational readiness.
+The control plane, private HTTPS and Authentik discovery are deployed through PR #142. The workspace image is published; this change pins its digest and proposes automatic workspace initialization. These additions have not been deployed. Initial bootstrap-image publication and backup/restore acceptance remain pending. Update this paragraph with dated runtime evidence after acceptance.
 
 ## Components
 
@@ -20,6 +20,7 @@ This change is prepared locally. Image publication, deployment, login, connectiv
 | SSH | Port 2222 in the pod, private NodePort 30222, public-key authentication only. |
 | Home backup | Every four hours in UTC to `coder-workspaces/bingops-lab/current`, changed/deleted objects archived for 30 days. |
 | Tools | Python with scientific packages, Go, Node/npm, Git, tmux, build tools and OpenSSH. |
+| Automatic setup | A five-minute CronJob provisions the OIDC owner and template once, then preserves the existing workspace. |
 | Monitoring | Coder ServiceMonitor, CNPG PodMonitor, Gatus health check and Portal links/backup inventory. |
 
 The persistent home is independent of the workspace lifecycle. Stop, start or replacement must preserve it. The requested local-path size is not a disk quota; track actual node storage and usage.
@@ -38,7 +39,9 @@ The current cluster uses Flannel without a NetworkPolicy enforcement controller.
 
 The tracked `coder.yaml` Authentik blueprint declares a public OIDC PKCE client and a `coder-admins` group containing only `bingops` (`therealbingops@gmail.com`). Application policy and Coder's allowed-group check both restrict login. Password authentication and later self-signups are disabled.
 
-Coder v2.36.7 supports a public OIDC client and gives the first OIDC user the owner role even when signups are disabled. The first login must therefore be `bingops` through Authentik. No local bootstrap administrator or OIDC client secret is created.
+The automatic setup provisions `bingops` as an active OIDC owner before normal login. It uses the official `coder server create-admin-user` recovery/bootstrap command to obtain temporary operator access, then uses the API to create or verify the declared OIDC identity. Its temporary local identity and password are derived in memory, with separate HMAC purposes, from the existing CNPG credential and installation generation. This lets a retry resume a partial attempt without accumulating accounts or requiring a new recoverable secret. The temporary identity is deleted as soon as a fifteen-minute setup token has been issued to the OIDC owner; that token is revoked at completion.
+
+Coder exempts owners from its password-authentication disable flag for emergency recovery. Therefore the permanent `bingops` account must remain OIDC with no local password. A completed setup must leave no active `@coder-bootstrap.invalid` identity. Interrupted attempts are cleaned on retry. No OIDC client secret or long-lived setup credential is needed.
 
 Verify the first owner, its login type and the sole group member after login. Do not enable paid role-sync settings as a substitute for this check. Removing group access must also revoke active Coder tokens/sessions and suspend the account if it had previously signed in.
 
@@ -50,7 +53,7 @@ Verify the first owner, its login type and the sole group member after login. Do
 | R2 access pair | Existing bucket-scoped Object Read and Write credential in the Bitwarden `labprod` project; recover from Bitwarden or replace at Cloudflare and update the mapped values. It is reused for dedicated Coder prefixes, not prefix-isolated from other consumers of the same bucket. |
 | Authentik account access | Operator password manager and the Authentik recovery runbook. The public PKCE client adds no shared secret. |
 | SSH private key | Remains on the operator's iPhone. Git stores only its public key; replace that key declaratively if the device/key is lost. |
-| Coder session token for template setup | Short-lived generated credential issued to `bingops` after SSO. Keep in process environment, revoke after setup, recreate through authenticated Coder access if needed. |
+| Coder setup credentials | Generated in memory by the operator-owned job using the existing CNPG application credential. Temporary local identities are deleted and setup tokens revoked; an interrupted token expires after fifteen minutes. No additional recoverable secret is required. |
 | Workspace image publication | Existing GitHub Actions package-write token; configure the GHCR package for anonymous read, or recover a scoped pull credential separately. No token is committed. |
 
 The generated CNPG password, Coder agent token and Terraform state must never be printed or committed. Coder stores its template/state in PostgreSQL. A restored database regenerates namespace application credentials through CNPG.
@@ -59,11 +62,31 @@ The generated CNPG password, Coder agent token and Terraform state must never be
 
 These steps change live infrastructure and are for the installation authorized by the operator.
 
-1. Publish the reviewed workspace image with the existing Docker workflow. Resolve its manifest digest and replace the release-tag reference in `base/template/main.tf` with `ghcr.io/bingops-com/coder-workspace@sha256:...`.
+1. Verify the pinned workspace image is public. The bootstrap image is built without publication in pull requests and published as `0.1.0` by the existing Docker workflow after an authorized merge. Verify anonymous pull access and pin its published digest before completing runtime acceptance. The first GitOps sync can temporarily wait for this initial image publication.
 2. Integrate the reviewed GitOps changes. Let Authentik and private DNS reconcile before Coder becomes available. The existing parent split route already covers the name.
 3. Verify the namespace-local token sync and Bitwarden mappings, then CNPG readiness, Coder health and the certificate.
-4. Open the private URL over Tailscale and sign in as `bingops` through Authentik. Verify the sole owner and create a short-lived setup token.
-5. On an operator host with the pinned Coder CLI, run the idempotent workspace helper. It refuses an unpinned image and requires the token only through environment.
+4. Let `coder-auto-setup` run in `coder-workspaces`. Its first pod binds the retained home and creates the OIDC owner, imports the template, sets default autostop to zero and creates `bingops/lab` with `--stop-after 0h`.
+5. Verify that the job completes and leaves only the permanent OIDC owner. Open the private URL through Tailscale and use the normal Authentik login. No manual template import or setup token is required.
+
+## Automatic initialization and retries
+
+The CronJob uses a small image containing the pinned official Coder CLI and Python. It can read only its own ServiceAccount metadata and the generated `coder-postgresql-app` Secret. The development container has neither of these permissions nor the bootstrap token. The job retrieves the connection only when initialization is needed and does not write it into the home or its logs.
+
+A file lock on the retained home serializes setup. The non-sensitive marker `.config/lab/bootstrap.json` records the desired definition hash, bootstrap ServiceAccount UID, owner ID and workspace ID. If the definition and installation identity match and the database is initialized, the next run exits without creating credentials or changing the workspace.
+
+The job preserves an existing identity only when its username, email, active status and OIDC login type match the declaration. It refuses to reset a conflicting identity. Template changes are imported and activated, but an existing workspace is not stopped, restarted or recreated automatically. Adoption of a new image in a running workspace is a deliberate operation, so an active simulation is preserved.
+
+New installations and rebuilt namespaces have a new ServiceAccount UID and re-run setup against the recovered database. A database-only recovery must update `CODER_BOOTSTRAP_GENERATION` alongside the archive generation. On partial failure, the job retries, removes reserved temporary identities and resumes the missing operations. The reserved `setup-*` identities with the `@coder-bootstrap.invalid` suffix belong exclusively to this process.
+
+The job is scheduled rather than a PostSync hook: its first pod binds the `WaitForFirstConsumer` home PVC, which would otherwise prevent application health and deadlock a hook waiting for it. The current generation and input files are all in Git.
+
+For an authorized immediate retry, first confirm there is no active setup Job, then create one from the declared CronJob:
+
+```sh
+kubectl --context labprod -n coder-workspaces create job coder-setup-manual --from=cronjob/coder-auto-setup
+```
+
+The manual helper remains available for operator diagnosis after SSO; it is not part of the ordinary setup. It refuses an unpinned image and reads a short-lived token only from environment:
 
 ```sh
 read -rsp 'Coder session token: ' CODER_SESSION_TOKEN; export CODER_SESSION_TOKEN
@@ -77,9 +100,9 @@ CODER_BIN=/path/to/coder ./hacks/setup-coder-workspace.sh
 unset CODER_SESSION_TOKEN
 ```
 
-The helper imports the Git-tracked template, sets its default autostop to zero, and creates the single workspace with `--stop-after 0h` if it does not exist. Check an existing workspace's schedule separately; the helper does not silently restart or replace it.
+The optional helper imports the Git-tracked template, sets its default autostop to zero, and creates the single workspace with `--stop-after 0h` if it does not exist. Check an existing workspace's schedule separately; the helper does not silently restart or replace it.
 
-Retrying after partial initialization updates the template and retains the independent home. Creating another name or owner is rejected by the template precondition. A stopped workspace is restarted through Coder, not by manually creating a conflicting Deployment.
+Creating another real workspace name or owner is rejected by the template precondition; Coder's ownerless preview plans are allowed. A stopped workspace is restarted through Coder, not by manually creating a conflicting Deployment.
 
 ## Use from iSH
 
@@ -200,3 +223,5 @@ bash -n hacks/setup-coder-workspace.sh apps/workloads/coder/base/template/startu
 ```
 
 Validate the template in an initialized temporary directory without a plan or live provider operations. Build and test the image before importing the template. Authentication, private routing, archive restoration and iSH connectivity require runtime acceptance after deployment.
+
+`coder-bootstrap-test.yml` builds the candidate image and exercises the real installer against disposable Coder and PostgreSQL containers. Only Kubernetes credential lookup is replaced with a test fixture. It verifies the OIDC owner, removal of temporary access, an unchanged second run, and template updates without rebuilding the existing workspace. This does not replace an actual Authentik sign-in or backup restoration check.
