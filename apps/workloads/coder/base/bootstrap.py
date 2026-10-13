@@ -184,7 +184,7 @@ def setup(desired):
         if "owner" not in roles:
             bootstrap_api.call(f"/api/v2/users/{owner_id}/roles", "PUT", {"roles": sorted(roles | {"owner"})})
         owner_token = bootstrap_api.call(f"/api/v2/users/{owner_id}/keys/tokens", "POST", {
-            "lifetime": 900_000_000_000, "scopes": ["all"], "token_name": name + "-" + secrets.token_hex(4),
+            "lifetime": 900_000_000_000, "scopes": ["coder:all"], "token_name": name + "-" + secrets.token_hex(4),
         })["key"]
         SENSITIVE.append(owner_token)
         owner_api = API(owner_token)
