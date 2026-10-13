@@ -10,7 +10,7 @@ admin:
   group: games-admins
 image:
   repository: ghcr.io/bingops-com/games
-  tag: sha-1fa5c6a4a1eb29c175d2b7e406a17f7a3888723e
+  tag: sha-33fb5d752b538db203b629483ad9fb8f85d4e444
 networkPolicy:
   enabled: true
   # Authentik's public issuer is served by Cloudflare. Restrict TCP/443 to
