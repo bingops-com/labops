@@ -42,15 +42,16 @@ class APIError(RuntimeError):
 
 
 class API:
-    def __init__(self, token=""):
+    def __init__(self, token="", base=None):
         self.token = token
+        self.base = base or BASE
 
     def call(self, path, method="GET", payload=None, missing=False):
         body = None if payload is None else json.dumps(payload).encode()
         headers = {"Content-Type": "application/json"}
         if self.token:
             headers["Coder-Session-Token"] = self.token
-        request = urllib.request.Request(BASE + path, data=body, method=method, headers=headers)
+        request = urllib.request.Request(self.base + path, data=body, method=method, headers=headers)
         try:
             with urllib.request.urlopen(request, timeout=30) as response:
                 content = response.read()
@@ -105,6 +106,52 @@ def wait_for_server():
     raise RuntimeError("Coder did not become available")
 
 
+def temporary_session(connection, name, password):
+    # Public password authentication remains disabled. This recovery instance
+    # accepts connections only inside the setup pod and runs no provisioners.
+    local = "http://127.0.0.1:18080"
+    env = dict(os.environ, CODER_PG_CONNECTION_URL=connection,
+               CODER_ACCESS_URL=local, CODER_HTTP_ADDRESS="127.0.0.1:18080",
+               CODER_DISABLE_PASSWORD_AUTH="false", CODER_TELEMETRY_ENABLE="false",
+               CODER_PROVISIONER_DAEMONS="0", CODER_UPDATE_CHECK="false",
+               CODER_DERP_SERVER_ENABLE="false",
+               CODER_EXTERNAL_AUTH_GITHUB_DEFAULT_PROVIDER_ENABLE="false",
+               CODER_CONFIG_DIR="/tmp/coder-recovery-config",
+               CODER_CACHE_DIRECTORY="/tmp/coder-recovery-cache")
+    with tempfile.TemporaryFile(mode="w+t") as output:
+        process = subprocess.Popen(["coder", "server"], env=env, cwd="/tmp", stdout=output, stderr=output)
+        try:
+            api = API(base=local)
+            for _ in range(60):
+                if process.poll() is not None:
+                    output.seek(0)
+                    log("\n".join(output.read().splitlines()[-20:]))
+                    raise RuntimeError("Loopback-only Coder recovery instance exited")
+                try:
+                    api.call("/api/v2/users/first", missing=True)
+                    break
+                except (RuntimeError, urllib.error.URLError):
+                    time.sleep(1)
+            else:
+                raise RuntimeError("Loopback-only Coder recovery instance did not become ready")
+            login = {"email": name + RESERVED_DOMAIN, "password": password}
+            try:
+                return api.call("/api/v2/users/login", "POST", login)["session_token"]
+            except APIError as error:
+                if error.status != 401:
+                    raise
+            log("Creating temporary bootstrap access through the official Coder CLI")
+            cli(["server", "create-admin-user"], extra_env={"CODER_USERNAME": name, "CODER_EMAIL": name + RESERVED_DOMAIN, "CODER_PASSWORD": password, "CODER_PG_CONNECTION_URL": connection})
+            return api.call("/api/v2/users/login", "POST", login)["session_token"]
+        finally:
+            process.terminate()
+            try:
+                process.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=10)
+
+
 def setup(desired):
     database = kubernetes("/api/v1/namespaces/coder/secrets/coder-postgresql-app")
     connection = base64.b64decode(database["data"]["uri"]).decode()
@@ -118,16 +165,7 @@ def setup(desired):
     owner_token = ""
     owner_api = None
     try:
-        login = {"email": name + RESERVED_DOMAIN, "password": password}
-        try:
-            session = API().call("/api/v2/users/login", "POST", login)["session_token"]
-            log("Resuming temporary bootstrap access from an interrupted attempt")
-        except APIError as error:
-            if error.status != 401:
-                raise
-            log("Creating temporary bootstrap access through the official Coder CLI")
-            cli(["server", "create-admin-user"], extra_env={"CODER_USERNAME": name, "CODER_EMAIL": name + RESERVED_DOMAIN, "CODER_PASSWORD": password, "CODER_PG_CONNECTION_URL": connection})
-            session = API().call("/api/v2/users/login", "POST", login)["session_token"]
+        session = temporary_session(connection, name, password)
         SENSITIVE.append(session)
         bootstrap_api = API(session)
         bootstrap_id = bootstrap_api.call("/api/v2/users/me")["id"]

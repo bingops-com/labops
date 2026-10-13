@@ -10,6 +10,8 @@ spec = importlib.util.spec_from_file_location("bootstrap", "/scripts/bootstrap.p
 bootstrap = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bootstrap)
 bootstrap.BASE = "http://coder:8080"
+# Host cleanup must work when the CI runner UID differs from the image UID.
+os.umask(0)
 
 
 def kubernetes(path):
