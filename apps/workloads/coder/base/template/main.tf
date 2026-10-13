@@ -19,6 +19,8 @@ data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 
 locals {
+  # Coder imports/dry-runs have no owner; the pinned provider supplies these defaults.
+  template_preview = data.coder_workspace_owner.me.name == "default" && data.coder_workspace_owner.me.email == "default@example.com"
   labels = {
     "app.kubernetes.io/name" = "coder-workspace"
     "labops.bingo/workspace" = "bingops-lab"
@@ -49,7 +51,7 @@ resource "kubernetes_deployment_v1" "lab" {
   }
   lifecycle {
     precondition {
-      condition     = data.coder_workspace_owner.me.name == "bingops" && data.coder_workspace.me.name == "lab"
+      condition     = local.template_preview || (data.coder_workspace_owner.me.name == "bingops" && data.coder_workspace.me.name == "lab")
       error_message = "This template owns one workspace: bingops/lab, with a dedicated retained home and SSH port."
     }
   }
