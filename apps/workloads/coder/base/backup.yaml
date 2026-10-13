@@ -1,0 +1,53 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: coder-home-r2-backup
+  namespace: coder-workspaces
+spec:
+  schedule: "17 */4 * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 172800
+      template:
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile: {type: RuntimeDefault}
+          containers:
+            - name: rclone
+              image: rclone/rclone:1.75.1
+              command: [/bin/sh, -ec]
+              args:
+                - test -f /data/.lab-initialized; stamp=$(date -u +%Y-%m-%dT%H-%M-%SZ); rclone sync /data r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/current --backup-dir "r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/archive/$stamp" --exclude '/.cache/**' --exclude '/.local/share/pipx/**' --exclude '/.npm/**' --exclude '/.venvs/**' --exclude '**/node_modules/**' --exclude '**/.venv/**' --exclude '**/venv/**' --exclude '/.config/lab/sshd.pid' --exclude '/.config/lab/sshd.log' --checkers 4 --transfers 2 --log-level ERROR; rclone delete r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/archive --min-age 30d --rmdirs --log-level ERROR; echo 'Workspace backup complete'
+              env:
+                - {name: RCLONE_CONFIG_R2_TYPE, value: s3}
+                - {name: RCLONE_CONFIG_R2_PROVIDER, value: Cloudflare}
+                - {name: RCLONE_CONFIG_R2_ENDPOINT, value: "https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com"}
+                - name: RCLONE_CONFIG_R2_ACCESS_KEY_ID
+                  valueFrom: {secretKeyRef: {name: coder-r2-credentials, key: ACCESS_KEY_ID}}
+                - name: RCLONE_CONFIG_R2_SECRET_ACCESS_KEY
+                  valueFrom: {secretKeyRef: {name: coder-r2-credentials, key: ACCESS_SECRET_KEY}}
+              resources:
+                requests: {cpu: 50m, memory: 64Mi}
+                limits: {cpu: "1", memory: 256Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities: {drop: [ALL]}
+                readOnlyRootFilesystem: true
+              volumeMounts:
+                - {name: home, mountPath: /data, readOnly: true}
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - name: home
+              persistentVolumeClaim: {claimName: coder-bingops-home}
+            - {name: tmp, emptyDir: {}}

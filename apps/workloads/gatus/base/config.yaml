@@ -7,6 +7,11 @@ storage:
   path: /data/gatus.db
 
 endpoints:
+  - name: Coder
+    group: Plateforme
+    url: http://coder.coder.svc.cluster.local/healthz
+    interval: 60s
+    conditions: ["[STATUS] == 200"]
   - name: Argo CD
     group: Plateforme
     url: http://argocd-server.argocd-system.svc.cluster.local/healthz

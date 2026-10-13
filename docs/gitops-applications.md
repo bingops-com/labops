@@ -34,6 +34,7 @@ The current application decisions are:
 | Games (prepared, manual sync) | `games-postgresql` (CloudNativePG). | Player accounts are separate; the operator panel requires Authentik, exact `bingops` identity and `games-admins` membership. | WAL and daily backups to the `games` R2 prefix, including administrator action history; offline recovery-code, isolation and runtime acceptance required before publication. |
 | Mail (dormant; excluded from the GitOps root) | No database; Postfix queue on `relay-spool` PVC. | Internal authenticated submission only; no public SMTP endpoint. | Bitwarden owns SMTP/DKIM credentials; cert-manager reissues TLS. Queue survives pod replacement but is disposable after disk loss. See `apps/platform/mail/labprod/README.md`. |
 | Portfolio | None; stateless public site. | Not applicable; no privileged UI. | Rebuild from Git and the immutable image. |
+| Coder (prepared) | `coder-postgresql` (CloudNativePG). | Public OIDC PKCE client restricted to `coder-admins`, only `bingops`; first OIDC owner, password login disabled. | WAL and daily backups to the `coder` R2 prefix; retained home to `coder-workspaces/bingops-lab` with 30-day changed-object history. Both restore acceptance checks are required. |
 | Project Zomboid | None. | Not applicable; the game protocol does not use browser SSO. | Restic backup to the dedicated `bingops-pz-labprod` R2 bucket. |
 
 Update this table in the same change whenever an application's classification

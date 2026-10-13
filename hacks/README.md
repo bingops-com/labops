@@ -7,6 +7,10 @@
   from `BWS_LABPROD_ACCESS_TOKEN` without printing it.
 - `deploy.sh` diffs, temporarily deploys, reports or restores production Argo
   CD Applications. Deployment asks for explicit confirmation.
+- `setup-coder-workspace.sh` imports the pinned Coder template and creates the
+  persistent `bingops/lab` workspace after SSO login. It requires a short-lived
+  `CODER_SESSION_TOKEN`, never prints it, and performs live Coder operations.
+  See [the Coder runbook](../apps/workloads/coder/README.md).
 - `retire-lost-kube-vms.sh` is reserved for the documented total-disk-loss
   recovery and must receive the exact approved VM IDs.
 - `purge-r2-bucket.py` reports whether an R2 bucket contains objects and purges

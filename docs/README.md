@@ -14,6 +14,8 @@
   roll back and remove workloads through the current GitOps model.
 - [Operator helpers](../hacks/README.md): client configuration and lifecycle
   scripts.
+- [Coder development environment](../apps/workloads/coder/README.md): private
+  workspaces, iSH SSH, PostgreSQL and R2 recovery.
 
 ## Agent instructions
 

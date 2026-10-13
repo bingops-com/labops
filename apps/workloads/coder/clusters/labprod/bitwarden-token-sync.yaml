@@ -1,0 +1,361 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coder-token-sync-coder
+  namespace: coder
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: coder-token-sync-coder-source
+  namespace: argocd-system
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["bw-auth-token"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: coder-token-sync-coder-source
+  namespace: argocd-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: coder-token-sync-coder-source
+subjects:
+  - kind: ServiceAccount
+    name: coder-token-sync-coder
+    namespace: coder
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: coder-token-sync-coder-target
+  namespace: coder
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["bw-auth-token"]
+    verbs: ["get", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: coder-token-sync-coder-target
+  namespace: coder
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: coder-token-sync-coder-target
+subjects:
+  - kind: ServiceAccount
+    name: coder-token-sync-coder
+    namespace: coder
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coder-token-sync-coder
+  namespace: coder
+data:
+  sync.py: |
+    import json
+    import ssl
+    import urllib.error
+    import urllib.request
+
+    API = "https://kubernetes.default.svc"
+    CA_FILE = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+    TOKEN_FILE = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    SOURCE = "/api/v1/namespaces/argocd-system/secrets/bw-auth-token"
+    TARGET = "/api/v1/namespaces/coder/secrets/bw-auth-token"
+    TARGET_COLLECTION = "/api/v1/namespaces/coder/secrets"
+
+    with open(TOKEN_FILE, encoding="utf-8") as token_file:
+        bearer = token_file.read().strip()
+
+    context = ssl.create_default_context(cafile=CA_FILE)
+
+    def request(path, method="GET", payload=None, content_type="application/json"):
+        body = None if payload is None else json.dumps(payload).encode()
+        req = urllib.request.Request(
+            API + path,
+            data=body,
+            method=method,
+            headers={
+                "Authorization": f"Bearer {bearer}",
+                "Content-Type": content_type,
+            },
+        )
+        with urllib.request.urlopen(req, context=context, timeout=30) as response:
+            return json.load(response)
+
+    source = request(SOURCE)
+    encoded_token = source.get("data", {}).get("token")
+    if not encoded_token:
+        raise RuntimeError("source Secret does not contain the token key")
+
+    patch = {"data": {"token": encoded_token}}
+    try:
+        request(
+            TARGET,
+            method="PATCH",
+            payload=patch,
+            content_type="application/merge-patch+json",
+        )
+        action = "updated"
+    except urllib.error.HTTPError as error:
+        if error.code != 404:
+            raise
+        request(
+            TARGET_COLLECTION,
+            method="POST",
+            payload={
+                "apiVersion": "v1",
+                "kind": "Secret",
+                "metadata": {"name": "bw-auth-token", "namespace": "coder"},
+                "type": "Opaque",
+                "data": {"token": encoded_token},
+            },
+        )
+        action = "created"
+
+    print(f"{action} coder/bw-auth-token")
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: coder-token-sync-coder
+  namespace: coder
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          serviceAccountName: coder-token-sync-coder
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: sync
+              image: python:3.13.7-alpine3.22
+              imagePullPolicy: IfNotPresent
+              command: ["python", "/scripts/sync.py"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+                readOnlyRootFilesystem: true
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 24Mi
+                limits:
+                  cpu: 100m
+                  memory: 64Mi
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+                  readOnly: true
+          volumes:
+            - name: script
+              configMap:
+                name: coder-token-sync-coder
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coder-token-sync-coder-workspaces
+  namespace: coder-workspaces
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: coder-token-sync-coder-workspaces-source
+  namespace: argocd-system
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["bw-auth-token"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: coder-token-sync-coder-workspaces-source
+  namespace: argocd-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: coder-token-sync-coder-workspaces-source
+subjects:
+  - kind: ServiceAccount
+    name: coder-token-sync-coder-workspaces
+    namespace: coder-workspaces
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: coder-token-sync-coder-workspaces-target
+  namespace: coder-workspaces
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["bw-auth-token"]
+    verbs: ["get", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: coder-token-sync-coder-workspaces-target
+  namespace: coder-workspaces
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: coder-token-sync-coder-workspaces-target
+subjects:
+  - kind: ServiceAccount
+    name: coder-token-sync-coder-workspaces
+    namespace: coder-workspaces
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coder-token-sync-coder-workspaces
+  namespace: coder-workspaces
+data:
+  sync.py: |
+    import json
+    import ssl
+    import urllib.error
+    import urllib.request
+
+    API = "https://kubernetes.default.svc"
+    CA_FILE = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+    TOKEN_FILE = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    SOURCE = "/api/v1/namespaces/argocd-system/secrets/bw-auth-token"
+    TARGET = "/api/v1/namespaces/coder-workspaces/secrets/bw-auth-token"
+    TARGET_COLLECTION = "/api/v1/namespaces/coder-workspaces/secrets"
+
+    with open(TOKEN_FILE, encoding="utf-8") as token_file:
+        bearer = token_file.read().strip()
+
+    context = ssl.create_default_context(cafile=CA_FILE)
+
+    def request(path, method="GET", payload=None, content_type="application/json"):
+        body = None if payload is None else json.dumps(payload).encode()
+        req = urllib.request.Request(
+            API + path,
+            data=body,
+            method=method,
+            headers={
+                "Authorization": f"Bearer {bearer}",
+                "Content-Type": content_type,
+            },
+        )
+        with urllib.request.urlopen(req, context=context, timeout=30) as response:
+            return json.load(response)
+
+    source = request(SOURCE)
+    encoded_token = source.get("data", {}).get("token")
+    if not encoded_token:
+        raise RuntimeError("source Secret does not contain the token key")
+
+    patch = {"data": {"token": encoded_token}}
+    try:
+        request(
+            TARGET,
+            method="PATCH",
+            payload=patch,
+            content_type="application/merge-patch+json",
+        )
+        action = "updated"
+    except urllib.error.HTTPError as error:
+        if error.code != 404:
+            raise
+        request(
+            TARGET_COLLECTION,
+            method="POST",
+            payload={
+                "apiVersion": "v1",
+                "kind": "Secret",
+                "metadata": {"name": "bw-auth-token", "namespace": "coder-workspaces"},
+                "type": "Opaque",
+                "data": {"token": encoded_token},
+            },
+        )
+        action = "created"
+
+    print(f"{action} coder-workspaces/bw-auth-token")
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: coder-token-sync-coder-workspaces
+  namespace: coder-workspaces
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          serviceAccountName: coder-token-sync-coder-workspaces
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: sync
+              image: python:3.13.7-alpine3.22
+              imagePullPolicy: IfNotPresent
+              command: ["python", "/scripts/sync.py"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+                readOnlyRootFilesystem: true
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 24Mi
+                limits:
+                  cpu: 100m
+                  memory: 64Mi
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+                  readOnly: true
+          volumes:
+            - name: script
+              configMap:
+                name: coder-token-sync-coder-workspaces

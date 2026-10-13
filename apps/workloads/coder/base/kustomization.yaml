@@ -1,0 +1,24 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - rbac.yaml
+  - postgresql.yaml
+  - server.yaml
+  - access.yaml
+  - workspace.yaml
+  - backup.yaml
+configMapGenerator:
+  - name: coder-lab-template
+    namespace: coder
+    files:
+      - main.tf=template/main.tf
+      - startup.sh=template/startup.sh
+      - .terraform.lock.hcl=template/.terraform.lock.hcl
+  - name: coder-workspace-ssh
+    namespace: coder-workspaces
+    files:
+      - authorized_keys=authorized_keys
+generatorOptions:
+  disableNameSuffixHash: true

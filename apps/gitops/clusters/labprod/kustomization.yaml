@@ -29,3 +29,4 @@ resources:
   - games.yaml
   - rom.yaml
   - pz-server.yaml
+  - coder.yaml

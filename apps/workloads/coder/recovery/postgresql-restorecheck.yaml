@@ -1,0 +1,26 @@
+---
+# Disposable acceptance resource. This is not reconciled by the production app.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: coder-postgresql-restorecheck
+  namespace: coder
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie
+  bootstrap:
+    recovery:
+      source: coder-original
+  externalClusters:
+    - name: coder-original
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: coder-postgresql
+          serverName: coder-postgresql-g1
+  storage:
+    size: 4Gi
+    storageClass: local-path
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {cpu: "1", memory: 512Mi}
