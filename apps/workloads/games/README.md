@@ -149,6 +149,20 @@ Application specification. Do not enable automatic sync to bypass the existing
 production acceptance gate. Check the desired chart/image, Argo revisions and
 deployment image rather than restarting a pod running the previous pin.
 
+After explicit rollout authorization and verification that the live Application
+specification has the reviewed pins and no running operation, an operator can
+request the normal Argo sync through Kubernetes. This avoids changing local
+kubeconfig namespaces or copying credentials. The operation below does not
+enable automatic sync, force replacement or prune resources:
+
+```sh
+kubectl --context labprod -n argocd-system patch applications.argoproj.io games-labprod --type merge -p '{"operation":{"initiatedBy":{"username":"codex"},"sync":{"prune":false,"syncStrategy":{"hook":{}}}}}'
+```
+
+The controller consumes this transient operation; the persistent desired state
+remains the Application and values in Git. Observe sync completion and the
+expected deployment image before declaring the release delivered.
+
 Before acceptance, require both app master image workflows and the Games
 publication check to pass, then follow the existing backup/rollout checks.
 After rollout, verify pointer removal, held Space bombing, drawing fill, the
