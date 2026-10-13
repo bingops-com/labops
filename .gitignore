@@ -26,3 +26,8 @@ capi/credentials.env
 
 # Generated Python cache; private account-link proofs must stay outside Git.
 __pycache__/
+
+# Coder template validation and local authentication
+/apps/workloads/coder/base/template/.terraform/
+/apps/workloads/coder/base/template/terraform.tfstate*
+/apps/workloads/coder/credentials/

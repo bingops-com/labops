@@ -696,6 +696,79 @@ data:
           name: LabOps Portal production
           provider: !KeyOf portal-provider
           meta_launch_url: https://lab.bingo
+  coder.yaml: |
+    version: 1
+    metadata:
+      name: labops-coder
+    entries:
+      - model: authentik_core.group
+        id: coder-admins
+        identifiers:
+          name: coder-admins
+        attrs:
+          is_superuser: false
+          users:
+            - !Find [authentik_core.user, [username, bingops]]
+      - model: authentik_providers_oauth2.scopemapping
+        id: coder-email
+        identifiers:
+          name: Coder verified email
+        attrs:
+          scope_name: email
+          expression: |
+            return {"email": request.user.email, "email_verified": True}
+      - model: authentik_providers_oauth2.scopemapping
+        id: coder-groups
+        identifiers:
+          name: Coder group membership
+        attrs:
+          scope_name: groups
+          expression: |
+            return {"groups": [group.name for group in request.user.all_groups()]}
+      - model: authentik_providers_oauth2.oauth2provider
+        id: coder-provider
+        identifiers:
+          name: Coder production
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: public
+          client_id: coder
+          grant_types: [authorization_code, refresh_token]
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, profile]]
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, offline_access]]
+            - !KeyOf coder-email
+            - !KeyOf coder-groups
+          redirect_uris:
+            - matching_mode: strict
+              url: https://coder.lab.bingo/api/v2/users/oidc/callback
+      - model: authentik_core.application
+        id: coder-application
+        identifiers:
+          slug: coder
+        attrs:
+          name: Coder
+          provider: !KeyOf coder-provider
+          meta_launch_url: https://coder.lab.bingo
+          policy_engine_mode: all
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !KeyOf coder-application
+          group: !KeyOf coder-admins
+          order: 0
+        attrs:
+          target: !KeyOf coder-application
+          group: !KeyOf coder-admins
+          order: 0
+          enabled: true
+          negate: false
+          timeout: 30
   romm.yaml: |
     version: 1
     metadata:

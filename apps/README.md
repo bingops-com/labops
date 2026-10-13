@@ -22,7 +22,8 @@ Production names under `lab.bingo` are explicit. Cloudflare Tunnel publishes
 `rom.lab.bingo`, `slots.lab.bingo`, `games.lab.bingo` (prepared, manual sync)
 and `status.lab.bingo`; `bingops.com` and
 `www.bingops.com` reach the portfolio. Argo CD and Grafana remain private
-through exact-name Tailscale split-DNS routes, and the LabOps Portal is
+through exact-name Tailscale split-DNS routes, Coder uses the private
+`lab.bingo` parent route, and the LabOps Portal is
 private at the `lab.bingo` apex. The private names resolve to `192.168.10.151`;
 the private DNS zone `lab.bingo` forwards every other name (for example
 `auth.lab.bingo`) to public resolvers. TLS uses the Bitwarden-delivered
@@ -31,6 +32,11 @@ cert-manager token and Cloudflare DNS-01.
 Secrets are represented only by BitwardenSecret mappings. The sole Bitwarden
 machine token is injected with `./hacks/bootstrap-bitwarden.sh labprod`.
 PostgreSQL backups use the Terraform-owned `bingops-cnpg-labprod` R2 bucket.
+
+Coder's operator-managed database and retained experimentation workspace are
+defined in `workloads/coder`. Its native SSH NodePort remains private through
+the existing LAN/Tailscale route. Deployment and recovery acceptance are
+tracked in [the Coder runbook](workloads/coder/README.md).
 
 Render before delivery:
 

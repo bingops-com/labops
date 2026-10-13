@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: coder-bingops-home
+  namespace: coder-workspaces
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false,Prune=false
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests: {storage: 20Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coder-lab-ssh
+  namespace: coder-workspaces
+spec:
+  type: NodePort
+  externalTrafficPolicy: Local
+  selector:
+    labops.bingo/workspace: bingops-lab
+  ports:
+    - {name: ssh, port: 2222, targetPort: 2222, nodePort: 30222}

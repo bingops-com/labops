@@ -116,6 +116,15 @@ configs are sensitive generated state, not documentation.
    If the workload is healthy but its public name returns `NXDOMAIN`, use the
    Terraform DNS recovery procedure in `docs/infrastructure/cloudflare.md`;
    reconciling the tunnel Application does not create DNS records.
+   Coder also depends on this private DNS zone, Authentik, CloudNativePG and
+   the published workspace image. Restore its Barman database generation and
+   retained home before starting recovered workspaces; keep file backups
+   suspended until restoration is verified. The public OIDC client adds no
+   secret, and Coder reuses the existing bucket-scoped R2 key through
+   Bitwarden mappings. The first SSO owner must be `bingops`, followed by the
+   Git-tracked template import and isolated database/file restore checks.
+   See [the Coder runbook](../apps/workloads/coder/README.md) for ordering,
+   external inputs, private iSH access and the single-node availability limit.
 10. Create the bucket-scoped Project Zomboid R2 token in Bitwarden, reconcile
     its mappings and the workload, then verify a Restic snapshot and a
     disposable restore before retiring the Build 41 VM.

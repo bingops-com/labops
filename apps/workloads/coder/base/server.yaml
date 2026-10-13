@@ -1,0 +1,98 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coder
+  namespace: coder
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app.kubernetes.io/name: coder}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: coder}
+    spec:
+      serviceAccountName: coder
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      hostAliases:
+        - ip: 192.168.10.151
+          hostnames: [coder.lab.bingo]
+      containers:
+        - name: coder
+          image: ghcr.io/coder/coder:v2.36.7
+          env:
+            - {name: CODER_HTTP_ADDRESS, value: "0.0.0.0:8080"}
+            - {name: CODER_ACCESS_URL, value: "https://coder.lab.bingo"}
+            - name: CODER_PG_CONNECTION_URL
+              valueFrom:
+                secretKeyRef: {name: coder-postgresql-app, key: uri}
+            - {name: CODER_OIDC_ISSUER_URL, value: "https://auth.lab.bingo/application/o/coder/"}
+            - {name: CODER_OIDC_CLIENT_ID, value: coder}
+            - {name: CODER_OIDC_SCOPES, value: "openid,profile,email,groups,offline_access"}
+            - {name: CODER_OIDC_GROUP_FIELD, value: groups}
+            - {name: CODER_OIDC_ALLOWED_GROUPS, value: coder-admins}
+            - {name: CODER_OIDC_ALLOW_SIGNUPS, value: "false"}
+            - {name: CODER_OIDC_SIGN_IN_TEXT, value: "Connexion LabOps"}
+            - {name: CODER_DISABLE_PASSWORD_AUTH, value: "true"}
+            - {name: CODER_TELEMETRY_ENABLE, value: "false"}
+            - {name: CODER_PROVISIONER_DAEMONS, value: "1"}
+            - {name: CODER_CACHE_DIRECTORY, value: /tmp/coder-cache}
+            - {name: CODER_PROMETHEUS_ENABLE, value: "true"}
+            - {name: CODER_PROMETHEUS_ADDRESS, value: "0.0.0.0:2112"}
+            - {name: CODER_PPROF_ENABLE, value: "false"}
+          ports:
+            - {name: http, containerPort: 8080}
+            - {name: metrics, containerPort: 2112}
+          startupProbe:
+            httpGet: {path: /healthz, port: http}
+            failureThreshold: 60
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 200m, memory: 256Mi}
+            limits: {cpu: "2", memory: 2Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: cache, mountPath: /home/coder}
+            - {name: tmp, mountPath: /tmp}
+            - {name: template, mountPath: /opt/lab-template, readOnly: true}
+      volumes:
+        - {name: cache, emptyDir: {}}
+        - {name: tmp, emptyDir: {}}
+        - name: template
+          configMap: {name: coder-lab-template}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coder
+  namespace: coder
+  labels: {app.kubernetes.io/name: coder}
+spec:
+  selector: {app.kubernetes.io/name: coder}
+  ports:
+    - {name: http, port: 80, targetPort: http}
+    - {name: metrics, port: 2112, targetPort: metrics}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: coder
+  namespace: coder
+spec:
+  selector:
+    matchLabels: {app.kubernetes.io/name: coder}
+  endpoints:
+    - port: metrics

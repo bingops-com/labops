@@ -12,6 +12,10 @@ The Tailscale OAuth client is an external sensitive input with the minimum DNS
 write and network scopes required by this stack. Store it only in an ignored
 variables file and rotate it in the admin console if lost.
 
+The private `coder.lab.bingo` name also uses the existing `lab.bingo` parent
+route. Its answer is owned by `apps/platform/private-dns/labprod`; adding
+Coder does not require a tailnet DNS mutation.
+
 Review a Terraform plan before apply because it contacts and changes the live
 tailnet. Verify `argocd`, `grafana` and the `lab.bingo` apex resolve to `192.168.10.151` while on
 LAN/Tailscale and are not publicly routed.

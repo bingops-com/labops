@@ -19,6 +19,7 @@ pages:
               url: ${PORTAL_VAR_PROMETHEUS_URL}
               cronjobs:
                 - pz-server/pz-server-pz-server-backup
+                - coder-workspaces/coder-home-r2-backup
                 - rom/rom-files-r2-backup
                 - romm/romm-files-r2-backup
           - type: incidents
@@ -31,6 +32,7 @@ pages:
                   links:
                     - { title: Argo CD, url: "https://argocd.lab.bingo", description: GitOps, icon: "si:argo", checkUrl: "http://argocd-server.argocd-system.svc.cluster.local/healthz" }
                     - { title: Grafana, url: "https://grafana.lab.bingo", description: Métriques et journaux, icon: "si:grafana", checkUrl: "http://monitoring-grafana.monitoring.svc.cluster.local/api/health" }
+                    - { title: Coder, url: "https://coder.lab.bingo", description: Développement persistant, checkUrl: "http://coder.coder.svc.cluster.local/healthz" }
                     - { title: Authentik, url: "https://auth.lab.bingo", description: SSO, icon: "si:authentik", checkUrl: "https://auth.lab.bingo/-/health/live/" }
                     - { title: RomM, url: "https://rom.lab.bingo", description: Bibliothèque de jeux, icon: "si:nintendogamecube", checkUrl: "https://rom.lab.bingo/api/heartbeat" }
                     - { title: Demandes ROM, url: "https://rom-requests.lab.bingo", description: Rechercher et télécharger, icon: "si:nintendogamecube", checkUrl: "http://rom-request-portal.rom.svc.cluster.local:8080/healthz" }
@@ -146,6 +148,7 @@ pages:
             options:
               maxAgeHours: 26
               cronjobs:
+                - coder-workspaces/coder-home-r2-backup
                 - pz-server/pz-server-pz-server-backup
                 - rom/rom-files-r2-backup
                 - romm/romm-files-r2-backup
@@ -202,6 +205,7 @@ pages:
             options:
               url: ${PORTAL_VAR_PROMETHEUS_URL}
               cronjobs:
+                - coder-workspaces/coder-home-r2-backup
                 - pz-server/pz-server-pz-server-backup
                 - rom/rom-files-r2-backup
                 - romm/romm-files-r2-backup
