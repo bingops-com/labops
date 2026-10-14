@@ -10,7 +10,12 @@ workload cluster.
 Argo CD is bootstrapped from `apps/argocd/clusters/labprod` and the root
 Application `apps/gitops/bootstrap/labprod.yaml`. The root reconciles
 `apps/gitops/clusters/labprod`; platform components use negative sync waves
-and workloads use wave zero. Automated pruning and self-healing are enabled.
+and workloads use wave zero. Every active Application, including Games and the
+root, enables automatic synchronization, pruning and self-healing. A reviewed
+LabOps merge selects desired state; application image publication precedes any
+immutable version update. Dormant applications excluded from the root remain
+outside this policy. Restore and maintenance procedures retain their explicit
+write-freeze and reconciliation-suspension steps.
 The `rom-labprod` migration target passed its restore and acceptance gates and
 is now the production ROM stack, including its one-click catalogue of curated
 homebrew and freely distributable games. The former `romm-labprod` Application,
@@ -19,7 +24,7 @@ file archive and Barman backup remain the recovery sources.
 
 Production names under `lab.bingo` are explicit. Cloudflare Tunnel publishes
 `auth.lab.bingo`, `portfolio.lab.bingo`, `rom-requests.lab.bingo`,
-`rom.lab.bingo`, `slots.lab.bingo`, `games.lab.bingo` (prepared, manual sync)
+`rom.lab.bingo`, `slots.lab.bingo`, `games.lab.bingo`
 and `status.lab.bingo`; `bingops.com` and
 `www.bingops.com` reach the portfolio. Argo CD and Grafana remain private
 through exact-name Tailscale split-DNS routes, Coder uses the private

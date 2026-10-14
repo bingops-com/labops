@@ -39,7 +39,7 @@ a safe rollback unless that wallet field is preserved. The source accounts and
 balances must not be reset to force a rollback.
 
 Slots retains automatic Argo synchronization: merging the finalized LabOps PR
-triggers the rollout. Games remains manual as documented in its runbook. No
+triggers the rollout. Games follows the same automatic policy. No
 new external inputs or bootstrap actions are introduced. Application publication
 precedes LabOps version selection; Argo retries the declared pair idempotently.
 An operator can reconstruct it from Git and the existing CNPG/R2 recovery inputs

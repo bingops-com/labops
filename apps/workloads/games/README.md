@@ -5,18 +5,21 @@ separately in [Arcade](../arcade/README.md). These production values keep the
 existing standalone database until the reviewed migration/cutover; do not disable
 its CNPG resources when selecting common credentials.
 
-Prepared public multiplayer service at `https://games.lab.bingo`. Argo CD reads
+Public multiplayer service at `https://games.lab.bingo`. Argo CD reads
 the public Games chart at an immutable commit, with the matching commit image.
 LabOps owns namespace, R2 mapping, database backups, Cloudflare routing and DNS.
-`games-labprod` stays manually synchronized until production acceptance passes.
-Merging preparation does not authorize deployment or public opening.
+`games-labprod` follows the automatic synchronization policy of all active
+Applications, with pruning and self-healing. A reviewed LabOps merge authorizes
+the declared rollout. Automatic mode does not prove production acceptance;
+keep the publication, recovery, SSO and isolation checks below.
 
 ## Reconstruction and inputs
 
 1. Rebuild storage, Bitwarden, CloudNativePG/Barman, monitoring and the Cloudflare
-   connector. Demonstrate NetworkPolicy enforcement before synchronizing Games.
+   connector. NetworkPolicy enforcement remains a separate acceptance check.
    The observed Flannel v0.28.4 installation has no policy controller; review
-   enabling enforcement separately. Do not replace the CNI during an app sync.
+   enabling enforcement separately before relying on isolation. Automatic sync
+   does not provide it. Do not replace the CNI during an app sync.
 2. Publish the Games image for the exact commit pinned in `games.yaml` and
    `values.yaml`, and verify an anonymous pull before deployment. Chart and image
    must advance together. The recovery-code release requires a new image;
@@ -27,8 +30,9 @@ Merging preparation does not authorize deployment or public opening.
 3. Recover the bucket-scoped R2 key from Bitwarden `labprod`. The mapping exposes
    identifiers only. CNPG generates the database URI; Games owns R2 prefix
    `games`, continuous WAL archiving and daily backups retained for 14 days.
-4. After explicit deployment authorization and the isolation check, synchronize
-   Games directly. No mail relay, SMTP account, SMS or mail DNS is required.
+4. After prerequisites and image publication, integrate the reviewed LabOps
+   declaration. Argo synchronizes Games automatically. No mail relay, SMTP
+   account, SMS or mail DNS is required.
    The namespace token bootstrap is idempotent and controllers retry dependencies.
    Correct declared inputs after partial failure and retry without copying secrets.
 
@@ -102,7 +106,8 @@ operation. Existing migrations are preserved; schema migration 8 is additive.
 
 Rebuild order: Authentik including the existing `bingops` identity and its
 blueprint, then the published Games commit image and matching chart, then the
-authorized Games synchronization. The current release pins live only in
+reviewed Games declaration and its automatic reconciliation. The current
+release pins live only in
 `apps/gitops/clusters/labprod/games.yaml` and
 `apps/workloads/games/clusters/labprod/values.yaml`.
 
@@ -142,26 +147,13 @@ accounts stay off; no consolidation, SQL migration or new credential is part
 of this application upgrade.
 
 Merging application source does not deploy it: both immutable pins above must
-advance together. Slots synchronizes automatically after its LabOps pins change;
-Games deliberately remains manual. A Games rollout therefore also requires an
-explicitly authorized sync of `games-labprod`, after Argo has observed the new
-Application specification. Do not enable automatic sync to bypass the existing
-production acceptance gate. Check the desired chart/image, Argo revisions and
-deployment image rather than restarting a pod running the previous pin.
-
-After explicit rollout authorization and verification that the live Application
-specification has the reviewed pins and no running operation, an operator can
-request the normal Argo sync through Kubernetes. This avoids changing local
-kubeconfig namespaces or copying credentials. The operation below does not
-enable automatic sync, force replacement or prune resources:
-
-```sh
-kubectl --context labprod -n argocd-system patch applications.argoproj.io games-labprod --type merge -p '{"operation":{"initiatedBy":{"username":"codex"},"sync":{"prune":false,"syncStrategy":{"hook":{}}}}}'
-```
-
-The controller consumes this transient operation; the persistent desired state
-remains the Application and values in Git. Observe sync completion and the
-expected deployment image before declaring the release delivered.
+advance together. Games and Slots synchronize automatically after the reviewed
+LabOps pins change. A separate manual sync is no longer part of normal delivery.
+Check the desired chart/image, Argo revisions and deployment image rather than
+restarting a pod running the previous pin. Observe sync completion and the
+expected deployment image before declaring the release delivered. Pruning and
+self-healing follow the active GitOps declaration. Use a reviewed GitOps pause
+for restore or maintenance before temporary live changes, as described below.
 
 Before acceptance, require both app master image workflows and the Games
 publication check to pass, then follow the existing backup/rollout checks.
@@ -262,6 +254,16 @@ curl -fsS https://games.lab.bingo/livez
 ```
 
 ## Recovery and rollback
+
+Before database restoration or temporary live maintenance, pause automatic sync
+with a reviewed LabOps change removing the `automated` block from
+`apps/gitops/clusters/labprod/games.yaml`. Wait for the root to reconcile this
+policy and verify the live Application before changing recovery resources.
+Disabling only the live child Application is insufficient because the root
+self-heals its Git declaration. Keep intended recovery configuration in Git,
+then restore pruning and self-healing through a reviewed change once recovered
+state is ready. Routine application rollback uses a Git revert without this
+maintenance pause.
 
 Follow the pinned Games README to restore CNPG into a new cluster/release, using
 `recovery.serverName=games-postgresql-g1` and a distinct new archive generation.
