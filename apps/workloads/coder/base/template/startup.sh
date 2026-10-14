@@ -35,7 +35,7 @@ GatewayPorts no
 ClientAliveInterval 60
 ClientAliveCountMax 3
 Subsystem sftp internal-sftp
-SetEnv PATH=/home/coder/.local/bin:/usr/local/go/bin:/usr/lib/postgresql/18/bin:/usr/local/bin:/usr/bin:/bin CHROMIUM=/usr/bin/chromium ANSIBLE_COLLECTIONS_PATH=/opt/homeops-dev/collections CLUSTERCTL_DISABLE_VERSIONCHECK=true
+SetEnv PATH=/home/coder/.local/bin:/usr/local/go/bin:/usr/lib/postgresql/18/bin:/usr/local/bin:/usr/bin:/bin CHROMIUM=/usr/bin/chromium ANSIBLE_COLLECTIONS_PATH=/home/coder/.ansible/collections:/opt/homeops-dev/collections CLUSTERCTL_DISABLE_VERSIONCHECK=true
 CONFIG
 
 /usr/sbin/sshd -t -f /home/coder/.config/lab/sshd_config

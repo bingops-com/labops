@@ -42,6 +42,7 @@ if [[ ${2:-basic} == homeops ]]; then
   # This records inner-sandbox support without relaxing the container profile.
   if ! docker exec "$container_id" codex sandbox -- /usr/bin/true > "$scratch/sandbox-result" 2>&1; then
     echo 'Codex inner sandbox is unavailable under the restricted CI container profile; a compatible runtime profile or explicit container-isolation mode is required.'
+    tail -n 4 "$scratch/sandbox-result"
   else
     echo 'Codex inner sandbox verified.'
   fi

@@ -18,7 +18,7 @@ COPY package.json package-lock.json /opt/homeops-dev/npm/
 RUN npm ci --prefix /opt/homeops-dev/npm --no-audit --no-fund && ln -s /opt/homeops-dev/npm/node_modules/.bin/codex /usr/local/bin/codex
 COPY homeops-dev-check.sh /usr/local/bin/homeops-dev-check
 RUN chmod 0755 /usr/local/bin/homeops-dev-check && for tool in ansible ansible-playbook ansible-galaxy ansible-lint yamllint pytest; do ln -s "/opt/homeops-dev/venv/bin/$tool" "/usr/local/bin/$tool"; done
-ENV PATH="/home/coder/.local/bin:/usr/local/go/bin:${PATH}" LANG=C.UTF-8 CHROMIUM=/usr/bin/chromium ANSIBLE_COLLECTIONS_PATH=/opt/homeops-dev/collections CLUSTERCTL_DISABLE_VERSIONCHECK=true
+ENV PATH="/home/coder/.local/bin:/usr/local/go/bin:${PATH}" LANG=C.UTF-8 CHROMIUM=/usr/bin/chromium ANSIBLE_COLLECTIONS_PATH=/home/coder/.ansible/collections:/opt/homeops-dev/collections CLUSTERCTL_DISABLE_VERSIONCHECK=true
 USER 1000:1000
 WORKDIR /opt/homeops
 EXPOSE 2222
