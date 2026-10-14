@@ -31,11 +31,8 @@ provider "coder" {}
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 resource "terraform_data" "initial_failure" {
-  lifecycle {
-    precondition {
-      condition     = data.coder_workspace_owner.me.name != "bingops"
-      error_message = "Disposable initial-start failure for recovery acceptance"
-    }
+  provisioner "local-exec" {
+    command = "exit 1"
   }
 }
 output "workspace_name" {
