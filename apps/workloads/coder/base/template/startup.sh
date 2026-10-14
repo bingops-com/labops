@@ -2,7 +2,11 @@
 set -euo pipefail
 umask 077
 
-mkdir -p /home/coder/.ssh /home/coder/.config/lab /home/coder/projects
+mkdir -p /home/coder/.ssh /home/coder/.config/lab /home/coder/.codex /home/coder/projects
+chmod 700 /home/coder/.codex
+if [[ ! -f /home/coder/.codex/config.toml ]]; then
+  printf '%s\n' 'cli_auth_credentials_store = "file"' > /home/coder/.codex/config.toml
+fi
 if [[ ! -f /home/coder/.ssh/ssh_host_ed25519_key ]]; then
   ssh-keygen -q -t ed25519 -N '' -f /home/coder/.ssh/ssh_host_ed25519_key
 fi
@@ -31,7 +35,7 @@ GatewayPorts no
 ClientAliveInterval 60
 ClientAliveCountMax 3
 Subsystem sftp internal-sftp
-SetEnv PATH=/home/coder/.local/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin
+SetEnv PATH=/home/coder/.local/bin:/usr/local/go/bin:/usr/lib/postgresql/18/bin:/usr/local/bin:/usr/bin:/bin CHROMIUM=/usr/bin/chromium ANSIBLE_COLLECTIONS_PATH=/home/coder/.ansible/collections:/opt/homeops-dev/collections CLUSTERCTL_DISABLE_VERSIONCHECK=true
 CONFIG
 
 /usr/sbin/sshd -t -f /home/coder/.config/lab/sshd_config

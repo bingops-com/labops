@@ -29,6 +29,12 @@ terraform {
 }
 provider "coder" {}
 data "coder_workspace" "me" {}
+data "coder_workspace_owner" "me" {}
+resource "terraform_data" "initial_failure" {
+  provisioner "local-exec" {
+    command = "exit 1"
+  }
+}
 output "workspace_name" {
   value = data.coder_workspace.me.name
 }
@@ -76,7 +82,10 @@ query() {
   docker exec "$prefix-postgres" psql -XAt -U coder_test -d coder -c "$1"
 }
 
+run_phase initial_failure
+[[ $(query "SELECT count(*) FROM workspaces WHERE NOT deleted AND name='lab'") == 1 ]]
 run_phase initial
+[[ $(query "SELECT count(*) FROM workspace_builds") == 2 ]]
 [[ $(query "SELECT count(*) FROM users WHERE NOT deleted AND username='bingops' AND login_type='oidc' AND status='active' AND 'owner'=ANY(rbac_roles)") == 1 ]]
 [[ $(query "SELECT count(*) FROM users WHERE NOT deleted AND email LIKE '%@coder-bootstrap.invalid'") == 0 ]]
 [[ $(query "SELECT count(*) FROM api_keys WHERE token_name LIKE 'setup-%'") == 0 ]]

@@ -127,6 +127,12 @@ configs are sensitive generated state, not documentation.
    OIDC owner and imports the Git-tracked template without a persistent setup
    password. Update its bootstrap generation after database-only recovery,
    then perform isolated database/file restore checks.
+   The `homeops-dev` image supplies Codex and HomeOps clients. Publish the reviewed
+   image before completing workspace acceptance, then re-enroll the trusted
+   operator's `labmgmt`/`labprod` client configs with `provision-homeops-dev.py`
+   if they were not recovered with the home. First Codex login belongs to the
+   operator account and stays outside Git/images. A failed initial workspace
+   start retries against the active template without replacing its retained home.
    See [the Coder runbook](../apps/workloads/coder/README.md) for ordering,
    external inputs, private iSH access and the single-node availability limit.
 10. Create the bucket-scoped Project Zomboid R2 token in Bitwarden, reconcile

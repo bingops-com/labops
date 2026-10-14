@@ -37,4 +37,14 @@ if [[ "$connected" != true ]]; then
 fi
 
 cat "$scratch/result"
+if [[ ${2:-basic} == homeops ]]; then
+  ssh -i "$scratch/client_key" -p "$port" -o BatchMode=yes -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 homeops-dev-check
+  # This records inner-sandbox support without relaxing the container profile.
+  if ! docker exec "$container_id" codex sandbox -- /usr/bin/true > "$scratch/sandbox-result" 2>&1; then
+    echo 'Codex inner sandbox is unavailable under the restricted CI container profile; a compatible runtime profile or explicit container-isolation mode is required.'
+    tail -n 4 "$scratch/sandbox-result"
+  else
+    echo 'Codex inner sandbox verified.'
+  fi
+fi
 echo 'Non-root SSH and development tools verified.'

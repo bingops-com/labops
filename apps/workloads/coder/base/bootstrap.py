@@ -212,6 +212,21 @@ def setup(desired):
             log("Creating the retained bingops/lab workspace with autostop disabled")
             cli(["create", "bingops/lab", "--template", "lab", "--stop-after", "0h", "--yes"], token=owner_token)
             workspace = owner_api.call(f"/api/v2/users/{OWNER}/workspace/lab")
+        elif workspace["latest_build"]["status"] == "failed" and workspace["latest_build"]["transition"] == "start":
+            log("Retrying a failed workspace start using the declared active template")
+            template = owner_api.call(f"/api/v2/organizations/{organization['id']}/templates/lab")
+            build = owner_api.call(f"/api/v2/workspaces/{workspace['id']}/builds", "POST", {
+                "transition": "start", "template_version_id": template["active_version_id"],
+            })
+            for _ in range(120):
+                build = owner_api.call(f"/api/v2/workspacebuilds/{build['id']}")
+                if build["job"]["status"] == "succeeded":
+                    break
+                if build["job"]["status"] in ("failed", "canceled"):
+                    raise RuntimeError("Workspace start retry failed; completion marker was not written")
+                time.sleep(5)
+            else:
+                raise RuntimeError("Workspace start retry did not finish; completion marker was not written")
         # An existing workspace is preserved, including an intentional stop.
         desired.update(owner_id=owner_id, workspace_id=workspace["id"])
     finally:
