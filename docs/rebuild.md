@@ -121,8 +121,10 @@ configs are sensitive generated state, not documentation.
    retained home before starting recovered workspaces; keep file backups
    suspended until restoration is verified. The public OIDC client adds no
    secret, and Coder reuses the existing bucket-scoped R2 key through
-   Bitwarden mappings. The first SSO owner must be `bingops`, followed by the
-   Git-tracked template import and isolated database/file restore checks.
+   Bitwarden mappings. Its automatic setup provisions only the `bingops`
+   OIDC owner and imports the Git-tracked template without a persistent setup
+   password. Update its bootstrap generation after database-only recovery,
+   then perform isolated database/file restore checks.
    See [the Coder runbook](../apps/workloads/coder/README.md) for ordering,
    external inputs, private iSH access and the single-node availability limit.
 10. Create the bucket-scoped Project Zomboid R2 token in Bitwarden, reconcile

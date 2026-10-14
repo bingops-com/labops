@@ -84,7 +84,7 @@ resource "kubernetes_deployment_v1" "lab" {
         }
         container {
           name    = "dev"
-          image   = "ghcr.io/bingops-com/coder-workspace:0.1.0"
+          image   = "ghcr.io/bingops-com/coder-workspace@sha256:2bfc5ae02c950f62705f6c30ce59b970d5374f1ccd87a4a829743eb020b70685"
           command = ["/bin/sh", "-c", coder_agent.main.init_script]
           env {
             name  = "CODER_AGENT_TOKEN"

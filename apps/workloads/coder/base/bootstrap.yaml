@@ -1,0 +1,110 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coder-bootstrap
+  namespace: coder-workspaces
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: coder-bootstrap
+  namespace: coder-workspaces
+rules:
+  - apiGroups: [""]
+    resources: [serviceaccounts]
+    resourceNames: [coder-bootstrap]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: coder-bootstrap
+  namespace: coder-workspaces
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: coder-bootstrap
+subjects:
+  - kind: ServiceAccount
+    name: coder-bootstrap
+    namespace: coder-workspaces
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: coder-bootstrap-database
+  namespace: coder
+rules:
+  - apiGroups: [""]
+    resources: [secrets]
+    resourceNames: [coder-postgresql-app]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: coder-bootstrap-database
+  namespace: coder
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: coder-bootstrap-database
+subjects:
+  - kind: ServiceAccount
+    name: coder-bootstrap
+    namespace: coder-workspaces
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: coder-auto-setup
+  namespace: coder-workspaces
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 900
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          serviceAccountName: coder-bootstrap
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile: {type: RuntimeDefault}
+          hostAliases:
+            - ip: 192.168.10.151
+              hostnames: [coder.lab.bingo]
+          containers:
+            - name: setup
+              image: ghcr.io/bingops-com/coder-bootstrap:0.1.0
+              env:
+                - {name: CODER_BOOTSTRAP_GENERATION, value: coder-postgresql-g1}
+              resources:
+                requests: {cpu: 100m, memory: 128Mi}
+                limits: {cpu: "1", memory: 512Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities: {drop: [ALL]}
+                readOnlyRootFilesystem: true
+              volumeMounts:
+                - {name: script, mountPath: /scripts, readOnly: true}
+                - {name: template, mountPath: /opt/lab-template, readOnly: true}
+                - {name: home, mountPath: /data}
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - name: script
+              configMap: {name: coder-bootstrap-script}
+            - name: template
+              configMap: {name: coder-lab-template}
+            - name: home
+              persistentVolumeClaim: {claimName: coder-bingops-home}
+            - {name: tmp, emptyDir: {}}

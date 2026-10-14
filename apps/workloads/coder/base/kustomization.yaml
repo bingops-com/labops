@@ -9,9 +9,20 @@ resources:
   - access.yaml
   - workspace.yaml
   - backup.yaml
+  - bootstrap.yaml
 configMapGenerator:
+  - name: coder-bootstrap-script
+    namespace: coder-workspaces
+    files:
+      - bootstrap.py
   - name: coder-lab-template
     namespace: coder
+    files:
+      - main.tf=template/main.tf
+      - startup.sh=template/startup.sh
+      - .terraform.lock.hcl=template/.terraform.lock.hcl
+  - name: coder-lab-template
+    namespace: coder-workspaces
     files:
       - main.tf=template/main.tf
       - startup.sh=template/startup.sh

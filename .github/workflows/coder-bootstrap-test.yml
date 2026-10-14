@@ -1,0 +1,38 @@
+---
+name: Coder automatic setup acceptance
+
+'on':
+  pull_request:
+    branches: [master]
+    paths:
+      - docker/coder-bootstrap/**
+      - apps/workloads/coder/base/bootstrap.py
+      - .github/scripts/test-coder-bootstrap.*
+      - .github/workflows/coder-bootstrap-test.yml
+  push:
+    branches: [master]
+    paths:
+      - docker/coder-bootstrap/**
+      - apps/workloads/coder/base/bootstrap.py
+      - .github/scripts/test-coder-bootstrap.*
+      - .github/workflows/coder-bootstrap-test.yml
+
+permissions:
+  contents: read
+
+jobs:
+  automatic-setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: image=mirror.gcr.io/moby/buildkit:buildx-stable-1
+          buildkitd-config-inline: |
+            [registry."docker.io"]
+              mirrors = ["mirror.gcr.io"]
+      - name: Build bootstrap candidate
+        run: docker buildx build --load --tag labops-coder-bootstrap:test docker/coder-bootstrap
+      - name: Verify automatic setup against disposable Coder and PostgreSQL
+        run: bash .github/scripts/test-coder-bootstrap.sh labops-coder-bootstrap:test
