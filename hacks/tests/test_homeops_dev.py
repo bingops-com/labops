@@ -2,6 +2,7 @@
 import importlib.util
 import base64
 import json
+import os
 import shutil
 from pathlib import Path
 import subprocess
@@ -175,6 +176,34 @@ class CredentialTransport(unittest.TestCase):
             payload = {".ssh/homeops-proxmox": encode(FAKE), ".ssh/homeops-config": encode("Host proxmox\n")}
             self.assertEqual(self.install(home, payload).returncode, 0)
             self.assertEqual((home / ".ssh/config").resolve(), home / ".ssh/homeops-config")
+
+    def test_personal_aliases_load_with_preserved_profiles_and_idempotent_hooks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            (home / ".profile").write_text("# existing personal profile\n")
+            (home / ".bashrc").write_text("# existing personal bashrc\n")
+            payload = {".bash_aliases": {"_file_base64": base64.b64encode(b"alias fixture='printf TEST_ONLY_ALIAS'\n").decode()}, ".config/homeops/aliases-init.bash": {"_file_base64": base64.b64encode(provision.SHELL_INIT.encode()).decode()}}
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            first = {name: (home / name).read_bytes() for name in (".bashrc", ".profile")}
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            for name in first:
+                self.assertEqual((home / name).read_bytes(), first[name])
+                self.assertTrue(first[name].startswith(b"# existing personal"))
+            for command in (["bash", "--noprofile", "--rcfile", str(home / ".bashrc"), "-ic", "test \"$(type -t fixture)\" = alias"], ["bash", "--noprofile", "--norc", "-ic", '. "$HOME/.profile"; test "$(type -t fixture)" = alias']):
+                result = subprocess.run(command, env={**os.environ, "HOME": str(home)}, capture_output=True)
+                self.assertEqual(result.returncode, 0)
+            self.assertEqual((home / ".bash_aliases").stat().st_mode & 0o777, 0o600)
+
+    def test_shell_profile_symlink_refuses_alias_enrollment_before_writes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            preserved = home / "preserved-profile"
+            preserved.write_text("personal profile")
+            (home / ".profile").symlink_to(preserved)
+            payload = {".bash_aliases": {"_file_base64": base64.b64encode(b"alias fixture='true'\n").decode()}}
+            self.assertNotEqual(self.install(home, payload).returncode, 0)
+            self.assertFalse((home / ".bash_aliases").exists())
+            self.assertEqual(preserved.read_text(), "personal profile")
 
 
 if __name__ == "__main__":

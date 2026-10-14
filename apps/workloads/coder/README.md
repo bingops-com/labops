@@ -176,6 +176,20 @@ Python libraries installed in the image are visible to that virtual environment.
 
 ## Operator cluster access
 
+Personal Bash aliases can also be enrolled from the trusted source operator host:
+
+```sh
+python3 hacks/provision-homeops-dev.py --shell-aliases
+```
+
+This copies only the explicitly selected `~/.bash_aliases` into the retained home (0600), adds common Bash shortcuts and appends an idempotent interactive-only loading hook to existing Bash/profile files without replacing their contents. It does not copy the PC's complete shell initialization, environment or history. Differing existing alias files or symlinked profiles make enrollment refuse before writes. Edit `~/.bash_aliases` in Coder for subsequent personal changes, then reload `~/.bashrc` or reconnect. Startup preserves these user-owned files, and the home backup covers them. Recovery comes from that backup or the owner's original alias file; no personal alias definition is committed to Git.
+
+Kubernetes aliases retain their behavior and permissions: enrolling them never executes their commands. Windows paths/tools and unrelated `/opt` checkouts remain PC-specific. If the source's `ls` alias needs unavailable `exa`, the loader uses `eza` when available or GNU `ls`; absent `btop` restores ordinary `top` lookup. This avoids breaking basic shell commands while preserving the original private definitions. Verify names only, without exposing alias values:
+
+```sh
+compgen -A alias
+```
+
 Run from the trusted operator host after the workspace is ready. This writes personal generated client configuration to the retained home; it does not create a Kubernetes Secret, cluster or role. The helper selects only the existing `labmgmt` and `labprod` identities and never prints them:
 
 ```sh

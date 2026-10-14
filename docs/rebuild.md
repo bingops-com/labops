@@ -134,7 +134,9 @@ configs are sensitive generated state, not documentation.
    operator accounts and stays outside Git/images. Their user-owned auth/config
    files persist under the home and are never replaced by startup or cluster-only
    access refresh. Recover a lost or revoked login by signing into its provider
-   again. A failed initial workspace
+   again. Optional `--shell-aliases` enrollment restores personal Bash aliases
+   from the owner's private source file if they were not recovered with the home;
+   it preserves existing profiles and adds interactive loading hooks. A failed initial workspace
    start retries against the active template without replacing its retained home.
    Terraform must complete before Coder can authorize the workspace agent;
    the Deployment does not wait for agent-dependent SSH readiness during apply.
