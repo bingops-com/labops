@@ -27,7 +27,7 @@ port=$(docker inspect --format '{{(index (index .NetworkSettings.Ports "2222/tcp
 
 connected=false
 for _ in $(seq 1 20); do
-  if ssh -i "$scratch/client_key" -p "$port" -o BatchMode=yes -o ConnectTimeout=2 -o StrictHostKeyChecking=accept-new -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 'test "$(id -u)" = 1000 && python3 -c "import matplotlib,numpy,pandas" && node --version && npm --version && go version && tmux -V' > "$scratch/result" 2> "$scratch/ssh-error"; then
+  if ssh -i "$scratch/client_key" -p "$port" -o HostKeyAlias=coder-fixture -o BatchMode=yes -o ConnectTimeout=2 -o StrictHostKeyChecking=accept-new -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 'test "$(id -u)" = 1000 && python3 -c "import matplotlib,numpy,pandas" && node --version && npm --version && go version && tmux -V' > "$scratch/result" 2> "$scratch/ssh-error"; then
     connected=true
     break
   fi
@@ -44,9 +44,11 @@ cat "$scratch/result"
 # Restart with the retained home. These account fixtures contain no real tokens.
 docker exec "$container_id" python3 -c 'import json,pathlib; h=pathlib.Path("/home/coder"); files={".codex/config.toml":"cli_auth_credentials_store = \"file\"\n# personal configuration\n", ".codex/auth.json":"{\"fixture\":\"FAKE_CODEX_SESSION\"}", ".claude/settings.json":"{\"theme\":\"dark\"}", ".claude/.credentials.json":"{\"fixture\":\"FAKE_CLAUDE_SESSION\"}", ".claude.json":"{\"fixture\":\"FAKE_USER_SETTINGS\"}"}; [(h/p).write_text(v) for p,v in files.items()]; (h/".config/lab/persistence-fixture.json").write_text(json.dumps(files)); (h/"projects/persistence-fixture.txt").write_text("retained project")'
 docker restart "$container_id" >/dev/null
+# Docker may allocate a new ephemeral host port; pin trust to the same fixture.
+port=$(docker inspect --format '{{(index (index .NetworkSettings.Ports "2222/tcp") 0).HostPort}}' "$container_id")
 persisted=false
 for _ in $(seq 1 20); do
-  if ssh -i "$scratch/client_key" -p "$port" -o BatchMode=yes -o ConnectTimeout=2 -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 'python3 -c '\''import json,pathlib; h=pathlib.Path.home(); files=json.loads((h/".config/lab/persistence-fixture.json").read_text()); assert all((h/p).read_text()==v for p,v in files.items()); assert (h/"projects/persistence-fixture.txt").read_text()=="retained project"; assert (h/".claude").stat().st_mode & 0o777 == 0o700; assert (h/".claude.json").stat().st_mode & 0o777 == 0o600'\''' > /dev/null 2> "$scratch/ssh-error"; then
+  if ssh -i "$scratch/client_key" -p "$port" -o HostKeyAlias=coder-fixture -o BatchMode=yes -o ConnectTimeout=2 -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 'python3 -c '\''import json,pathlib; h=pathlib.Path.home(); files=json.loads((h/".config/lab/persistence-fixture.json").read_text()); assert all((h/p).read_text()==v for p,v in files.items()); assert (h/"projects/persistence-fixture.txt").read_text()=="retained project"; assert (h/".claude").stat().st_mode & 0o777 == 0o700; assert (h/".claude.json").stat().st_mode & 0o777 == 0o600'\''' > /dev/null 2> "$scratch/ssh-error"; then
     persisted=true
     break
   fi
@@ -58,7 +60,7 @@ if [[ "$persisted" != true ]]; then
 fi
 echo 'Personal account configuration, SSH host identity and projects survive restart.'
 if [[ ${2:-basic} == homeops ]]; then
-  ssh -i "$scratch/client_key" -p "$port" -o BatchMode=yes -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 homeops-dev-check
+  ssh -i "$scratch/client_key" -p "$port" -o HostKeyAlias=coder-fixture -o BatchMode=yes -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 homeops-dev-check
   # This records inner-sandbox support without relaxing the container profile.
   if ! docker exec "$container_id" codex sandbox -- /usr/bin/true > "$scratch/sandbox-result" 2>&1; then
     echo 'Codex inner sandbox is unavailable under the restricted CI container profile; a compatible runtime profile or explicit container-isolation mode is required.'
