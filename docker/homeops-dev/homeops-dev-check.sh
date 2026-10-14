@@ -5,6 +5,7 @@ test "$(id -u)" = 1000
 test -w /home/coder
 test "$(readlink -f /opt/homeops)" = /home/coder/projects
 codex --version
+claude --version
 coder version
 terraform version
 kubectl version --client=true

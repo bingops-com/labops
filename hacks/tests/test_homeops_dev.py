@@ -2,6 +2,8 @@
 import importlib.util
 import base64
 import json
+import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -52,6 +54,56 @@ class CredentialTransport(unittest.TestCase):
             default.write_text("existing operator configuration")
             self.assertEqual(self.install(home).returncode, 0)
             self.assertEqual(default.read_text(), "existing operator configuration")
+
+    def test_cluster_rotation_preserves_context_choice_and_cli_sessions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            kube = {"current-context": "labprod", "contexts": [{"name": "labmgmt"}, {"name": "labprod"}], "users": [{"credential": FAKE}]}
+            talos = {"context": "labprod", "contexts": {"labmgmt": {}, "labprod": {"credential": FAKE}}}
+            payload = {".kube/homeops-config": kube, ".talos/homeops-config": talos}
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            for relative, field in ((".kube/homeops-config", "current-context"), (".talos/homeops-config", "context")):
+                target = home / relative
+                config = json.loads(target.read_text())
+                config[field] = "labmgmt"
+                target.write_text(json.dumps(config))
+            for relative in (".codex/auth.json", ".claude/.credentials.json"):
+                target = home / relative
+                target.parent.mkdir()
+                target.write_text("existing personal session")
+            kube["users"] = [{"credential": "TEST_ONLY_ROTATED_CREDENTIAL"}]
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            self.assertEqual(json.loads((home / ".kube/homeops-config").read_text())["current-context"], "labmgmt")
+            self.assertEqual(json.loads((home / ".talos/homeops-config").read_text())["context"], "labmgmt")
+            self.assertEqual(json.loads((home / ".kube/homeops-config").read_text())["users"], kube["users"])
+            for relative in (".codex/auth.json", ".claude/.credentials.json"):
+                self.assertEqual((home / relative).read_text(), "existing personal session")
+
+    def test_removed_context_falls_back_to_declared_default(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            initial = {"current-context": "retired-test-context", "contexts": [{"name": "retired-test-context"}]}
+            self.assertEqual(self.install(home, {".kube/homeops-config": initial}).returncode, 0)
+            replacement = {"current-context": "labprod", "contexts": [{"name": "labprod"}]}
+            self.assertEqual(self.install(home, {".kube/homeops-config": replacement}).returncode, 0)
+            self.assertEqual(json.loads((home / ".kube/homeops-config").read_text())["current-context"], "labprod")
+
+    def test_rotation_after_context_commands_rewrite_yaml(self):
+        if not all(shutil.which(tool) for tool in ("kubectl", "talosctl")):
+            self.skipTest("Context rewrite acceptance requires the HomeOps clients")
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            kube = {"apiVersion": "v1", "kind": "Config", "current-context": "labprod", "contexts": [{"name": name, "context": {"cluster": name, "user": name}} for name in ("labmgmt", "labprod")], "clusters": [{"name": name, "cluster": {"server": "https://example.invalid"}} for name in ("labmgmt", "labprod")], "users": [{"name": name, "user": {}} for name in ("labmgmt", "labprod")]}
+            talos = {"context": "labprod", "contexts": {"labmgmt": {}, "labprod": {}}}
+            payload = {".kube/homeops-config": kube, ".talos/homeops-config": talos}
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            for command, relative in ((["kubectl", "--kubeconfig", str(home / ".kube/homeops-config"), "config", "use-context", "labmgmt"], ".kube/homeops-config"), (["talosctl", "--talosconfig", str(home / ".talos/homeops-config"), "config", "context", "labmgmt"], ".talos/homeops-config")):
+                result = subprocess.run(command, capture_output=True)
+                self.assertEqual(result.returncode, 0)
+                self.assertFalse((home / relative).read_text().lstrip().startswith("{"))
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            self.assertEqual(json.loads((home / ".kube/homeops-config").read_text())["current-context"], "labmgmt")
+            self.assertEqual(json.loads((home / ".talos/homeops-config").read_text())["context"], "labmgmt")
 
     def test_symlinked_credential_destination_is_refused(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -124,6 +176,34 @@ class CredentialTransport(unittest.TestCase):
             payload = {".ssh/homeops-proxmox": encode(FAKE), ".ssh/homeops-config": encode("Host proxmox\n")}
             self.assertEqual(self.install(home, payload).returncode, 0)
             self.assertEqual((home / ".ssh/config").resolve(), home / ".ssh/homeops-config")
+
+    def test_personal_aliases_load_with_preserved_profiles_and_idempotent_hooks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            (home / ".profile").write_text("# existing personal profile\n")
+            (home / ".bashrc").write_text("# existing personal bashrc\n")
+            payload = {".bash_aliases": {"_file_base64": base64.b64encode(b"alias fixture='printf TEST_ONLY_ALIAS'\n").decode()}, ".config/homeops/aliases-init.bash": {"_file_base64": base64.b64encode(provision.SHELL_INIT.encode()).decode()}}
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            first = {name: (home / name).read_bytes() for name in (".bashrc", ".profile")}
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            for name in first:
+                self.assertEqual((home / name).read_bytes(), first[name])
+                self.assertTrue(first[name].startswith(b"# existing personal"))
+            for command in (["bash", "--noprofile", "--rcfile", str(home / ".bashrc"), "-ic", "test \"$(type -t fixture)\" = alias"], ["bash", "--noprofile", "--norc", "-ic", '. "$HOME/.profile"; test "$(type -t fixture)" = alias']):
+                result = subprocess.run(command, env={**os.environ, "HOME": str(home)}, capture_output=True)
+                self.assertEqual(result.returncode, 0)
+            self.assertEqual((home / ".bash_aliases").stat().st_mode & 0o777, 0o600)
+
+    def test_shell_profile_symlink_refuses_alias_enrollment_before_writes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            preserved = home / "preserved-profile"
+            preserved.write_text("personal profile")
+            (home / ".profile").symlink_to(preserved)
+            payload = {".bash_aliases": {"_file_base64": base64.b64encode(b"alias fixture='true'\n").decode()}}
+            self.assertNotEqual(self.install(home, payload).returncode, 0)
+            self.assertFalse((home / ".bash_aliases").exists())
+            self.assertEqual(preserved.read_text(), "personal profile")
 
 
 if __name__ == "__main__":

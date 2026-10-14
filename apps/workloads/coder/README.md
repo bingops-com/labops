@@ -6,7 +6,7 @@ Coder provides the private control plane at `https://coder.lab.bingo`. The `bing
 
 Argo CD owns the `coder-labprod` workload, the retained home PVC, SSH Service, secret mappings and backup schedules. Coder's Terraform template owns only the workspace Deployment. Terraform's network stack owns tailnet DNS. Authentik owns identity and authorization. Bitwarden owns the R2 credential.
 
-PR #148 is merged and `homeops-dev:0.1.1` is public. Runtime checks on 2026-10-14 confirm Argo synchronization, Authentik-only login, non-root settings, healthy PostgreSQL, continuous WAL archival and a completed database backup. The remaining provisioning cycle waits for SSH before authorizing the agent that launches SSH. This template disables that wait and pins the published digest; integration and failed-build recovery remain pending. As a temporary recovery, the versioned startup script initialized/reloaded SSH, making the existing Pod Ready without replacing its volume. LabOps, Slots and City data and the selected operator inputs were transferred to the retained home. Read-only calls from the workspace verified both Kubernetes clusters, Talos, Proxmox SSH/passwordless sudo and GitHub; all three local Terraform state snapshots match the source. Coder is the primary Terraform runner. First home backup/restore acceptance remains pending. A disposable Talos probe confirmed that Codex's filesystem sandbox cannot run with this Pod profile; deprecated Landlock still requires bubblewrap and is not a working fallback. No sandbox or approval bypass is configured.
+PRs #148 and #149 are merged and `homeops-dev:0.1.1` is public and digest-pinned. Runtime checks on 2026-10-14 confirm a Ready workspace, successful automatic setup, Authentik-only login, non-root settings, healthy PostgreSQL, continuous WAL archival, a completed database backup and a completed scheduled home backup. Restore acceptance remains pending. LabOps, Slots and City data and the selected operator inputs were transferred to the retained home. Read-only calls from the workspace verified both Kubernetes clusters, Talos, Proxmox SSH/passwordless sudo and GitHub; all three local Terraform state snapshots match the source. Coder is the primary Terraform runner. The 0.1.2 image adds Claude and requires publication and explicit template/image adoption before it is available in this running workspace. A disposable Talos probe confirmed that Codex's filesystem sandbox cannot run with this Pod profile; deprecated Landlock still requires bubblewrap and is not a working fallback. No sandbox or approval bypass is configured.
 
 ## Components
 
@@ -25,13 +25,15 @@ PR #148 is merged and `homeops-dev:0.1.1` is public. Runtime checks on 2026-10-1
 
 The persistent home is independent of the workspace lifecycle. Stop, start or replacement must preserve it. The requested local-path size is not a disk quota; track actual node storage and usage.
 
+The container filesystem outside `/home/coder` is replaceable. Keep projects under `~/projects` (also `/opt/homeops`) and personal account/cluster configuration under the home directory. `.codex`, `.claude`, `.claude.json`, `.kube`, `.talos`, `.ssh` and user shell profiles survive ordinary stop/start, Pod replacement and image updates. Coder's workspace Terraform never owns the home PVC; GitOps marks it `Delete=false,Prune=false`. These protections do not recover a deliberately deleted volume or a lost node disk: use the documented R2 restore procedure. A persisted session can still expire or be revoked by its provider.
+
 ## Private access
 
 The existing Proxmox Tailscale router advertises `192.168.10.0/24`. Tailnet DNS already sends the `lab.bingo` zone to `192.168.10.160`, which also covers Coder. Private CoreDNS answers Coder with `192.168.10.151`. No additional Tailscale DNS route is necessary.
 
 The Coder ingress permits LAN, tailnet and workspace pod sources. No Cloudflare public DNS record or Tunnel route is added. TLS is issued through the existing DNS-01 issuer. Workspace pods have an explicit host alias for the private Coder name because cluster DNS does not use the tailnet resolver.
 
-Native SSH bypasses the Coder CLI transport and uses the supplied iSH public key. Its NodePort is reachable on the LAN and through the subnet route. No Internet port forwarding is part of this setup. Tailnet ACL ownership remains with the operator; restrict the subnet route to the intended devices/users.
+Native SSH bypasses the Coder CLI transport and uses the operator's iSH and desktop public keys declared in `base/authorized_keys`. Its NodePort is reachable on the LAN and through the subnet route. No Internet port forwarding is part of this setup. Tailnet ACL ownership remains with the operator; restrict the subnet route to the intended devices/users.
 
 Kubernetes projects ConfigMap keys under a directory with mode 0777, even on a read-only mount. OpenSSH rejects that directory as an ordinary authorized-keys file path with `StrictModes yes`. The server keeps that check enabled and loads only the declared public keys through `AuthorizedKeysCommand /usr/bin/cat /etc/coder-ssh/authorized_keys`, executed as the existing non-root `coder` user. The command is root-owned in the image and its input is the read-only GitOps ConfigMap; local home keys are not an additional login source.
 
@@ -56,11 +58,12 @@ Verify the first owner, its login type and the sole group member after login. Do
 | Bitwarden machine token | Existing `labprod` bootstrap token; recover/rotate through the Secrets Manager machine account and `hacks/bootstrap-bitwarden.sh`. Two least-privilege sync CronJobs propagate it to the Coder namespaces. |
 | R2 access pair | Existing bucket-scoped Object Read and Write credential in the Bitwarden `labprod` project; recover from Bitwarden or replace at Cloudflare and update the mapped values. It is reused for dedicated Coder prefixes, not prefix-isolated from other consumers of the same bucket. |
 | Authentik account access | Operator password manager and the Authentik recovery runbook. The public PKCE client adds no shared secret. |
-| SSH private key | Remains on the operator's iPhone. Git stores only its public key; replace that key declaratively if the device/key is lost. |
+| SSH private keys | Remain on the operator's respective iPhone and desktop devices. Git stores only their public keys in `base/authorized_keys`; add or revoke a device key declaratively there and verify its fingerprint with `ssh-keygen -lf` before publication. Replace/revoke that public key if its device/private key is lost. |
 | Coder setup credentials | Generated in memory by the operator-owned job using the existing CNPG application credential. Temporary local identities are deleted and setup tokens revoked; an interrupted token expires after fifteen minutes. No additional recoverable secret is required. |
 | Workspace image publication | Existing GitHub Actions package-write token; configure the GHCR package for anonymous read, or recover a scoped pull credential separately. No token is committed. |
 | Operator client access | Existing `labmgmt`/`labprod` kubeconfigs and optional Talos config, generated by `hacks/cluster-setup.sh`; recover from the infrastructure state and trusted operator configuration as documented in `hacks/README.md`. Explicit enrollment streams only these contexts into retained home files (0600) and preserves existing defaults. Re-enroll after client credential rotation. No new cluster, role or image credential is created. |
 | Codex account | Operator's OpenAI account and its recovery method. First device-code login is completed by the account owner; the auth cache stays in the private retained home. Recover by signing in again, never by baking a token into an image. |
+| Claude account | Operator's Claude subscription or Anthropic Console account, with permissions to use Claude Code. The owner completes `claude auth login` after the Claude-containing image is adopted. Linux OAuth credentials stay in `~/.claude/.credentials.json` (0600), settings in `~/.claude` (0700) and `~/.claude.json`; home backups include them. Revoke/rotate through Anthropic or sign in again after loss; no credential is an image/Git input or a Coder login credential. |
 | Proxmox operator SSH | Existing private key for `bingo@192.168.1.100`, explicitly selected for enrollment. Recover from protected operator storage or install a replacement public key through the Proxmox administrator. The public host key is declared in `base/proxmox_known_hosts`, obtained through the existing operator connection on 2026-10-14; verify replacements through the Proxmox console/administrator after host reconstruction and update Git. Account and sudo permissions remain unchanged. Other personal SSH keys are excluded. |
 | Terraform inputs/state | Ignored `.tfvars` and local state for the `proxmox`, `cloudflare` and `network` stacks. Recover/rotate API credentials through their owning runbooks. Coder is the selected primary runner: finish source operations before transfer and retain source state privately for recovery. Subsequent state revisions depend on the retained-home backup. Never operate two independent state copies against the same infrastructure. |
 | CLI sessions/AWS | GitHub/Codex file-based sessions and explicitly selected AWS config/credentials are sensitive user inputs stored only in the private retained home. Recover by signing into their providers and revoke/rotate there. Source process environment, AWS SSO caches and unrelated SSH keys are excluded. |
@@ -139,6 +142,14 @@ Codex runs on the workspace through this SSH session. For first account enrollme
 codex login --device-auth
 ```
 
+After adopting `homeops-dev:0.1.2`, enroll Claude separately using [its official login flow](https://code.claude.com/docs/en/authentication). Follow the URL/code instructions in the SSH terminal using Safari; retain any verification code privately:
+
+```sh
+claude auth login
+```
+
+Run `claude` in the desired project. To change accounts use `claude auth logout` followed by `claude auth login`; for Codex use `codex logout` followed by `codex login --device-auth`. Startup preserves those user-owned sessions and settings. Authentik signs you into Coder only. An account login does not verify model execution or sandbox compatibility.
+
 Clone the project once into the persistent directory; an existing checkout is preserved:
 
 ```sh
@@ -165,6 +176,20 @@ Python libraries installed in the image are visible to that virtual environment.
 
 ## Operator cluster access
 
+Personal Bash aliases can also be enrolled from the trusted source operator host:
+
+```sh
+python3 hacks/provision-homeops-dev.py --shell-aliases
+```
+
+This copies only the explicitly selected `~/.bash_aliases` into the retained home (0600), adds common Bash shortcuts and appends an idempotent interactive-only loading hook to existing Bash/profile files without replacing their contents. It does not copy the PC's complete shell initialization, environment or history. Differing existing alias files or symlinked profiles make enrollment refuse before writes. Edit `~/.bash_aliases` in Coder for subsequent personal changes, then reload `~/.bashrc` or reconnect. Startup preserves these user-owned files, and the home backup covers them. Recovery comes from that backup or the owner's original alias file; no personal alias definition is committed to Git.
+
+Kubernetes aliases retain their behavior and permissions: enrolling them never executes their commands. Windows paths/tools and unrelated `/opt` checkouts remain PC-specific. If the source's `ls` alias needs unavailable `exa`, the loader uses `eza` when available or GNU `ls`; absent `btop` restores ordinary `top` lookup. This avoids breaking basic shell commands while preserving the original private definitions. Verify names only, without exposing alias values:
+
+```sh
+compgen -A alias
+```
+
 Run from the trusted operator host after the workspace is ready. This writes personal generated client configuration to the retained home; it does not create a Kubernetes Secret, cluster or role. The helper selects only the existing `labmgmt` and `labprod` identities and never prints them:
 
 ```sh
@@ -182,6 +207,18 @@ This installs `.kube/homeops-config` and optionally `.talos/homeops-config` with
 ```sh
 export KUBECONFIG="$HOME/.kube/homeops-config" TALOSCONFIG="$HOME/.talos/homeops-config"
 ```
+
+Choose the active cluster at any time from the workspace; these commands change only the persisted client selection, not infrastructure:
+
+```sh
+kubectl config use-context labprod
+```
+
+```sh
+talosctl config context labprod
+```
+
+Use `labmgmt` instead for the management cluster, or pass `--context` on an individual command. Re-run the cluster-only enrollment command above from the trusted source after credential rotation. It updates the two managed identities and keeps the selected context if still available; it does not transfer or overwrite Claude/Codex sessions. An existing separate default config is still preserved. Additional personal contexts belong in a separate user-owned config, since these generated files manage only `labmgmt`/`labprod`. Credentials are enrolled snapshots: this is not an automatic issuer or rotation service. Do not repeatedly use the full initial migration command, especially its Terraform-state/session options, to refresh cluster access.
 
 Verify without displaying credentials:
 
@@ -243,7 +280,7 @@ Treat the workspace project as user data protected by its file backup. The local
 
 PostgreSQL has WAL archival and daily full backups through the operator's Barman plugin. Workspace files use the existing private R2 bucket, every four hours, with version archives for changed or deleted objects. Credentials are mounted only into backup jobs, not the development container.
 
-The file backup includes projects, output, personal client configurations (including enrolled kubeconfig/Talos/Codex credentials) and the SSH host key. Caches, package installations and virtual environments are excluded. It is a live file copy, not an atomic filesystem or application snapshot. A running simulator should write checkpoints atomically; a database introduced inside the workspace would need its own consistent backup procedure.
+The file backup includes projects, output, personal client configurations (including enrolled kubeconfig/Talos/Codex credentials, Claude's `.credentials.json`, settings and `.claude.json`) and the SSH host key. Caches, package installations and virtual environments are excluded. It is a live file copy, not an atomic filesystem or application snapshot. A running simulator should write checkpoints atomically; a database introduced inside the workspace would need its own consistent backup procedure.
 
 These R2 files use bucket access control and HTTPS; no separate client-side encryption layer is configured. The full home can include personal tokens, so treat its R2 access pair as privileged. More restrictive backup credentials or encryption require a separately recoverable key.
 

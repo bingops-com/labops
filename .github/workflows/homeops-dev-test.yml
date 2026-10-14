@@ -30,8 +30,6 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - name: Verify private client configuration transport with fake credentials
-        run: python3 -m unittest discover -s hacks/tests -p test_homeops_dev.py
       - uses: docker/setup-buildx-action@v3
         with:
           driver-opts: image=mirror.gcr.io/moby/buildkit:buildx-stable-1
@@ -40,5 +38,7 @@ jobs:
               mirrors = ["mirror.gcr.io"]
       - name: Build the pinned development environment
         run: docker buildx build --load --tag labops-homeops-dev:test docker/homeops-dev
+      - name: Verify fake credential rotation with the real runtime clients and YAML parser
+        run: docker run --rm --env PYTHONDONTWRITEBYTECODE=1 --mount "type=bind,src=${{ github.workspace }},dst=/tmp/repo,readonly" --workdir /tmp/repo labops-homeops-dev:test python3 -m unittest discover -s hacks/tests -p test_homeops_dev.py
       - name: Verify iSH-compatible SSH and HomeOps tools as UID 1000
         run: bash .github/scripts/test-coder-workspace.sh labops-homeops-dev:test homeops

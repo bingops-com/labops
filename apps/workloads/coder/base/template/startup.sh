@@ -2,8 +2,11 @@
 set -euo pipefail
 umask 077
 
-mkdir -p /home/coder/.ssh /home/coder/.config/lab /home/coder/.codex /home/coder/projects
-chmod 700 /home/coder/.codex
+mkdir -p /home/coder/.ssh /home/coder/.config/lab /home/coder/.codex /home/coder/.claude /home/coder/projects
+chmod 700 /home/coder/.codex /home/coder/.claude
+if [[ -f /home/coder/.claude.json ]]; then
+  chmod 600 /home/coder/.claude.json
+fi
 if [[ ! -f /home/coder/.codex/config.toml ]]; then
   printf '%s\n' 'cli_auth_credentials_store = "file"' > /home/coder/.codex/config.toml
 fi
@@ -39,7 +42,7 @@ GatewayPorts no
 ClientAliveInterval 60
 ClientAliveCountMax 3
 Subsystem sftp internal-sftp
-SetEnv PATH=/home/coder/.local/bin:/usr/local/go/bin:/usr/lib/postgresql/18/bin:/usr/local/bin:/usr/bin:/bin CHROMIUM=/usr/bin/chromium ANSIBLE_COLLECTIONS_PATH=/home/coder/.ansible/collections:/opt/homeops-dev/collections CLUSTERCTL_DISABLE_VERSIONCHECK=true
+SetEnv PATH=/home/coder/.local/bin:/usr/local/go/bin:/usr/lib/postgresql/18/bin:/usr/local/bin:/usr/bin:/bin CHROMIUM=/usr/bin/chromium ANSIBLE_COLLECTIONS_PATH=/home/coder/.ansible/collections:/opt/homeops-dev/collections CLUSTERCTL_DISABLE_VERSIONCHECK=true DISABLE_AUTOUPDATER=1
 CONFIG
 
 /usr/sbin/sshd -t -f /home/coder/.config/lab/sshd_config

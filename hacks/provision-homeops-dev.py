@@ -7,6 +7,33 @@ from pathlib import Path
 import subprocess
 
 
+SHELL_INIT = '''# Personal aliases live on the retained home, never in the image.
+alias ls='ls --color=auto'
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+alias diff='diff --color=auto'
+alias ip='ip --color=auto'
+alias ll='ls -l'
+alias la='ls -A'
+alias l='ls -CF'
+if [[ -r "$HOME/.bash_aliases" ]]; then
+  source "$HOME/.bash_aliases"
+fi
+# Preserve the source definitions, but keep core commands usable without PC tools.
+if [[ $(alias ls 2>/dev/null) == "alias ls='exa -Sl --icons'" ]] && ! command -v exa >/dev/null; then
+  if command -v eza >/dev/null; then
+    alias ls='eza -Sl --icons'
+  else
+    alias ls='ls --color=auto'
+  fi
+fi
+if [[ $(alias top 2>/dev/null) == "alias top='btop'" ]] && ! command -v btop >/dev/null; then
+  unalias top
+fi
+'''
+
+
 INSTALL = '''import base64,json,os,pathlib,tempfile,sys
 payload=json.load(sys.stdin)
 home=pathlib.Path("/home/coder")
@@ -21,12 +48,29 @@ for relative,content in payload.items():
         if ancestor.is_symlink():
             raise SystemExit("Refusing a symlinked credential destination")
     raw=isinstance(content,dict) and set(content)=={"_file_base64"}
+    # Rotation updates managed identities but keeps a still-valid user choice.
+    if target.exists() and relative in (".kube/homeops-config",".talos/homeops-config"):
+        import yaml
+        previous=yaml.safe_load(target.read_text())
+        field="current-context" if relative.startswith(".kube/") else "context"
+        contexts=content.get("contexts",{})
+        available={entry["name"] for entry in contexts} if isinstance(contexts,list) else set(contexts)
+        if previous.get(field) in available: content[field]=previous[field]
     data=base64.b64decode(content["_file_base64"],validate=True) if raw else (json.dumps(content)+"\\n").encode()
     if relative.startswith("projects/labops/") and not (home/"projects/labops/.git").exists():
         raise SystemExit("Clone LabOps before enrolling project configuration")
     if raw and target.exists() and target.read_bytes()!=data:
         raise SystemExit("Existing operator file differs; refusing to overwrite")
     prepared.append((relative,target,data))
+if ".bash_aliases" in payload:
+    hook='\\n# HomeOps retained aliases (managed enrollment hook)\\ncase $- in *i*) if [ -n "${BASH_VERSION:-}" ] && [ -r "$HOME/.config/homeops/aliases-init.bash" ]; then . "$HOME/.config/homeops/aliases-init.bash"; fi ;; esac\\n'
+    profiles=[".bashrc",".profile",*[name for name in (".bash_profile",".bash_login") if os.path.lexists(home/name)]]
+    for relative in profiles:
+        target=home/relative
+        if target.is_symlink(): raise SystemExit("Refusing a symlinked shell profile")
+        previous=target.read_text() if target.exists() else ""
+        if hook not in previous:
+            prepared.append((relative,target,(previous+hook).encode()))
 for relative,target,data in prepared:
     missing=[]
     parent=target.parent
@@ -34,7 +78,7 @@ for relative,target,data in prepared:
         missing.append(parent)
         parent=parent.parent
     for directory in reversed(missing): directory.mkdir(mode=0o700)
-    if not relative.startswith("projects/"): target.parent.chmod(0o700)
+    if target.parent!=home and not relative.startswith("projects/"): target.parent.chmod(0o700)
     descriptor,name=tempfile.mkstemp(prefix=".homeops-",dir=target.parent)
     try:
         with os.fdopen(descriptor,"wb") as stream: stream.write(data)
@@ -73,7 +117,7 @@ def kubeconfig(contexts):
     return merged
 
 
-def operator_files(home, root=None, proxmox_key=None, cli_sessions=False, aws_config=False, terraform_state=False):
+def operator_files(home, root=None, proxmox_key=None, cli_sessions=False, aws_config=False, terraform_state=False, shell_aliases=False):
     """Select HomeOps inputs explicitly; never collect the entire operator home."""
     files = {}
 
@@ -97,6 +141,9 @@ def operator_files(home, root=None, proxmox_key=None, cli_sessions=False, aws_co
             source = home / relative
             if source.exists():
                 add(relative, source)
+    if shell_aliases:
+        add(".bash_aliases", home / ".bash_aliases")
+        files[".config/homeops/aliases-init.bash"] = {"_file_base64": base64.b64encode(SHELL_INIT.encode()).decode()}
     if aws_config:
         for relative in (".aws/config", ".aws/credentials"):
             source = home / relative
@@ -125,6 +172,7 @@ def main():
     parser.add_argument("--talos-config", type=Path, help="Optional existing operator Talos config; only labmgmt/labprod are transferred")
     parser.add_argument("--proxmox-key", type=Path, help="Existing operator SSH key for bingo@192.168.1.100; other SSH keys are excluded")
     parser.add_argument("--cli-sessions", action="store_true", help="Enroll existing GitHub/Codex file-based sessions")
+    parser.add_argument("--shell-aliases", action="store_true", help="Enroll existing ~/.bash_aliases and load them in interactive Bash/SSH; preserve personal profiles")
     parser.add_argument("--aws-config", action="store_true", help="Enroll the operator AWS config/credentials files; SSO caches are excluded")
     parser.add_argument("--homeops-root", type=Path, help="Existing LabOps checkout; select ignored input files for the three Terraform stacks")
     parser.add_argument("--include-terraform-state", action="store_true", help="Move a snapshot of local Terraform state after choosing Coder as primary")
@@ -140,7 +188,7 @@ def main():
         if not all(name in contexts for name in ("labmgmt", "labprod")):
             raise RuntimeError("Talos config must contain labmgmt and labprod")
         payload[".talos/homeops-config"] = {"context": "labprod", "contexts": {name: contexts[name] for name in ("labmgmt", "labprod")}}
-    payload.update(operator_files(Path.home(), args.homeops_root, args.proxmox_key, args.cli_sessions, args.aws_config, args.include_terraform_state))
+    payload.update(operator_files(Path.home(), args.homeops_root, args.proxmox_key, args.cli_sessions, args.aws_config, args.include_terraform_state, args.shell_aliases))
     run(["kubectl", "--context", "labprod", "-n", "coder-workspaces", "exec", "-i", "deployment/coder-bingops-lab", "--", "python3", "-c", INSTALL], json.dumps(payload).encode())
     print("Selected operator access installed privately (0600); no new cluster or role created")
     if args.include_terraform_state:

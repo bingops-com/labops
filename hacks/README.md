@@ -16,12 +16,17 @@
   home after its Pod is ready. It streams private content through exec, writes
   0600 generated files, preserves existing default configs and never prints
   credentials. This is personal access enrollment, not a cluster/role creation.
-  Re-run it after client credential rotation; see the owning Coder runbook.
+  Re-run it after client credential rotation; the cluster-only invocation
+  preserves a still-valid selected context and does not overwrite personal
+  Claude/Codex sessions. See the owning Coder runbook.
   Optional flags enroll the selected Proxmox SSH key/host trust, GitHub/Codex
   sessions, AWS files and the three Terraform stacks' ignored inputs. State
   transfer explicitly selects Coder as primary; never run Terraform against an
   independent stale state copy on the old PC. Differing existing private files
   are preserved by refusing the operation before writes.
+  `--shell-aliases` privately transfers the source `~/.bash_aliases` and appends
+  interactive Bash loading hooks without replacing profiles or copying shell
+  history/environment. Personal changes then belong to the retained Coder home.
 - `retire-lost-kube-vms.sh` is reserved for the documented total-disk-loss
   recovery and must receive the exact approved VM IDs.
 - `purge-r2-bucket.py` reports whether an R2 bucket contains objects and purges

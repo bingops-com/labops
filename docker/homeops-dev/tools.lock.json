@@ -1,5 +1,12 @@
 [
   {
+    "name": "claude",
+    "version": "2.1.287",
+    "url": "https://downloads.claude.ai/claude-code-releases/2.1.287/linux-x64/claude",
+    "sha256": "3920489a5109cff5786a1a392c25277408ff22bc796d5edb9c16a60e5a1718f0",
+    "archive": "binary"
+  },
+  {
     "name": "terraform",
     "version": "1.10.5",
     "url": "https://releases.hashicorp.com/terraform/1.10.5/terraform_1.10.5_linux_amd64.zip",
