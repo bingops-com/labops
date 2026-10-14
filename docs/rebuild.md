@@ -69,8 +69,9 @@ configs are sensitive generated state, not documentation.
    archive reuses the existing bucket-scoped R2 key under the dedicated
    `slots` prefix; verify WAL archival and one completed backup before opening
    ranked play. See `apps/workloads/slots/README.md`.
-   Games is prepared with manual synchronization. Recover its bucket-scoped
-   R2 key from Bitwarden and publish the pinned Games commit image before sync.
+   Games follows the automatic synchronization policy of every active
+   Application. Recover its bucket-scoped R2 key from Bitwarden and publish the
+   pinned Games commit image before reconciling its production declaration.
    Reconcile Authentik's `games-admin` blueprint after the existing `bingops`
    identity, then verify its strict Games callback and dedicated `games-admins`
    group. The public PKCE client needs no additional secret. Review the declared
@@ -83,9 +84,10 @@ configs are sensitive generated state, not documentation.
    Accounts use pseudonyms, passwords and offline single-use recovery codes;
    no SMTP, SMS, mail DNS or Postfix deployment is needed. Recovery-code hashes
    live in PostgreSQL and follow the same backup/restore lifecycle as accounts.
-   Demonstrate NetworkPolicy enforcement before an authorized Games sync.
-   The current Flannel installation has no policy controller;
-   review its addition separately before relying on isolation. Verify recovery
+   Network isolation remains a separate acceptance requirement. The current
+   Flannel installation has no policy controller; review its addition separately
+   before relying on isolation. Automatic sync does not demonstrate enforcement.
+   Verify recovery
    codes, backup and isolated restore before public use. Existing accounts
    create their own codes from “Mon compte” using their current password.
    Ownership and repeatable setup: `apps/workloads/games/README.md`.

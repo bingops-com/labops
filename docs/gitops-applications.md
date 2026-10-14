@@ -4,6 +4,27 @@ There is one workload environment, `labprod`. Every application has one
 production overlay at `apps/workloads/<app>/clusters/labprod` and one Argo CD
 Application at `apps/gitops/clusters/labprod/<app>.yaml`.
 
+## Synchronization policy
+
+All active Applications and the bootstrap root declare `automated.prune: true`
+and `automated.selfHeal: true`. Argo applies reviewed desired-state changes from
+`master`, corrects drift and prunes resources removed from the declared state.
+Declare the same policy when adding an Application to the active root. Dormant
+manifests excluded from its Kustomization are not activated by this policy.
+
+The "last sync" timestamp records an applied operation, not the latest Git
+comparison. It can remain old while an application is Synced and Healthy. A
+failed sync or a comparison error still needs diagnosis; automatic mode does
+not establish backup, SSO or isolation acceptance.
+
+Merging an application repository alone does not advance pinned LabOps images
+or chart commits. Publish first, then update the paired pins in a reviewed
+LabOps PR. Restore/cutover procedures must suspend automatic synchronization
+through a reviewed change to the affected Application declaration before
+temporary changes, then restore the policy after recovered state is ready.
+Disabling only a live child Application is insufficient: the root's self-healing
+would restore the declaration from Git.
+
 ## Application acceptance gate
 
 Every new application must classify its database, authentication and durable
@@ -31,7 +52,7 @@ The current application decisions are:
 | Gatus | None; seven-day SQLite history is disposable. | Not applicable; no exposed UI. | Loss resets history and is accepted. |
 | Status | None; a JSON file on its PVC holds 90 days of availability derived from Gatus. | Not applicable; public, read-only page with no login and no privileged function. | Loss resets the figures of the page and is accepted. |
 | Slots | `slots-postgresql` (CloudNativePG). | Not applicable; pseudonymous player accounts have no privileged role and there is no operator UI. | Database to the `slots` R2 prefix. |
-| Games (prepared, manual sync) | `games-postgresql` (CloudNativePG). | Player accounts are separate; the operator panel requires Authentik, exact `bingops` identity and `games-admins` membership. | WAL and daily backups to the `games` R2 prefix, including administrator action history; offline recovery-code, isolation and runtime acceptance required before publication. |
+| Games | `games-postgresql` (CloudNativePG). | Player accounts are separate; the operator panel requires Authentik, exact `bingops` identity and `games-admins` membership. | WAL and daily backups to the `games` R2 prefix, including administrator action history; offline recovery-code, isolation and runtime acceptance remain required. |
 | Mail (dormant; excluded from the GitOps root) | No database; Postfix queue on `relay-spool` PVC. | Internal authenticated submission only; no public SMTP endpoint. | Bitwarden owns SMTP/DKIM credentials; cert-manager reissues TLS. Queue survives pod replacement but is disposable after disk loss. See `apps/platform/mail/labprod/README.md`. |
 | Portfolio | None; stateless public site. | Not applicable; no privileged UI. | Rebuild from Git and the immutable image. |
 | Coder (acceptance in progress) | `coder-postgresql` (CloudNativePG). | Public OIDC PKCE client restricted to `coder-admins`, only `bingops`; automatically provisioned OIDC owner. Temporary local bootstrap identities are deleted. | WAL and daily backups to the `coder` R2 prefix; retained home to `coder-workspaces/bingops-lab` with 30-day changed-object history. Both restore acceptance checks are required. |
