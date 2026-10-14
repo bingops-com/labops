@@ -8,25 +8,32 @@ Slots is the public fictional-credit game at `https://slots.lab.bingo`. Argo CD
 combines the Helm chart and immutable application commit from
 `bingops-com/slots` with the production values and prerequisite resources in
 this directory. Application source merges do not change these pins. The candidate
-chart/image pair is `7c31abc213dc51a0931f7c9b8b55c17902f8087d`, the merge of
-[Slots PR #5](https://github.com/bingops-com/slots/pull/5), including the previous
+chart/image pair is `3157ac7f3e8d9c74dd5fb8f2c029cef3419217c8`, the merge of
+[Slots PR #6](https://github.com/bingops-com/slots/pull/6), including the previous
+[Slots PR #5](https://github.com/bingops-com/slots/pull/5) advance repayment and
 [Slots PR #4](https://github.com/bingops-com/slots/pull/4) restorations. The GHCR
 package must be public because the pod has no registry credential.
 
-This release restores illustrations, multiplayer blackjack seat/multiple-hand
-selection and deal timing, fixes mobile/desktop dialogs and adds guarded opt-in
-shared accounts. Shared mode remains off, with the existing standalone CNPG
+This release improves multiplayer blackjack betting and split hands, adds
+optional Perfect Pairs and 21+3 side bets, adjusts its timers, updates icons and
+supports bounded repeated Plinko drops while Space is held. The previous
+illustration, dialog and shared-account changes are retained. Shared mode
+remains off, with the existing standalone CNPG
 database and backups. Continuous sea ambience stays removed; action effects,
 reel/coin sounds and bonus melodies remain available. Argo CD
 replaces the single Slots instance when its image changes, briefly interrupting
 play; PostgreSQL accounts, balances and backups are preserved. After an
 authorized rollout, reload the page so the service worker updates the cached UI.
 
-Advance repayment comes from Slots PR #5. Before deployment, require its master
+Before deployment, require the selected merge commit's master
 image workflow to pass and verify anonymous Linux/amd64 access to the pinned
 merge-commit image. Never select an unpublished or unmerged branch commit.
-Repayment transfers credits from balance to score while
-reducing debt and stores preserved points in `wallet.banked`, without a new SQL
+The chart and SQL persistence code are unchanged from PR #5; no schema migration
+is introduced by this update. After rollout, verify multiplayer split hands,
+side-bet settlements and Plinko hold/release behavior, as well as the existing
+account and wallet checks below. Advance repayment transfers credits from
+balance to score while reducing debt and stores preserved points in
+`wallet.banked`, without a new SQL
 schema. After the first repayment, an older engine that ignores `banked` is not
 a safe rollback unless that wallet field is preserved. The source accounts and
 balances must not be reset to force a rollback.
