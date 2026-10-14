@@ -10,6 +10,8 @@ cleanup() {
   if [[ -n "$container_id" ]]; then
     docker rm -f "$container_id" >/dev/null
   fi
+  # The mounted fake home belongs to container UID 1000, not the runner UID.
+  sudo rm -rf -- "$scratch/home"
   rm -rf "$scratch"
 }
 trap cleanup EXIT

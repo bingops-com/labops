@@ -39,6 +39,7 @@ class CredentialTransport(unittest.TestCase):
             self.assertEqual(self.install(home).returncode, 0)
             self.assertEqual(self.install(home).returncode, 0)
             target = home / ".kube/homeops-config"
+            self.assertEqual(json.loads(target.read_text()), {"credential": FAKE})
             self.assertEqual(target.stat().st_mode & 0o777, 0o600)
             self.assertEqual(target.parent.stat().st_mode & 0o777, 0o700)
             self.assertEqual((home / ".kube/config").resolve(), target)
