@@ -42,8 +42,10 @@ resource "coder_agent" "main" {
 }
 
 resource "kubernetes_deployment_v1" "lab" {
+  # Coder authorizes the agent only after apply completes. SSH readiness
+  # depends on the agent startup script, so waiting here deadlocks provisioning.
   count            = data.coder_workspace.me.start_count
-  wait_for_rollout = true
+  wait_for_rollout = false
   metadata {
     name      = "coder-bingops-lab"
     namespace = "coder-workspaces"
@@ -84,7 +86,7 @@ resource "kubernetes_deployment_v1" "lab" {
         }
         container {
           name        = "dev"
-          image       = "ghcr.io/bingops-com/homeops-dev:0.1.1"
+          image       = "ghcr.io/bingops-com/homeops-dev@sha256:5224f6e6c1fb0fc44baa538369fe3c25ecb2d7d4a830091b3ef93deffdb4aabe"
           working_dir = "/home/coder"
           command     = ["/bin/sh", "-c", coder_agent.main.init_script]
           env {

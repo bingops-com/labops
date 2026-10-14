@@ -6,7 +6,7 @@ Coder provides the private control plane at `https://coder.lab.bingo`. The `bing
 
 Argo CD owns the `coder-labprod` workload, the retained home PVC, SSH Service, secret mappings and backup schedules. Coder's Terraform template owns only the workspace Deployment. Terraform's network stack owns tailnet DNS. Authentik owns identity and authorization. Bitwarden owns the R2 credential.
 
-PR #147 is merged and `homeops-dev:0.1.0` is public. Runtime checks on 2026-10-14 confirm Argo synchronization, Authentik-only login, non-root settings, healthy PostgreSQL, continuous WAL archival and a completed database backup. The workspace fails before its process starts: runc cannot create the image's `/opt/homeops` symlink as its working directory while mounting the retained home. The corrected template and image 0.1.1 explicitly start in `/home/coder`. These corrections and expanded operator enrollment await deployment. SSH, Codex sandbox execution, access enrollment and home backup/restore are not yet validated.
+PR #148 is merged and `homeops-dev:0.1.1` is public. Runtime checks on 2026-10-14 confirm Argo synchronization, Authentik-only login, non-root settings, healthy PostgreSQL, continuous WAL archival and a completed database backup. The remaining provisioning cycle waits for SSH before authorizing the agent that launches SSH. This template disables that wait and pins the published digest; integration and failed-build recovery remain pending. As a temporary recovery, the versioned startup script initialized/reloaded SSH, making the existing Pod Ready without replacing its volume. LabOps, Slots and City data and the selected operator inputs were transferred to the retained home. Read-only calls from the workspace verified both Kubernetes clusters, Talos, Proxmox SSH/passwordless sudo and GitHub; all three local Terraform state snapshots match the source. Coder is the primary Terraform runner. First home backup/restore acceptance remains pending. A disposable Talos probe confirmed that Codex's filesystem sandbox cannot run with this Pod profile; deprecated Landlock still requires bubblewrap and is not a working fallback. No sandbox or approval bypass is configured.
 
 ## Components
 
@@ -32,6 +32,8 @@ The existing Proxmox Tailscale router advertises `192.168.10.0/24`. Tailnet DNS 
 The Coder ingress permits LAN, tailnet and workspace pod sources. No Cloudflare public DNS record or Tunnel route is added. TLS is issued through the existing DNS-01 issuer. Workspace pods have an explicit host alias for the private Coder name because cluster DNS does not use the tailnet resolver.
 
 Native SSH bypasses the Coder CLI transport and uses the supplied iSH public key. Its NodePort is reachable on the LAN and through the subnet route. No Internet port forwarding is part of this setup. Tailnet ACL ownership remains with the operator; restrict the subnet route to the intended devices/users.
+
+Kubernetes projects ConfigMap keys under a directory with mode 0777, even on a read-only mount. OpenSSH rejects that directory as an ordinary authorized-keys file path with `StrictModes yes`. The server keeps that check enabled and loads only the declared public keys through `AuthorizedKeysCommand /usr/bin/cat /etc/coder-ssh/authorized_keys`, executed as the existing non-root `coder` user. The command is root-owned in the image and its input is the read-only GitOps ConfigMap; local home keys are not an additional login source.
 
 The current cluster uses Flannel without a NetworkPolicy enforcement controller. Namespace separation and scoped service accounts do not establish network isolation from production services. This workspace is reserved for trusted operator code. Untrusted multi-user execution requires an enforcement layer or a separate cluster before expanding access.
 
@@ -78,6 +80,10 @@ These steps change live infrastructure and are for the installation authorized b
 6. After the Pod is ready, clone LabOps into `/opt/homeops/labops`, enroll the selected operator access and verify a real CLI task. Migrate local Terraform state before running Terraform there. The image creates no cluster and applies no HomeOps infrastructure automatically.
 
 ## Automatic initialization and retries
+
+Terraform creates the workspace Deployment with `wait_for_rollout = false`, as in [Coder's official Kubernetes template](https://github.com/coder/coder/blob/main/examples/templates/kubernetes/main.tf). A successful infrastructure apply permits agent authentication; its blocking startup script then launches SSH. The unchanged TCP readiness probe still reports actual SSH availability. Coder agent/startup state and Kubernetes readiness are separate from the provision-job result. Do not make Terraform completion wait for a probe that depends on its own agent registration, and do not increase the ten-minute timeout to hide this cycle.
+
+CI provisions this real template against a disposable Kubernetes cluster on a GitHub runner, checks agent connection and retained-home initialization, then logs in with a generated SSH key. No cluster is created on Coder or HomeOps infrastructure by that test, and no operator credentials are used.
 
 The CronJob uses a small image containing the pinned official Coder CLI and Python. It can read only its own ServiceAccount metadata and the generated `coder-postgresql-app` Secret. The development container has neither of these permissions nor the bootstrap token. The job retrieves the connection only when initialization is needed and does not write it into the home or its logs.
 

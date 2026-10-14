@@ -30,7 +30,10 @@ methods = bootstrap.API().call("/api/v2/users/authmethods")
 assert methods["github"]["enabled"] is False, "GitHub login must be disabled"
 assert methods["password"]["enabled"] is False, "Password login must remain disabled"
 assert methods["oidc"]["enabled"] is True, "OIDC login must remain enabled"
-if phase == "initial_failure":
+if phase == "kubernetes_initial":
+    bootstrap.main()
+    assert marker.exists()
+elif phase == "initial_failure":
     try:
         bootstrap.main()
     except RuntimeError:
