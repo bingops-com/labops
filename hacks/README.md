@@ -16,7 +16,9 @@
   home after its Pod is ready. It streams private content through exec, writes
   0600 generated files, preserves existing default configs and never prints
   credentials. This is personal access enrollment, not a cluster/role creation.
-  Re-run it after client credential rotation; see the owning Coder runbook.
+  Re-run it after client credential rotation; the cluster-only invocation
+  preserves a still-valid selected context and does not overwrite personal
+  Claude/Codex sessions. See the owning Coder runbook.
   Optional flags enroll the selected Proxmox SSH key/host trust, GitHub/Codex
   sessions, AWS files and the three Terraform stacks' ignored inputs. State
   transfer explicitly selects Coder as primary; never run Terraform against an

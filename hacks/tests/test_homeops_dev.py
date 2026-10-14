@@ -53,6 +53,39 @@ class CredentialTransport(unittest.TestCase):
             self.assertEqual(self.install(home).returncode, 0)
             self.assertEqual(default.read_text(), "existing operator configuration")
 
+    def test_cluster_rotation_preserves_context_choice_and_cli_sessions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            kube = {"current-context": "labprod", "contexts": [{"name": "labmgmt"}, {"name": "labprod"}], "users": [{"credential": FAKE}]}
+            talos = {"context": "labprod", "contexts": {"labmgmt": {}, "labprod": {"credential": FAKE}}}
+            payload = {".kube/homeops-config": kube, ".talos/homeops-config": talos}
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            for relative, field in ((".kube/homeops-config", "current-context"), (".talos/homeops-config", "context")):
+                target = home / relative
+                config = json.loads(target.read_text())
+                config[field] = "labmgmt"
+                target.write_text(json.dumps(config))
+            for relative in (".codex/auth.json", ".claude/.credentials.json"):
+                target = home / relative
+                target.parent.mkdir()
+                target.write_text("existing personal session")
+            kube["users"] = [{"credential": "TEST_ONLY_ROTATED_CREDENTIAL"}]
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            self.assertEqual(json.loads((home / ".kube/homeops-config").read_text())["current-context"], "labmgmt")
+            self.assertEqual(json.loads((home / ".talos/homeops-config").read_text())["context"], "labmgmt")
+            self.assertEqual(json.loads((home / ".kube/homeops-config").read_text())["users"], kube["users"])
+            for relative in (".codex/auth.json", ".claude/.credentials.json"):
+                self.assertEqual((home / relative).read_text(), "existing personal session")
+
+    def test_removed_context_falls_back_to_declared_default(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            initial = {"current-context": "retired-test-context", "contexts": [{"name": "retired-test-context"}]}
+            self.assertEqual(self.install(home, {".kube/homeops-config": initial}).returncode, 0)
+            replacement = {"current-context": "labprod", "contexts": [{"name": "labprod"}]}
+            self.assertEqual(self.install(home, {".kube/homeops-config": replacement}).returncode, 0)
+            self.assertEqual(json.loads((home / ".kube/homeops-config").read_text())["current-context"], "labprod")
+
     def test_symlinked_credential_destination_is_refused(self):
         with tempfile.TemporaryDirectory() as directory:
             home = Path(directory)

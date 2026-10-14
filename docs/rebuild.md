@@ -127,11 +127,14 @@ configs are sensitive generated state, not documentation.
    OIDC owner and imports the Git-tracked template without a persistent setup
    password. Update its bootstrap generation after database-only recovery,
    then perform isolated database/file restore checks.
-   The `homeops-dev` image supplies Codex and HomeOps clients. Publish the reviewed
+   The `homeops-dev` image supplies Codex, Claude (from 0.1.2) and HomeOps clients. Publish the reviewed
    image before completing workspace acceptance, then re-enroll the trusted
    operator's `labmgmt`/`labprod` client configs with `provision-homeops-dev.py`
-   if they were not recovered with the home. First Codex login belongs to the
-   operator account and stays outside Git/images. A failed initial workspace
+   if they were not recovered with the home. First Codex/Claude login belongs to the
+   operator accounts and stays outside Git/images. Their user-owned auth/config
+   files persist under the home and are never replaced by startup or cluster-only
+   access refresh. Recover a lost or revoked login by signing into its provider
+   again. A failed initial workspace
    start retries against the active template without replacing its retained home.
    Terraform must complete before Coder can authorize the workspace agent;
    the Deployment does not wait for agent-dependent SSH readiness during apply.
