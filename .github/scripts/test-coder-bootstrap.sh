@@ -80,6 +80,7 @@ if [[ "$mode" == kubernetes ]]; then
   cp "$repo_root/apps/workloads/coder/base/template/startup.sh" "$scratch/template/startup.sh"
   ssh-keygen -q -t ed25519 -N '' -f "$scratch/client_key"
   kubectl create namespace coder-workspaces
+  kubectl label namespace coder-workspaces pod-security.kubernetes.io/enforce=restricted
   kubectl -n coder-workspaces create configmap coder-workspace-ssh --from-file="authorized_keys=$scratch/client_key.pub"
   kubectl apply -f - <<'PVC'
 apiVersion: v1
@@ -134,8 +135,13 @@ if [[ "$mode" == kubernetes ]]; then
     sleep 1
   done
   test -n "$port"
-  if ! ssh -i "$scratch/client_key" -p "$port" -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 'test "$(id -u)" = 1000 && test -f ~/.lab-initialized && codex --version'; then
+  if ! ssh -i "$scratch/client_key" -p "$port" -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 'test "$(id -u)" = 1000 && test -f ~/.lab-initialized && codex --version'; then
     kubectl -n coder-workspaces exec deployment/coder-bingops-lab -- tail -n 20 /home/coder/.config/lab/sshd.log
+    exit 1
+  fi
+  ssh-keygen -q -t ed25519 -N '' -f "$scratch/unlisted_key"
+  if ssh -i "$scratch/unlisted_key" -p "$port" -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 true > "$scratch/unlisted-result" 2>&1; then
+    echo 'An unlisted SSH key was accepted' >&2
     exit 1
   fi
   [[ $(query "SELECT count(*) FROM workspace_agents WHERE first_connected_at IS NOT NULL") == 1 ]]
