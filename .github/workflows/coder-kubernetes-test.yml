@@ -1,0 +1,49 @@
+---
+name: Coder Kubernetes provisioning acceptance
+
+'on':
+  pull_request:
+    branches: [master]
+    paths:
+      - apps/workloads/coder/base/template/**
+      - apps/workloads/coder/base/bootstrap.py
+      - .github/scripts/test-coder-bootstrap.*
+      - .github/workflows/coder-kubernetes-test.yml
+  push:
+    branches: [master]
+    paths:
+      - apps/workloads/coder/base/template/**
+      - apps/workloads/coder/base/bootstrap.py
+      - .github/scripts/test-coder-bootstrap.*
+      - .github/workflows/coder-kubernetes-test.yml
+
+permissions:
+  contents: read
+
+jobs:
+  provisioning-agent-and-ssh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: v1.36.1
+      - name: Install verified Kind for the disposable CI cluster
+        env:
+          KIND_SHA256: aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d
+        run: |
+          curl -fsSL --retry 3 https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64 -o kind
+          echo "$KIND_SHA256  kind" | sha256sum --check
+          chmod +x kind
+          sudo mv kind /usr/local/bin/kind
+      - uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: image=mirror.gcr.io/moby/buildkit:buildx-stable-1
+          buildkitd-config-inline: |
+            [registry."docker.io"]
+              mirrors = ["mirror.gcr.io"]
+      - name: Build bootstrap candidate
+        run: docker buildx build --load --tag labops-coder-bootstrap:test docker/coder-bootstrap
+      - name: Provision the real template and connect its agent and SSH
+        run: bash .github/scripts/test-coder-bootstrap.sh labops-coder-bootstrap:test kubernetes

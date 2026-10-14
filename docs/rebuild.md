@@ -133,6 +133,9 @@ configs are sensitive generated state, not documentation.
    if they were not recovered with the home. First Codex login belongs to the
    operator account and stays outside Git/images. A failed initial workspace
    start retries against the active template without replacing its retained home.
+   Terraform must complete before Coder can authorize the workspace agent;
+   the Deployment does not wait for agent-dependent SSH readiness during apply.
+   Verify agent startup and Kubernetes readiness separately after provisioning.
    Coder is the selected primary Terraform workstation: after cloning LabOps,
    enroll its ignored API inputs and the current local states from the trusted
    source, with no simultaneous source Terraform operation. Retain the source
