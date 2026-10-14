@@ -6,7 +6,7 @@ Coder provides the private control plane at `https://coder.lab.bingo`. The `bing
 
 Argo CD owns the `coder-labprod` workload, the retained home PVC, SSH Service, secret mappings and backup schedules. Coder's Terraform template owns only the workspace Deployment. Terraform's network stack owns tailnet DNS. Authentik owns identity and authorization. Bitwarden owns the R2 credential.
 
-PRs #148 and #149 are merged and `homeops-dev:0.1.1` is public and digest-pinned. Runtime checks on 2026-10-14 confirm a Ready workspace, successful automatic setup, Authentik-only login, non-root settings, healthy PostgreSQL, continuous WAL archival, a completed database backup and a completed scheduled home backup. Restore acceptance remains pending. LabOps, Slots and City data and the selected operator inputs were transferred to the retained home. Read-only calls from the workspace verified both Kubernetes clusters, Talos, Proxmox SSH/passwordless sudo and GitHub; all three local Terraform state snapshots match the source. Coder is the primary Terraform runner. The 0.1.2 image adds Claude and requires publication and explicit template/image adoption before it is available in this running workspace. A disposable Talos probe confirmed that Codex's filesystem sandbox cannot run with this Pod profile; deprecated Landlock still requires bubblewrap and is not a working fallback. No sandbox or approval bypass is configured.
+PRs #148 and #149 are merged and `homeops-dev:0.1.1` is public and digest-pinned. Runtime checks on 2026-10-14 confirm a Ready workspace, successful automatic setup, Authentik-only login, non-root settings, healthy PostgreSQL, continuous WAL archival, a completed database backup and a completed scheduled home backup. Restore acceptance remains pending. LabOps, Slots and City data and the selected operator inputs were transferred to the retained home. Read-only calls from the workspace verified both Kubernetes clusters, Talos, Proxmox SSH/passwordless sudo and GitHub; all three local Terraform state snapshots match the source. Coder is the primary Terraform runner. The declared template now pins the public 0.1.3 image, which includes Claude and screen. Adoption in the existing workspace requires GitOps reconciliation, automatic template import and an explicit Coder update; runtime acceptance of this image remains pending. A disposable Talos probe confirmed that Codex's filesystem sandbox cannot run with this Pod profile; deprecated Landlock still requires bubblewrap and is not a working fallback. No sandbox or approval bypass is configured.
 
 ## Components
 
@@ -75,7 +75,7 @@ The generated CNPG password, Coder agent token and Terraform state must never be
 
 These steps change live infrastructure and are for the installation authorized by the operator.
 
-1. `homeops-dev:0.1.1` is built in pull requests and published after an authorized merge. Verify anonymous access and pin its published digest before completing runtime acceptance. GitOps may wait for publication. The bootstrap image has its own lifecycle.
+1. `homeops-dev:0.1.3` is built in pull requests and published after an authorized merge. Verify anonymous access and pin its published digest before completing runtime acceptance. GitOps may wait for publication. The bootstrap image has its own lifecycle.
 2. Integrate the reviewed GitOps changes. Let Authentik and private DNS reconcile before Coder becomes available. The existing parent split route already covers the name.
 3. Verify the namespace-local token sync and Bitwarden mappings, then CNPG readiness, Coder health and the certificate.
 4. Let `coder-auto-setup` run in `coder-workspaces`. Its first pod binds the retained home and creates the OIDC owner, imports the template, sets default autostop to zero and creates `bingops/lab` with `--stop-after 0h`.
@@ -92,7 +92,7 @@ The CronJob uses a small image containing the pinned official Coder CLI and Pyth
 
 A file lock on the retained home serializes setup. The non-sensitive marker `.config/lab/bootstrap.json` records the desired definition hash, bootstrap ServiceAccount UID, owner ID and workspace ID. If the definition and installation identity match and the database is initialized, the next run exits without creating credentials or changing the workspace.
 
-The job preserves an existing identity only when its username, email, active status and OIDC login type match the declaration. It refuses to reset a conflicting identity. Template changes are imported and activated. An existing healthy or intentionally stopped workspace is preserved. A failed `start` build is retried with the declared active template and must succeed before a completion marker is written. Adoption of a new image in a running workspace is a deliberate Coder update, so an active simulation is preserved.
+The job preserves an existing identity only when its username, email, active status and OIDC login type match the declaration. It refuses to reset a conflicting identity. Template changes are imported and activated. An existing healthy or intentionally stopped workspace is preserved. A failed `start` build is retried with the declared active template and must succeed before a completion marker is written. Adoption of a new image in a running workspace is a deliberate Coder update, so an active simulation is preserved. After merging an image-digest change and GitOps reconciliation, wait for the five-minute setup job to import and activate the template, then select **Update** on `bingops/lab` in Coder. This live operation restarts the workspace and interrupts running processes and SSH sessions while preserving the retained home. Repeating the update after adoption does not require recreating the workspace. After reconnecting, run `homeops-dev-check` to verify installed tool versions without contacting production. Roll back by restoring the previous image digest in Git, reconciling the template and updating the workspace through Coder again.
 
 New installations and rebuilt namespaces have a new ServiceAccount UID and re-run setup against the recovered database. A database-only recovery must update `CODER_BOOTSTRAP_GENERATION` alongside the archive generation. On partial failure, the job retries, removes reserved temporary identities and resumes the missing operations. The reserved `setup-*` identities with the `@coder-bootstrap.invalid` suffix belong exclusively to this process.
 
@@ -142,7 +142,7 @@ Codex runs on the workspace through this SSH session. For first account enrollme
 codex login --device-auth
 ```
 
-After adopting `homeops-dev:0.1.2`, enroll Claude separately using [its official login flow](https://code.claude.com/docs/en/authentication). Follow the URL/code instructions in the SSH terminal using Safari; retain any verification code privately:
+After adopting `homeops-dev:0.1.3`, enroll Claude separately using [its official login flow](https://code.claude.com/docs/en/authentication). Follow the URL/code instructions in the SSH terminal using Safari; retain any verification code privately:
 
 ```sh
 claude auth login
