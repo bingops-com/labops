@@ -103,6 +103,10 @@ def operator_files(home, root=None, proxmox_key=None, cli_sessions=False, aws_co
             if source.exists():
                 add(relative, source)
     if root:
+        for relative in ("capi/credentials.env", "apps/platform/authentik/credentials/bootstrap-password"):
+            source = root / relative
+            if source.is_file():
+                add("projects/labops/" + relative, source)
         for stack in ("proxmox", "cloudflare", "network"):
             directory = root / "terraform" / stack
             candidates = sorted(directory.glob("*.tfvars"))
