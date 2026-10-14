@@ -1,6 +1,6 @@
 # homeops-dev
 
-`ghcr.io/bingops-com/homeops-dev:0.1.2` recreates the operator's development tools for the retained `bingops/lab` Coder workspace. It targets Linux/amd64. `/opt/homeops` points to `/home/coder/projects`, keeping the existing project path while storing user files on the retained home PVC. The template keeps the published 0.1.1 digest until 0.1.2 is published and reviewed for adoption; this image change alone does not replace a running workspace.
+`ghcr.io/bingops-com/homeops-dev:0.1.3` recreates the operator's development tools for the retained `bingops/lab` Coder workspace. It targets Linux/amd64. `/opt/homeops` points to `/home/coder/projects`, keeping the existing project path while storing user files on the retained home PVC. The template keeps the published 0.1.1 digest until 0.1.3 is published and reviewed for adoption; this image change alone does not replace a running workspace.
 
 ## Tools and reproducibility
 
@@ -17,7 +17,7 @@
 | PostgreSQL clients | 18.4 from the pinned upstream image, matching CNPG; psql, pg_dump and pg_restore are on PATH. No server is launched by the image. |
 | Coder / GitHub / Docker | Pinned Coder 2.36.7 plus distribution Git, gh and Docker tools. Docker needs an explicitly configured remote engine; there is no Docker socket, privileged daemon or automatic infrastructure action. |
 | Operator delivery tools | Task 3.52.0, kubeseal 0.29.0 and Michael Sauter's Crane 3.6.0 match the existing PC; verified upstream binaries use the lock. Trivy 0.66.0 is copied from a digest-pinned official image because its old GitHub release artifacts are no longer available. AWS CLI comes from signed Debian packages. |
-| Browser and common tools | Native Chromium for existing Playwright projects; scientific Python, OpenSSH, tmux, jq, ripgrep, ShellCheck, rsync, DNS/network clients, rclone and Restic. |
+| Browser and common tools | Native Chromium for existing Playwright projects; scientific Python, OpenSSH, screen, tmux, jq, ripgrep, ShellCheck, rsync, DNS/network clients, rclone and Restic. |
 
 Go, Node, Coder and PostgreSQL bases are digest-pinned. `tools.lock.json` records exact upstream downloads and SHA-256 values. The installer verifies bytes before installing a selected binary; it never extracts entire archives. Python dependencies use `--require-hashes`, and npm uses `npm ci`. Distribution packages come from the pinned Debian image's signed package sources; rebuilding may receive package updates, so a new published image digest must be reviewed before adoption. Increment `VERSION` for image changes.
 

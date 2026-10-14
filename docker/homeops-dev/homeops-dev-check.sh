@@ -36,5 +36,6 @@ chromium --version
 python3 -c 'import matplotlib,numpy,pandas,yaml'
 /opt/homeops-dev/venv/bin/python -c 'import requests,proxmoxer,pytest'
 command -v bwrap >/dev/null
+screen --version
 tmux -V
 echo 'homeops-dev tools verified without contacting production.'
