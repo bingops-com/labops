@@ -18,7 +18,11 @@ Port 2222
 ListenAddress 0.0.0.0
 HostKey /home/coder/.ssh/ssh_host_ed25519_key
 PidFile /home/coder/.config/lab/sshd.pid
-AuthorizedKeysFile /etc/coder-ssh/authorized_keys
+# ConfigMap roots are 0777 despite their read-only mount. Keep StrictModes
+# and read the declared keys through the image's root-owned command instead.
+AuthorizedKeysFile none
+AuthorizedKeysCommand /usr/bin/cat /etc/coder-ssh/authorized_keys
+AuthorizedKeysCommandUser coder
 AllowUsers coder
 PasswordAuthentication no
 KbdInteractiveAuthentication no

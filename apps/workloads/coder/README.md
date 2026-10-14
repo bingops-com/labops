@@ -33,6 +33,8 @@ The Coder ingress permits LAN, tailnet and workspace pod sources. No Cloudflare 
 
 Native SSH bypasses the Coder CLI transport and uses the supplied iSH public key. Its NodePort is reachable on the LAN and through the subnet route. No Internet port forwarding is part of this setup. Tailnet ACL ownership remains with the operator; restrict the subnet route to the intended devices/users.
 
+Kubernetes projects ConfigMap keys under a directory with mode 0777, even on a read-only mount. OpenSSH rejects that directory as an ordinary authorized-keys file path with `StrictModes yes`. The server keeps that check enabled and loads only the declared public keys through `AuthorizedKeysCommand /usr/bin/cat /etc/coder-ssh/authorized_keys`, executed as the existing non-root `coder` user. The command is root-owned in the image and its input is the read-only GitOps ConfigMap; local home keys are not an additional login source.
+
 The current cluster uses Flannel without a NetworkPolicy enforcement controller. Namespace separation and scoped service accounts do not establish network isolation from production services. This workspace is reserved for trusted operator code. Untrusted multi-user execution requires an enforcement layer or a separate cluster before expanding access.
 
 ## Identity and administrator

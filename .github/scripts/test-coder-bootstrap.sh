@@ -134,7 +134,10 @@ if [[ "$mode" == kubernetes ]]; then
     sleep 1
   done
   test -n "$port"
-  ssh -i "$scratch/client_key" -p "$port" -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 'test "$(id -u)" = 1000 && test -f ~/.lab-initialized && codex --version'
+  if ! ssh -i "$scratch/client_key" -p "$port" -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 'test "$(id -u)" = 1000 && test -f ~/.lab-initialized && codex --version'; then
+    kubectl -n coder-workspaces exec deployment/coder-bingops-lab -- tail -n 20 /home/coder/.config/lab/sshd.log
+    exit 1
+  fi
   [[ $(query "SELECT count(*) FROM workspace_agents WHERE first_connected_at IS NOT NULL") == 1 ]]
   echo 'Real template provisioning, agent authorization, retained-home initialization and native SSH verified.'
   exit 0
