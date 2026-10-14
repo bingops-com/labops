@@ -86,7 +86,7 @@ resource "kubernetes_deployment_v1" "lab" {
         }
         container {
           name        = "dev"
-          image       = "ghcr.io/bingops-com/homeops-dev@sha256:5224f6e6c1fb0fc44baa538369fe3c25ecb2d7d4a830091b3ef93deffdb4aabe"
+          image       = "ghcr.io/bingops-com/homeops-dev@sha256:394c9228dc2a8a3954157492d91abf4ce7fd7fbb3adaca799273644d71cb0766"
           working_dir = "/home/coder"
           command     = ["/bin/sh", "-c", coder_agent.main.init_script]
           env {
