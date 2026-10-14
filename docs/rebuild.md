@@ -133,6 +133,13 @@ configs are sensitive generated state, not documentation.
    if they were not recovered with the home. First Codex login belongs to the
    operator account and stays outside Git/images. A failed initial workspace
    start retries against the active template without replacing its retained home.
+   Coder is the selected primary Terraform workstation: after cloning LabOps,
+   enroll its ignored API inputs and the current local states from the trusted
+   source, with no simultaneous source Terraform operation. Retain the source
+   snapshots privately for recovery and use only the workspace state afterward.
+   Selected Proxmox SSH, CLI sessions and AWS files are separate sensitive
+   inputs, never image layers. The real `/home/coder` startup directory avoids
+   runc's failure on the project symlink while mounting the persistent home.
    See [the Coder runbook](../apps/workloads/coder/README.md) for ordering,
    external inputs, private iSH access and the single-node availability limit.
 10. Create the bucket-scoped Project Zomboid R2 token in Bitwarden, reconcile

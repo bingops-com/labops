@@ -10,15 +10,19 @@ cleanup() {
   if [[ -n "$container_id" ]]; then
     docker rm -f "$container_id" >/dev/null
   fi
+  # The mounted fake home belongs to container UID 1000, not the runner UID.
+  sudo rm -rf -- "$scratch/home"
   rm -rf "$scratch"
 }
 trap cleanup EXIT
 
 ssh-keygen -q -t ed25519 -N '' -f "$scratch/client_key"
 chmod 644 "$scratch/client_key.pub"
+mkdir "$scratch/home"
+sudo chown 1000:1000 "$scratch/home"
 # Match a Kubernetes ConfigMap file: root-owned and readable, never writable.
 sudo chown 0:0 "$scratch/client_key.pub"
-container_id=$(docker run -d --cap-drop ALL --security-opt no-new-privileges --publish 127.0.0.1::2222 --mount "type=bind,src=$scratch/client_key.pub,dst=/etc/coder-ssh/authorized_keys,readonly" --mount "type=bind,src=$repo_root/apps/workloads/coder/base/template/startup.sh,dst=/opt/lab-startup.sh,readonly" "$image" /bin/bash -ec '/bin/bash /opt/lab-startup.sh; exec sleep infinity')
+container_id=$(docker run -d --workdir /home/coder --cap-drop ALL --security-opt no-new-privileges --publish 127.0.0.1::2222 --mount "type=bind,src=$scratch/home,dst=/home/coder" --mount "type=bind,src=$scratch/client_key.pub,dst=/etc/coder-ssh/authorized_keys,readonly" --mount "type=bind,src=$repo_root/apps/workloads/coder/base/template/startup.sh,dst=/opt/lab-startup.sh,readonly" "$image" /bin/bash -ec '/bin/bash /opt/lab-startup.sh; exec sleep infinity')
 port=$(docker inspect --format '{{(index (index .NetworkSettings.Ports "2222/tcp") 0).HostPort}}' "$container_id")
 
 connected=false

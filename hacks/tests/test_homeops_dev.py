@@ -1,5 +1,6 @@
 """Exercise credential transport with fake clients and disposable directories."""
 import importlib.util
+import base64
 import json
 from pathlib import Path
 import subprocess
@@ -24,8 +25,9 @@ class CredentialTransport(unittest.TestCase):
         self.assertEqual([item["name"] for item in result["contexts"]], ["labmgmt", "labprod"])
         self.assertEqual(len({item["name"] for item in result["users"]}), 2)
 
-    def install(self, directory):
-        payload = {".kube/homeops-config": {"credential": FAKE}}
+    def install(self, directory, payload=None):
+        if payload is None:
+            payload = {".kube/homeops-config": {"credential": FAKE}}
         script = provision.INSTALL.replace("/home/coder", str(directory))
         result = subprocess.run([sys.executable, "-c", script], input=json.dumps(payload), capture_output=True, text=True)
         self.assertNotIn(FAKE, result.stdout + result.stderr)
@@ -37,6 +39,7 @@ class CredentialTransport(unittest.TestCase):
             self.assertEqual(self.install(home).returncode, 0)
             self.assertEqual(self.install(home).returncode, 0)
             target = home / ".kube/homeops-config"
+            self.assertEqual(json.loads(target.read_text()), {"credential": FAKE})
             self.assertEqual(target.stat().st_mode & 0o777, 0o600)
             self.assertEqual(target.parent.stat().st_mode & 0o777, 0o700)
             self.assertEqual((home / ".kube/config").resolve(), target)
@@ -59,6 +62,68 @@ class CredentialTransport(unittest.TestCase):
             (home / ".kube/homeops-config").symlink_to(elsewhere)
             self.assertNotEqual(self.install(home).returncode, 0)
             self.assertEqual(elsewhere.read_text(), "preserved")
+
+    def test_binary_file_is_private_and_conflict_preserves_all_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            payload = {".codex/auth.json": {"_file_base64": base64.b64encode(FAKE.encode()).decode()}}
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            target = home / ".codex/auth.json"
+            self.assertEqual(target.read_text(), FAKE)
+            self.assertEqual(target.stat().st_mode & 0o777, 0o600)
+            target.write_text("existing session")
+            payload = {".kube/homeops-config": {"credential": FAKE}, **payload}
+            self.assertNotEqual(self.install(home, payload).returncode, 0)
+            self.assertEqual(target.read_text(), "existing session")
+            self.assertFalse((home / ".kube").exists())
+
+    def test_parent_symlink_and_path_escape_are_refused(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            outside = home / "outside"
+            outside.mkdir()
+            (home / ".config").symlink_to(outside)
+            payload = {".config/gh/hosts.yml": {"_file_base64": base64.b64encode(FAKE.encode()).decode()}}
+            self.assertNotEqual(self.install(home, payload).returncode, 0)
+            self.assertEqual(list(outside.iterdir()), [])
+            self.assertNotEqual(self.install(home, {"../escape": {"credential": FAKE}}).returncode, 0)
+
+    def test_state_and_sessions_require_explicit_selection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            stack = home / "labops/terraform/proxmox"
+            stack.mkdir(parents=True)
+            (stack / "credentials.auto.tfvars").write_text(FAKE)
+            (stack / "terraform.tfstate").write_text(FAKE)
+            (home / ".codex").mkdir()
+            (home / ".codex/auth.json").write_text(FAKE)
+            (home / "labops/capi").mkdir()
+            (home / "labops/capi/credentials.env").write_text(FAKE)
+            selected = provision.operator_files(home, home / "labops")
+            self.assertEqual(set(selected), {"projects/labops/terraform/proxmox/credentials.auto.tfvars", "projects/labops/capi/credentials.env"})
+            selected = provision.operator_files(home, home / "labops", cli_sessions=True, terraform_state=True)
+            self.assertIn("projects/labops/terraform/proxmox/terraform.tfstate", selected)
+            self.assertIn(".codex/auth.json", selected)
+            self.assertNotIn(".ssh/id_rsa", selected)
+
+    def test_project_inputs_require_checkout_before_any_write(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            payload = {".kube/homeops-config": {"credential": FAKE}, "projects/labops/terraform/proxmox/terraform.tfstate": {"_file_base64": base64.b64encode(FAKE.encode()).decode()}}
+            self.assertNotEqual(self.install(home, payload).returncode, 0)
+            self.assertFalse((home / ".kube").exists())
+            (home / "projects/labops/.git").mkdir(parents=True)
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            self.assertEqual((home / "projects/labops/terraform/proxmox/terraform.tfstate").stat().st_mode & 0o777, 0o600)
+
+    def test_ssh_default_links_configuration_instead_of_private_key(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            encode = lambda value: {"_file_base64": base64.b64encode(value.encode()).decode()}
+            payload = {".ssh/homeops-proxmox": encode(FAKE), ".ssh/homeops-config": encode("Host proxmox\n")}
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            self.assertEqual((home / ".ssh/config").resolve(), home / ".ssh/homeops-config")
 
 
 if __name__ == "__main__":
