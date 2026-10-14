@@ -2,6 +2,7 @@
 import importlib.util
 import base64
 import json
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -85,6 +86,23 @@ class CredentialTransport(unittest.TestCase):
             replacement = {"current-context": "labprod", "contexts": [{"name": "labprod"}]}
             self.assertEqual(self.install(home, {".kube/homeops-config": replacement}).returncode, 0)
             self.assertEqual(json.loads((home / ".kube/homeops-config").read_text())["current-context"], "labprod")
+
+    def test_rotation_after_context_commands_rewrite_yaml(self):
+        if not all(shutil.which(tool) for tool in ("kubectl", "talosctl")):
+            self.skipTest("Context rewrite acceptance requires the HomeOps clients")
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            kube = {"apiVersion": "v1", "kind": "Config", "current-context": "labprod", "contexts": [{"name": name, "context": {"cluster": name, "user": name}} for name in ("labmgmt", "labprod")], "clusters": [{"name": name, "cluster": {"server": "https://example.invalid"}} for name in ("labmgmt", "labprod")], "users": [{"name": name, "user": {}} for name in ("labmgmt", "labprod")]}
+            talos = {"context": "labprod", "contexts": {"labmgmt": {}, "labprod": {}}}
+            payload = {".kube/homeops-config": kube, ".talos/homeops-config": talos}
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            for command, relative in ((["kubectl", "--kubeconfig", str(home / ".kube/homeops-config"), "config", "use-context", "labmgmt"], ".kube/homeops-config"), (["talosctl", "--talosconfig", str(home / ".talos/homeops-config"), "config", "context", "labmgmt"], ".talos/homeops-config")):
+                result = subprocess.run(command, capture_output=True)
+                self.assertEqual(result.returncode, 0)
+                self.assertFalse((home / relative).read_text().lstrip().startswith("{"))
+            self.assertEqual(self.install(home, payload).returncode, 0)
+            self.assertEqual(json.loads((home / ".kube/homeops-config").read_text())["current-context"], "labmgmt")
+            self.assertEqual(json.loads((home / ".talos/homeops-config").read_text())["context"], "labmgmt")
 
     def test_symlinked_credential_destination_is_refused(self):
         with tempfile.TemporaryDirectory() as directory:

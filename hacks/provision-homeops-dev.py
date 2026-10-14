@@ -23,7 +23,8 @@ for relative,content in payload.items():
     raw=isinstance(content,dict) and set(content)=={"_file_base64"}
     # Rotation updates managed identities but keeps a still-valid user choice.
     if target.exists() and relative in (".kube/homeops-config",".talos/homeops-config"):
-        previous=json.loads(target.read_text())
+        import yaml
+        previous=yaml.safe_load(target.read_text())
         field="current-context" if relative.startswith(".kube/") else "context"
         contexts=content.get("contexts",{})
         available={entry["name"] for entry in contexts} if isinstance(contexts,list) else set(contexts)
