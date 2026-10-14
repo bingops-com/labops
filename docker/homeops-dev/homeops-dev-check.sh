@@ -20,6 +20,11 @@ actionlint --version
 tflint --version
 yq --version
 docker --version
+aws --version
+kubeseal --version
+task --version
+crane version
+trivy --version
 node --version
 npm --version
 go version

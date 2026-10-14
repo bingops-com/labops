@@ -1,6 +1,6 @@
 # homeops-dev
 
-`ghcr.io/bingops-com/homeops-dev:0.1.0` recreates the operator's development tools for the retained `bingops/lab` Coder workspace. It targets Linux/amd64. `/opt/homeops` points to `/home/coder/projects`, keeping the existing project path while storing user files on the retained home PVC.
+`ghcr.io/bingops-com/homeops-dev:0.1.1` recreates the operator's development tools for the retained `bingops/lab` Coder workspace. It targets Linux/amd64. `/opt/homeops` points to `/home/coder/projects`, keeping the existing project path while storing user files on the retained home PVC.
 
 ## Tools and reproducibility
 
@@ -15,6 +15,7 @@
 | Ansible / Python checks | Stable ansible-core 2.19.2 instead of the host's development snapshot; ansible-lint, yamllint, pytest, requests and proxmoxer have a hashed dependency lock. `community.general` 11.0.0 matches the installed collection. |
 | PostgreSQL clients | 18.4 from the pinned upstream image, matching CNPG; psql, pg_dump and pg_restore are on PATH. No server is launched by the image. |
 | Coder / GitHub / Docker | Pinned Coder 2.36.7 plus distribution Git, gh and Docker tools. Docker needs an explicitly configured remote engine; there is no Docker socket, privileged daemon or automatic infrastructure action. |
+| Operator delivery tools | Task 3.52.0, kubeseal 0.29.0 and Michael Sauter's Crane 3.6.0 match the existing PC; verified upstream binaries use the lock. Trivy 0.66.0 is copied from a digest-pinned official image because its old GitHub release artifacts are no longer available. AWS CLI comes from signed Debian packages. |
 | Browser and common tools | Native Chromium for existing Playwright projects; scientific Python, OpenSSH, tmux, jq, ripgrep, ShellCheck, rsync, DNS/network clients, rclone and Restic. |
 
 Go, Node, Coder and PostgreSQL bases are digest-pinned. `tools.lock.json` records exact upstream downloads and SHA-256 values. The installer verifies bytes before installing a selected binary; it never extracts entire archives. Python dependencies use `--require-hashes`, and npm uses `npm ci`. Distribution packages come from the pinned Debian image's signed package sources; rebuilding may receive package updates, so a new published image digest must be reviewed before adoption. Increment `VERSION` for image changes.
@@ -26,6 +27,8 @@ The narrow `.dockerignore` allows only explicit build inputs. No kubeconfig, Tal
 The image runs as `coder`, UID/GID 1000, without sudo or password login. The existing workspace startup script serves native SSH on pod port 2222 / private NodePort 30222 using the supplied iSH public key. Its persistent host key, projects and user configuration survive replacement. The development Pod has no automatically mounted Kubernetes ServiceAccount token.
 
 The operator explicitly provisions existing `labmgmt` and `labprod` client access with `hacks/provision-homeops-dev.py` after the workspace is ready. It streams credentials through Kubernetes exec, writes mode-0600 generated files under the retained home, preserves existing default configs and never prints credential output. No cluster or role is created. These are the operator's existing permissions, including administrator access where present; this workspace remains reserved for trusted operator code. The retired `labtest` context is excluded.
+
+The image and template start in the real `/home/coder` directory. `/opt/homeops` remains a project-path symlink, but using it as the OCI working directory failed before process startup when the retained home was mounted. CI now exercises that actual mounted-home layout. Optional enrollment also selects the Proxmox SSH key/known host, CLI sessions, AWS files and the three HomeOps stacks' ignored inputs. Local Terraform state transfer requires an explicit primary-runner confirmation; Coder is the selected primary and subsequent operations must not use the old PC's stale copy. The owning runbook gives the recovery and non-sensitive access checks.
 
 Codex CLI runs on the remote Linux workspace, not inside iSH. First sign-in is account-specific; the persisted `.codex` directory prevents reconfiguration on ordinary restarts. The startup script seeds only file-based auth storage when no user configuration exists. See [official Codex authentication](https://learn.chatgpt.com/docs/auth) for device-code login from a headless machine. Authentik login to Coder and OpenAI login to Codex are separate identities.
 

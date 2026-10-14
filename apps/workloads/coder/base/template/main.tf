@@ -83,9 +83,10 @@ resource "kubernetes_deployment_v1" "lab" {
           hostnames = ["coder.lab.bingo"]
         }
         container {
-          name    = "dev"
-          image   = "ghcr.io/bingops-com/homeops-dev:0.1.0"
-          command = ["/bin/sh", "-c", coder_agent.main.init_script]
+          name        = "dev"
+          image       = "ghcr.io/bingops-com/homeops-dev:0.1.1"
+          working_dir = "/home/coder"
+          command     = ["/bin/sh", "-c", coder_agent.main.init_script]
           env {
             name  = "CODER_AGENT_TOKEN"
             value = coder_agent.main.token
