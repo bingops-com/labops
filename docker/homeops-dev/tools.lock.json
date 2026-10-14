@@ -1,0 +1,62 @@
+[
+  {
+    "name": "terraform",
+    "version": "1.10.5",
+    "url": "https://releases.hashicorp.com/terraform/1.10.5/terraform_1.10.5_linux_amd64.zip",
+    "sha256": "0566a24f5332098b15716ebc394be503f4094acba5ba529bf5eb0698ed5e2a90",
+    "archive": "zip",
+    "member": "terraform"
+  },
+  {
+    "name": "kubectl",
+    "version": "1.36.1",
+    "url": "https://dl.k8s.io/release/v1.36.1/bin/linux/amd64/kubectl",
+    "sha256": "629d3f410e09bf49b64ae7079f7f0bda1191efed311f7d37fdbab0ad5b0ec2b7",
+    "archive": "binary"
+  },
+  {
+    "name": "helm",
+    "version": "3.19.4",
+    "url": "https://get.helm.sh/helm-v3.19.4-linux-amd64.tar.gz",
+    "sha256": "759c656fbd9c11e6a47784ecbeac6ad1eb16a9e76d202e51163ab78504848862",
+    "archive": "tar.gz",
+    "member": "linux-amd64/helm"
+  },
+  {
+    "name": "talosctl",
+    "version": "1.13.3",
+    "url": "https://github.com/siderolabs/talos/releases/download/v1.13.3/talosctl-linux-amd64",
+    "sha256": "50e87176dc532fd82b3136f321e8c292e175c98a4c6573c505b07fef21e476cf",
+    "archive": "binary"
+  },
+  {
+    "name": "clusterctl",
+    "version": "1.12.9",
+    "url": "https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.12.9/clusterctl-linux-amd64",
+    "sha256": "370b810b5b373d13a1c19bf3686df99da934b21d05ced9f675406d2d33807e56",
+    "archive": "binary"
+  },
+  {
+    "name": "yq",
+    "version": "4.45.1",
+    "url": "https://github.com/mikefarah/yq/releases/download/v4.45.1/yq_linux_amd64",
+    "sha256": "654d2943ca1d3be2024089eb4f270f4070f491a0610481d128509b2834870049",
+    "archive": "binary"
+  },
+  {
+    "name": "actionlint",
+    "version": "1.7.7",
+    "url": "https://github.com/rhysd/actionlint/releases/download/v1.7.7/actionlint_1.7.7_linux_amd64.tar.gz",
+    "sha256": "023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757",
+    "archive": "tar.gz",
+    "member": "actionlint"
+  },
+  {
+    "name": "tflint",
+    "version": "0.52.0",
+    "url": "https://github.com/terraform-linters/tflint/releases/download/v0.52.0/tflint_linux_amd64.zip",
+    "sha256": "bf758ff29b607b3fbc4a3630ea3b39df4afafe3cdb80c6d71fe528feeac2c58e",
+    "archive": "zip",
+    "member": "tflint"
+  }
+]

@@ -11,6 +11,12 @@
   persistent `bingops/lab` workspace after SSO login. It requires a short-lived
   `CODER_SESSION_TOKEN`, never prints it, and performs live Coder operations.
   See [the Coder runbook](../apps/workloads/coder/README.md).
+- `provision-homeops-dev.py` enrolls existing `labmgmt`/`labprod` operator
+  kubeconfigs and an optionally supplied Talos config into the retained Coder
+  home after its Pod is ready. It streams private content through exec, writes
+  0600 generated files, preserves existing default configs and never prints
+  credentials. This is personal access enrollment, not a cluster/role creation.
+  Re-run it after client credential rotation; see the owning Coder runbook.
 - `retire-lost-kube-vms.sh` is reserved for the documented total-disk-loss
   recovery and must receive the exact approved VM IDs.
 - `purge-r2-bucket.py` reports whether an R2 bucket contains objects and purges

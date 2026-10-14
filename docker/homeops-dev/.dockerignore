@@ -1,0 +1,9 @@
+*
+!Dockerfile
+!install-tools.py
+!tools.lock.json
+!requirements.txt
+!collections.yml
+!package.json
+!package-lock.json
+!homeops-dev-check.sh

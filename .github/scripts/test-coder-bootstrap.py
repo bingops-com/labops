@@ -30,7 +30,19 @@ methods = bootstrap.API().call("/api/v2/users/authmethods")
 assert methods["github"]["enabled"] is False, "GitHub login must be disabled"
 assert methods["password"]["enabled"] is False, "Password login must remain disabled"
 assert methods["oidc"]["enabled"] is True, "OIDC login must remain enabled"
-if phase == "initial":
+if phase == "initial_failure":
+    try:
+        bootstrap.main()
+    except RuntimeError:
+        assert not marker.exists(), "A failed start was marked complete"
+    else:
+        raise AssertionError("The fixture must fail its initial workspace start")
+elif phase == "initial":
+    template = Path("/opt/lab-template/main.tf")
+    definition = template.read_text()
+    start = definition.index('resource "terraform_data" "initial_failure"')
+    end = definition.index('output "workspace_name"', start)
+    template.write_text(definition[:start] + definition[end:])
     bootstrap.main()
     assert marker.exists()
 elif phase == "repeat":

@@ -8,6 +8,7 @@ name: Coder automatic setup acceptance
       - docker/coder-bootstrap/**
       - apps/workloads/coder/base/bootstrap.py
       - apps/workloads/coder/base/server.yaml
+      - apps/workloads/coder/base/template/**
       - .github/scripts/test-coder-bootstrap.*
       - .github/workflows/coder-bootstrap-test.yml
   push:
@@ -16,6 +17,7 @@ name: Coder automatic setup acceptance
       - docker/coder-bootstrap/**
       - apps/workloads/coder/base/bootstrap.py
       - apps/workloads/coder/base/server.yaml
+      - apps/workloads/coder/base/template/**
       - .github/scripts/test-coder-bootstrap.*
       - .github/workflows/coder-bootstrap-test.yml
 

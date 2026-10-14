@@ -14,7 +14,7 @@ if ! command -v "$coder_bin" >/dev/null 2>&1; then
   echo 'Install the pinned Coder CLI on the operator host, or set CODER_BIN to its path.' >&2
   exit 1
 fi
-if ! grep -Eq 'image[[:space:]]*=[[:space:]]*"ghcr.io/bingops-com/coder-workspace@sha256:[0-9a-f]{64}"' "$template_dir/main.tf"; then
+if ! grep -Eq 'image[[:space:]]*=[[:space:]]*"ghcr.io/bingops-com/(coder-workspace|homeops-dev)@sha256:[0-9a-f]{64}"' "$template_dir/main.tf"; then
   echo 'Pin the published workspace image digest in main.tf before importing the template.' >&2
   exit 1
 fi

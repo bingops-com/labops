@@ -1,0 +1,44 @@
+---
+name: HomeOps development environment acceptance
+
+'on':
+  pull_request:
+    branches: [master]
+    paths:
+      - docker/homeops-dev/**
+      - hacks/provision-homeops-dev.py
+      - hacks/tests/test_homeops_dev.py
+      - apps/workloads/coder/base/template/**
+      - .github/scripts/test-coder-workspace.sh
+      - .github/workflows/homeops-dev-test.yml
+  push:
+    branches: [master]
+    paths:
+      - docker/homeops-dev/**
+      - hacks/provision-homeops-dev.py
+      - hacks/tests/test_homeops_dev.py
+      - apps/workloads/coder/base/template/**
+      - .github/scripts/test-coder-workspace.sh
+      - .github/workflows/homeops-dev-test.yml
+
+permissions:
+  contents: read
+
+jobs:
+  homeops-tools-and-ssh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify private client configuration transport with fake credentials
+        run: python3 -m unittest discover -s hacks/tests -p test_homeops_dev.py
+      - uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: image=mirror.gcr.io/moby/buildkit:buildx-stable-1
+          buildkitd-config-inline: |
+            [registry."docker.io"]
+              mirrors = ["mirror.gcr.io"]
+      - name: Build the pinned development environment
+        run: docker buildx build --load --tag labops-homeops-dev:test docker/homeops-dev
+      - name: Verify iSH-compatible SSH and HomeOps tools as UID 1000
+        run: bash .github/scripts/test-coder-workspace.sh labops-homeops-dev:test homeops
