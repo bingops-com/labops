@@ -37,39 +37,58 @@ The Coder ingress permits LAN, tailnet and workspace pod sources. No Cloudflare 
 
 Native SSH bypasses the Coder CLI transport and uses the operator's iSH and desktop public keys declared in `base/authorized_keys`. Its NodePort is reachable on the LAN and through the subnet route. No Internet port forwarding is part of this setup. Tailnet ACL ownership remains with the operator; restrict the subnet route to the intended devices/users.
 
-### Dynamic development access and image gallery
+### Development dashboard and read-only workspace access
 
-Open **https://dev.lab.bingo/**, select the workspace, then open a development port or its read-only image gallery. The portal lists the declared `bingops/lab` workspace with agent `main`, matching the template's existing single-workspace restriction. Changing that restriction requires updating the portal's workspace options as well.
+Open **https://dev.lab.bingo/** for the Coder development dashboard. Its cobalt palette and locally hosted Red Hat fonts follow Portal, Slots and Games; it supports light/dark themes and mobile layouts. The declared workspace is `bingops/lab`, agent `main`, matching the template's single-workspace restriction.
 
-Coder runs with `CODER_WILDCARD_ACCESS_URL=*.dev.lab.bingo`. A server listening on a workspace port is accessible at `https://PORT.dev.lab.bingo/`; the portal accepts non-privileged ports 1024–65535. The existing Coder dashboard's **Open Ports** control automatically detects listening ports. Each application is served at its hostname root, supporting ordinary asset paths and WebSocket development servers without per-port Kubernetes Services, certificates or PRs. See [Coder's wildcard access](https://coder.com/docs/admin/networking/wildcard-access-url) and [port forwarding](https://coder.com/docs/admin/networking/port-forwarding) documentation.
+- **Servers:** project-owned HTTP listeners are discovered automatically. Cards show project, runtime, port, response state and `https://PORT.dev.lab.bingo/`; open or copy an address, search, filter by project or save favorites in the browser. Refresh runs every 10 seconds while visible, with manual refresh available.
+- **Projects:** only non-hidden project directory names are listed; selecting a project filters its active servers. Inactive projects are not presented as running applications.
+- **Coder:** links open the existing workspace dashboard for its terminal and management controls. This dashboard does not execute commands or launch servers.
+- **Images:** `https://4175.dev.lab.bingo/` browses permitted raster images in project folders, in read-only mode. It refuses writes, traversal, hidden paths, symlinks, SVG and files over 32 MiB. The home/account configuration is outside its root.
+- **Manual ports:** open any non-privileged port 1024–65535 through the short alias, even when automatic discovery does not recognize its service.
 
-The `dev.lab.bingo` portal shows workspace names and links only, restricted by the same LAN/tailnet/workspace IP allowlist as Coder. App subdomains use the stateless `base/dev-proxy.mjs` gateway to map numeric hosts to Coder’s canonical `PORT--main--lab--bingops.dev.lab.bingo` hostname and forward through the authenticated Coder control plane; ports remain owner-private by default. Opening one may redirect through the existing Coder/Authentik sign-in. This does not create anonymous read-only access to the whole workspace, or expose a shell/editor through the gallery.
+#### Authentication and discovery
 
-The gateway runs in the existing `coder-dev-portal` Deployment using Node from the pinned workspace image. It accepts only ports 1024–65535 on the declared `bingops/lab` workspace; adding another workspace requires an explicit disambiguation scheme because a port-only hostname cannot identify two workspaces. HTTP bodies and WebSocket upgrades stream through Coder, with no direct Pod routing, account token or new secret. The canonical hostname remains configured in Coder: sign-in temporarily uses that callback, preserves Coder's wildcard authentication cookie and returns to the numeric alias. Same-app Origin, Location and host-scoped cookie headers are translated; unrelated origins and authentication redirect parameters are preserved. URLs are never logged because callbacks may contain temporary credentials. Legacy canonical URLs remain accepted by the gateway. Generic upstream failures return 502; a stopped app is reported by Coder. The generated gateway/portal ConfigMap has a content hash, so a source update rolls the stateless portal without restarting the workspace. Recover by GitOps reconciliation; TLS and account recovery remain unchanged.
+The landing shell contains public names/links only and remains behind the existing LAN/tailnet/workspace allowlist. Private project and server metadata requires the owner's Coder application session. Without that session, the UI shows a sign-in action rather than fabricated or stale server data. This goes through `https://4175.dev.lab.bingo/_dev/return`, lets Coder/Authentik establish the existing wildcard app cookie, then returns to the dashboard. The return destination is fixed; no redirect URL can be supplied by the caller.
 
-Offline verification: `node --test hacks/tests/test_coder_dev_proxy.mjs` covers host validation, HTTP forwarding, authentication redirects/cookie scopes and WebSocket streaming. Existing gallery tests still apply. To verify after reconciliation, open `https://4173.dev.lab.bingo/` while signed in, check that login returns to the short address, then test a WebSocket development server and the gallery at `https://4175.dev.lab.bingo/`. Without a Coder session the short address must redirect to Coder authentication, never serve the app anonymously.
+The dashboard's `GET /api/workspace` is forwarded by `base/dev-proxy.mjs` to the fixed Coder-protected `4175` application route `/api/dev/status`. The gateway never calls the workspace directly or holds an account/API token. Coder's login redirects become a JSON 401 for the dashboard, with a separate top-level sign-in link. Non-JSON responses and unavailable/old agents show unavailable state; the gateway does not falsely report an empty healthy workspace. Previously loaded information is marked stale after a failed refresh. Expired authentication clears the private inventory from the UI.
 
-`dev-access.yaml` declares apex and wildcard ingress routes. cert-manager issues and renews `coder/coder-dev-tls` with both `dev.lab.bingo` and `*.dev.lab.bingo` through the existing `letsencrypt-cloudflare` DNS-01 ClusterIssuer. The TLS Secret is generated state, never copied into Git; recover the existing issuer credential through its established Bitwarden process. Private CoreDNS owns the apex and one-label wildcard responses to `192.168.10.151`. The existing `lab.bingo` Tailscale split-DNS parent covers them. No public DNS application record, Internet tunnel or new credential is required.
+The loopback gallery process also implements discovery in `base/gallery.py`. It reads `/proc/net/tcp{,6}` and same-user socket ownership, associates processes with their working directory under `/home/coder/projects`, then sends a bounded HTTP HEAD to local listeners only. It does **not** read process arguments, environment variables, Git metadata or project/configuration contents. Coder/Codex/Claude, SSH and browser helper processes are excluded. No external hosts are scanned. Non-HTTP sockets and listeners outside project directories are omitted. HTTP services bound exclusively to a non-loopback interface and TLS-only workspace listeners are not automatically detected; the manual port control remains available for compatible Coder routes. Detection is capped at 64 candidate ports, 100 project names and eight concurrent probes, with a five-second cache and a partial-result indicator. Results contain no PID, absolute working directory, command line, credentials or response body.
 
-The gallery source lives in `base/gallery.py`, supplied by the `coder-workspace-gallery` ConfigMap. The workspace template mounts it read-only at `/etc/coder-gallery` and startup launches its loopback listener on 4175. The optional mount keeps initial bootstrap and SSH acceptance independent of gallery availability. After template reconciliation, use Coder **Update** to adopt this mount/startup in an existing workspace; it restarts that workspace and interrupts its processes. For the already running workspace, the same source can be started without a rebuild:
+#### Proxy, TLS and lifecycle
+
+Coder retains `CODER_WILDCARD_ACCESS_URL=*.dev.lab.bingo`. The stateless Node gateway in the existing `coder-dev-portal` Deployment maps short aliases to canonical `PORT--main--lab--bingops.dev.lab.bingo` hosts and streams HTTP/WebSockets through Coder's owner-private application proxy. Same-app Origin/Location and host-scoped cookie headers are translated; unrelated origins and authentication callback parameters remain intact. Canonical URLs stay supported. URLs are never logged because authentication callbacks can contain temporary credentials. A port-only hostname identifies the declared workspace; multiple workspaces require an explicit disambiguation scheme before extending it.
+
+`dev-access.yaml` owns apex/wildcard ingress routes. cert-manager owns `coder/coder-dev-tls` for `dev.lab.bingo` and `*.dev.lab.bingo`, renewed through the existing `letsencrypt-cloudflare` DNS-01 issuer. Private CoreDNS owns apex and one-label wildcard answers to `192.168.10.151`; the `lab.bingo` Tailscale split-DNS route covers them. There is no new credential, public DNS application record, Internet tunnel, per-port Kubernetes Service or workspace volume mount in the dashboard Deployment.
+
+The dashboard HTML/CSS/JS and fonts are mounted from a content-hashed ConfigMap; source changes roll only its stateless Deployment. The gallery/discovery source remains in the `coder-workspace-gallery` ConfigMap, mounted read-only at `/etc/coder-gallery/server.py`; template startup launches it on `127.0.0.1:4175`. An existing workspace can adopt the mount through Coder **Update**, which restarts its processes. To update discovery without restarting the workspace, stop only the existing loopback gallery listener and relaunch the identical committed source in a retained terminal:
 
 ```sh
 python3 /home/coder/projects/labops/apps/workloads/coder/base/gallery.py --root /home/coder/projects --port 4175
 ```
 
-Run it in a retained terminal session until the updated template is adopted. The gallery only lists project directories and supported raster images, previews originals up to 32 MiB, and accepts GET/HEAD. It refuses writes, hidden paths, parent traversal, symlinks and non-image file access. Its root excludes account caches and private home configuration. This is application-level read-only access; the workspace owner still retains their normal SSH/Coder permissions. SVG is intentionally not served as an active document.
+The RPG process remains owned by its project (`cd /home/coder/projects/rpg && npm run dev`, port 4173). No proxy starts application processes. Reboot/replacement requires restarting development servers separately. The old dedicated RPG NodePort and `/rpg/` ingress have been replaced by generic aliases.
 
-The RPG remains owned by its retained-home project. Start it with `cd /home/coder/projects/rpg` then `npm run dev`, and open port 4173 from the portal. Applications must be running; the proxy does not start them. After workspace replacement, restart project servers. The dedicated RPG NodePort and `/rpg/` ingress were replaced by this generic proxy.
-
-Non-sensitive verification:
+#### Verification and reconstruction
 
 ```sh
-kubectl --context labprod -n coder get certificate coder-dev-tls
-curl --fail https://dev.lab.bingo/ -o /dev/null
-dig @192.168.10.160 4173.dev.lab.bingo
+node --test hacks/tests/test_coder_dev_proxy.mjs
+python3 -m unittest discover -s hacks/tests -p test_coder_gallery.py
+node hacks/tests/test_coder_dev_ui.mjs
+kubectl kustomize apps/workloads/coder/clusters/labprod > /tmp/coder-render.yaml
 ```
 
-An unauthenticated application request must redirect to Coder authentication rather than return workspace content. Sign in as the owner to verify the final forwarded application and gallery. Reapplying manifests is idempotent. Reconstruction order: existing issuer and private DNS, Coder ingress/control plane and gallery ConfigMap, retained workspace/template, then running application processes. The portal reuses the pinned workspace image solely for its Python static server, without credentials or a workspace volume mount.
+The browser test uses the real gateway with fixture-only Coder responses, covering six viewports, filtering, favorite persistence, themes, expired sessions, empty inventory and stale state. It needs an installed Chromium or `CHROMIUM_BIN`; no account credentials are used. Captures are local ignored artifacts.
+
+After reconciliation, verify TLS and authentication redirects without printing cookies/query strings; then sign in as the owner. Start a server under a project, wait up to ten seconds for its card, open its short URL, stop it and verify removal. Test a WebSocket dev server and gallery image access. Authentication, unavailable discovery and zero detected servers must remain distinct states.
+
+| Reconstruction question | Answer |
+| --- | --- |
+| Rebuild without chat history? | Yes: manifests, dashboard, discovery and template startup are declared here; existing workspace adoption is documented above. |
+| Inputs outside Git? | No new input. Existing Coder/Authentik accounts, issuer credentials and retained home recovery remain in this runbook's Inputs outside Git and backup sections. |
+| Partial failure / repeated operation? | GitOps reconciliation is idempotent; hashed dashboard updates roll automatically. Only one gallery listener may own port 4175. |
+| Ownership and order? | Existing DNS/issuer → Coder control plane and ConfigMaps → workspace/gallery → project processes. GitOps owns infrastructure; the owner runs development servers. |
+| Safe verification? | Offline fixture tests plus TLS/status checks and owner-session browser checks, without printing tokens or private configuration. |
 
 Kubernetes projects ConfigMap keys under a directory with mode 0777, even on a read-only mount. OpenSSH rejects that directory as an ordinary authorized-keys file path with `StrictModes yes`. The server keeps that check enabled and loads only the declared public keys through `AuthorizedKeysCommand /usr/bin/cat /etc/coder-ssh/authorized_keys`, executed as the existing non-root `coder` user. The command is root-owned in the image and its input is the read-only GitOps ConfigMap; local home keys are not an additional login source.
 

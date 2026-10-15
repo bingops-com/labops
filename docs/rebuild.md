@@ -149,7 +149,10 @@ configs are sensitive generated state, not documentation.
    inputs, never image layers. The real `/home/coder` startup directory avoids
    runc's failure on the project symlink while mounting the persistent home.
    See [the Coder runbook](../apps/workloads/coder/README.md) for ordering,
-   external inputs, private iSH access, dynamic previews and the read-only image gallery at `dev.lab.bingo` (applications use `PORT.dev.lab.bingo` through the authenticated alias gateway) and the
+   external inputs, private iSH access, the development dashboard and read-only
+   image gallery at `dev.lab.bingo`. Applications use `PORT.dev.lab.bingo` through
+   the authenticated alias gateway. Adopt the declared gallery/discovery agent
+   for live port inventory; no new credentials are needed. Also observe the
    single-node availability limit. Restore/start the RPG process in the retained
    workspace separately; the dynamic proxy does not launch project servers.
    Reconcile the private wildcard DNS and DNS-01 certificate before validating

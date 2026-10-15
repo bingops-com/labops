@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 from threading import Thread
 from http.server import ThreadingHTTPServer
 import unittest
+from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -71,6 +72,56 @@ class GalleryTests(unittest.TestCase):
         for method in ["POST", "PUT", "PATCH", "DELETE"]:
             self.assertEqual(self.status("/raw?path=hero.png", method)[0], 405)
         self.assertEqual((self.root / "hero.png").read_bytes(), b"\x89PNG\r\n\x1a\n")
+
+
+    def test_inventory_is_read_only_cached_and_excludes_private_files(self):
+        inventory = {"workspace": {"name": "lab"}, "ports": [], "projects": [{"name": "rpg", "ports": []}], "limited": False}
+        with patch.object(gallery, "workspace_inventory", return_value=inventory) as discover:
+            for _ in range(2):
+                status, payload = self.status("/api/dev/status")
+                self.assertEqual(status, 200)
+                self.assertEqual(json.loads(payload), inventory)
+            self.assertEqual(discover.call_count, 1)
+            self.assertEqual(self.status("/api/dev/status", "POST")[0], 405)
+
+    def test_fixed_login_return_has_no_open_redirect(self):
+        from urllib.request import build_opener, HTTPRedirectHandler
+        class NoRedirect(HTTPRedirectHandler):
+            def redirect_request(self, req, fp, code, msg, headers, newurl):
+                return None
+        try:
+            build_opener(NoRedirect).open(self.base + "/_dev/return?next=https://untrusted.example")
+            self.fail("Expected redirect")
+        except HTTPError as error:
+            self.assertEqual(error.code, 303)
+            self.assertEqual(error.headers["Location"], "https://dev.lab.bingo/")
+
+    def test_process_discovery_uses_socket_ownership_not_args_or_environment(self):
+        proc = Path(self.temp.name) / "proc"
+        (proc / "net").mkdir(parents=True)
+        executable = Path(self.temp.name) / "node"
+        executable.touch()
+        for pid, inode, name, cwd in [(101, 12345, "node", self.root / "rpg"), (102, 54321, "codex", self.root / "rpg"), (103, 99999, "node", self.root.parent)]:
+            process = proc / str(pid)
+            (process / "fd").mkdir(parents=True)
+            (process / "cwd").symlink_to(cwd)
+            binary = Path(self.temp.name) / name
+            binary.touch()
+            (process / "exe").symlink_to(binary)
+            (process / "fd/7").symlink_to(f"socket:[{inode}]")
+        (proc / "net/tcp").write_text("header\n" + "\n".join(f"0: 0100007F:{port:04X} 00000000:0000 0A 00000000:00000000 00:00000000 00000000 1000 0 {inode}" for port, inode in [(4173,12345),(34857,54321),(5000,99999)]))
+        (proc / "net/tcp6").write_text("header\n")
+        self.assertEqual(gallery.listening_project_ports(self.root, proc), [{"port":4173,"project":"rpg","runtime":"Node.js"}])
+
+    def test_probe_recognizes_http_and_discovers_projects_without_reading_them(self):
+        record = {"port":self.server.server_port,"project":"rpg","runtime":"Python"}
+        probe = gallery.probe_web_port(record)
+        self.assertEqual(probe["http_status"], 200)
+        with patch.object(gallery, "listening_project_ports", return_value=[record]):
+            result = gallery.workspace_inventory(self.root)
+        self.assertEqual([p["name"] for p in result["projects"]], ["rpg"])
+        self.assertEqual(result["ports"][0]["port"], self.server.server_port)
+        self.assertNotIn("secret.txt", json.dumps(result))
 
 
 if __name__ == "__main__":
