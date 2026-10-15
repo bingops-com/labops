@@ -43,15 +43,42 @@ export function createGateway({ upstream = 'http://coder.coder.svc.cluster.local
   const destination = new URL(upstream);
   const server = http.createServer(async (req, res) => {
     if (req.url === '/healthz') { res.writeHead(200); res.end('ok'); return; }
-    if (req.headers.host === 'dev.lab.bingo' && ['GET', 'HEAD'].includes(req.method)) {
-      if (req.url.split('?')[0] !== '/') { res.writeHead(404); res.end(); return; }
-      try { const html = await readFile(portal); res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' }); res.end(req.method === 'HEAD' ? undefined : html); }
-      catch { res.writeHead(503); res.end('Portal unavailable'); }
+    const dashboard = req.headers.host === 'dev.lab.bingo';
+    const inventory = dashboard && req.url.split('?')[0] === '/api/workspace';
+    if (dashboard && !['GET', 'HEAD'].includes(req.method)) { res.writeHead(405); res.end(); return; }
+    if (dashboard && !inventory) {
+      const assets = {
+        '/': [portal, 'text/html; charset=utf-8'],
+        '/dev.css': [new URL('./dev.css', portal), 'text/css; charset=utf-8'],
+        '/dev.js': [new URL('./dev.js', portal), 'text/javascript; charset=utf-8'],
+        '/fonts/display.woff2': [new URL('./display.woff2', portal), 'font/woff2'],
+        '/fonts/display-ext.woff2': [new URL('./display-ext.woff2', portal), 'font/woff2'],
+        '/fonts/text.woff2': [new URL('./text.woff2', portal), 'font/woff2'],
+        '/fonts/text-ext.woff2': [new URL('./text-ext.woff2', portal), 'font/woff2'],
+      };
+      const asset = assets[req.url.split('?')[0]];
+      if (!asset) { res.writeHead(404); res.end(); return; }
+      try {
+        const body = await readFile(asset[0]);
+        res.writeHead(200, { 'content-type': asset[1], 'cache-control': 'no-cache', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'" });
+        res.end(req.method === 'HEAD' ? undefined : body);
+      } catch { res.writeHead(503); res.end('Portal unavailable'); }
       return;
     }
-    const route = routeHost(req.headers.host);
+    const route = routeHost(inventory ? '4175.dev.lab.bingo' : req.headers.host);
     if (!route) { res.writeHead(404); res.end('Unknown development address'); return; }
-    const proxy = http.request({ hostname: destination.hostname, port: destination.port || 80, method: req.method, path: req.url, headers: requestHeaders(req, route, false) }, response => {
+    const path = inventory ? '/api/dev/status' : req.url;
+    const proxy = http.request({ hostname: destination.hostname, port: destination.port || 80, method: req.method, path, headers: requestHeaders(req, route, false) }, response => {
+      if (inventory && response.statusCode !== 200) {
+        const login = [301, 302, 303, 307, 308, 401, 403].includes(response.statusCode);
+        res.writeHead(login ? 401 : 503, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+        res.end(JSON.stringify({ error: login ? 'authentication_required' : 'workspace_unavailable', login_url: 'https://4175.dev.lab.bingo/_dev/return' }));
+        response.resume(); return;
+      }
+      if (inventory && !response.headers['content-type']?.includes('application/json')) {
+        res.writeHead(503, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+        res.end('{"error":"agent_update_required"}'); response.resume(); return;
+      }
       res.writeHead(response.statusCode, responseHeaders(response.headers, route));
       response.on('error', () => res.destroy()); response.pipe(res);
     });

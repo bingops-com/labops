@@ -31,3 +31,6 @@ __pycache__/
 /apps/workloads/coder/base/template/.terraform/
 /apps/workloads/coder/base/template/terraform.tfstate*
 /apps/workloads/coder/credentials/
+
+# Local Coder dashboard browser captures (fixture data only).
+/hacks/tests/artifacts/

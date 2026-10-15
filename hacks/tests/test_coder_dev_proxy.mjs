@@ -53,3 +53,18 @@ test('ConfigMap symlink entrypoint starts the executable module', async t => {
   assert.equal(isEntrypoint(link, source.href), true);
   assert.equal(isEntrypoint(undefined, source.href), false);
 });
+
+test('dashboard discovery requires Coder authentication and never forwards arbitrary paths', async t => {
+  let observed, authorized=false;
+  const coder=http.createServer((req,res)=>{
+    observed={host:req.headers.host,path:req.url,cookie:req.headers.cookie};
+    if(!authorized){res.writeHead(303,{location:'https://coder.lab.bingo/api/v2/applications/auth-redirect?private=example'});res.end();}
+    else {res.writeHead(200,{'content-type':'application/json'});res.end('{"ports":[],"projects":[]}');}
+  });coder.listen(0,'127.0.0.1');await once(coder,'listening');
+  const gateway=createGateway({upstream:`http://127.0.0.1:${coder.address().port}`});gateway.listen(0,'127.0.0.1');await once(gateway,'listening');
+  t.after(()=>{gateway.closeAllConnections();gateway.close();coder.closeAllConnections();coder.close();});
+  const request=(path,method='GET')=>new Promise((resolve,reject)=>{const req=http.request({hostname:'127.0.0.1',port:gateway.address().port,path,method,headers:{host:'dev.lab.bingo',cookie:'session=example'}},res=>{let body='';res.on('data',part=>body+=part);res.on('end',()=>resolve({status:res.statusCode,body,location:res.headers.location}));});req.on('error',reject);req.end();});
+  const login=await request('/api/workspace');assert.equal(login.status,401);assert.equal(login.location,undefined);assert.equal(JSON.parse(login.body).login_url,'https://4175.dev.lab.bingo/_dev/return');assert.equal(login.body.includes('private=example'),false);
+  authorized=true;assert.equal((await request('/api/workspace?path=/raw')).status,200);assert.equal(observed.path,'/api/dev/status');assert.equal(observed.host,'4175--main--lab--bingops.dev.lab.bingo');assert.equal(observed.cookie,'session=example');
+  assert.equal((await request('/api/workspace','POST')).status,405);assert.equal((await request('/api/arbitrary')).status,404);
+});

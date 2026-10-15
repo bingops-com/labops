@@ -5,12 +5,18 @@ name: Coder development aliases
     branches: [master]
     paths:
       - apps/workloads/coder/base/dev-proxy.mjs
+      - apps/workloads/coder/base/dev-portal.*
+      - apps/workloads/coder/base/dev-fonts/**
+      - hacks/tests/test_coder_dev_ui.mjs
       - hacks/tests/test_coder_dev_proxy.mjs
       - .github/workflows/coder-dev-proxy-test.yml
   push:
     branches: [master]
     paths:
       - apps/workloads/coder/base/dev-proxy.mjs
+      - apps/workloads/coder/base/dev-portal.*
+      - apps/workloads/coder/base/dev-fonts/**
+      - hacks/tests/test_coder_dev_ui.mjs
       - hacks/tests/test_coder_dev_proxy.mjs
       - .github/workflows/coder-dev-proxy-test.yml
 permissions:
@@ -25,3 +31,7 @@ jobs:
         with:
           node-version: '24'
       - run: node --test hacks/tests/test_coder_dev_proxy.mjs
+      - name: Dashboard browser acceptance
+        run: node hacks/tests/test_coder_dev_ui.mjs
+        env:
+          CHROMIUM_BIN: /usr/bin/google-chrome
