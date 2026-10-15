@@ -51,20 +51,20 @@ Open **https://dev.lab.bingo/** for the Coder development dashboard. Its cobalt 
 
 The landing shell contains public names/links only and remains behind the existing LAN/tailnet/workspace allowlist. Private project and server metadata requires the owner's Coder application session. Without that session, the UI shows a sign-in action rather than fabricated or stale server data. This goes through `https://4175.dev.lab.bingo/_dev/return`, lets Coder/Authentik establish the existing wildcard app cookie, then returns to the dashboard. The return destination is fixed; no redirect URL can be supplied by the caller.
 
-The dashboard's `GET /api/workspace` is forwarded by `base/dev-proxy.mjs` to the fixed Coder-protected `4175` application route `/api/dev/status`. The gateway never calls the workspace directly or holds an account/API token. Coder's login redirects become a JSON 401 for the dashboard, with a separate top-level sign-in link. Non-JSON responses and unavailable/old agents show unavailable state; the gateway does not falsely report an empty healthy workspace. Previously loaded information is marked stale after a failed refresh. Expired authentication clears the private inventory from the UI.
+The dashboard's `GET /api/workspace` is forwarded by [the Dev gateway](https://github.com/bingops-com/dev/blob/master/server.mjs) to the fixed Coder-protected `4175` application route `/api/dev/status`. The gateway never calls the workspace directly or holds an account/API token. Coder's login redirects become a JSON 401 for the dashboard, with a separate top-level sign-in link. Non-JSON responses and unavailable/old agents show unavailable state; the gateway does not falsely report an empty healthy workspace. Previously loaded information is marked stale after a failed refresh. Expired authentication clears the private inventory from the UI.
 
-The loopback gallery process also implements discovery in `base/gallery.py`. It reads `/proc/net/tcp{,6}` and same-user socket ownership, associates processes with their working directory under `/home/coder/projects`, then sends a bounded HTTP HEAD to local listeners only. It does **not** read process arguments, environment variables, Git metadata or project/configuration contents. Coder/Codex/Claude, SSH and browser helper processes are excluded. No external hosts are scanned. Non-HTTP sockets and listeners outside project directories are omitted. HTTP services bound exclusively to a non-loopback interface and TLS-only workspace listeners are not automatically detected; the manual port control remains available for compatible Coder routes. Detection is capped at 64 candidate ports, 100 project names and eight concurrent probes, with a five-second cache and a partial-result indicator. Results contain no PID, absolute working directory, command line, credentials or response body.
+The loopback gallery process also implements discovery in [Dev’s workspace agent](https://github.com/bingops-com/dev/blob/master/workspace/agent.py). It reads `/proc/net/tcp{,6}` and same-user socket ownership, associates processes with their working directory under `/home/coder/projects`, then sends a bounded HTTP HEAD to local listeners only. It does **not** read process arguments, environment variables, Git metadata or project/configuration contents. Coder/Codex/Claude, SSH and browser helper processes are excluded. No external hosts are scanned. Non-HTTP sockets and listeners outside project directories are omitted. HTTP services bound exclusively to a non-loopback interface and TLS-only workspace listeners are not automatically detected; the manual port control remains available for compatible Coder routes. Detection is capped at 64 candidate ports, 100 project names and eight concurrent probes, with a five-second cache and a partial-result indicator. Results contain no PID, absolute working directory, command line, credentials or response body.
 
 #### Proxy, TLS and lifecycle
 
-Coder retains `CODER_WILDCARD_ACCESS_URL=*.dev.lab.bingo`. The stateless Node gateway in the existing `coder-dev-portal` Deployment maps short aliases to canonical `PORT--main--lab--bingops.dev.lab.bingo` hosts and streams HTTP/WebSockets through Coder's owner-private application proxy. Same-app Origin/Location and host-scoped cookie headers are translated; unrelated origins and authentication callback parameters remain intact. Canonical URLs stay supported. URLs are never logged because authentication callbacks can contain temporary credentials. A port-only hostname identifies the declared workspace; multiple workspaces require an explicit disambiguation scheme before extending it.
+Coder retains `CODER_WILDCARD_ACCESS_URL=*.dev.lab.bingo`. The stateless Node gateway in the independent `dev` Deployment (Application `dev-labprod`, source `bingops-com/dev`) maps short aliases to canonical `PORT--main--lab--bingops.dev.lab.bingo` hosts and streams HTTP/WebSockets through Coder's owner-private application proxy. Same-app Origin/Location and host-scoped cookie headers are translated; unrelated origins and authentication callback parameters remain intact. Canonical URLs stay supported. URLs are never logged because authentication callbacks can contain temporary credentials. A port-only hostname identifies the declared workspace; multiple workspaces require an explicit disambiguation scheme before extending it.
 
 `dev-access.yaml` owns apex/wildcard ingress routes. cert-manager owns `coder/coder-dev-tls` for `dev.lab.bingo` and `*.dev.lab.bingo`, renewed through the existing `letsencrypt-cloudflare` DNS-01 issuer. Private CoreDNS owns apex and one-label wildcard answers to `192.168.10.151`; the `lab.bingo` Tailscale split-DNS route covers them. There is no new credential, public DNS application record, Internet tunnel, per-port Kubernetes Service or workspace volume mount in the dashboard Deployment.
 
-The dashboard HTML/CSS/JS and fonts are mounted from a content-hashed ConfigMap; source changes roll only its stateless Deployment. The gallery/discovery source remains in the `coder-workspace-gallery` ConfigMap, mounted read-only at `/etc/coder-gallery/server.py`; template startup launches it on `127.0.0.1:4175`. An existing workspace can adopt the mount through Coder **Update**, which restarts its processes. To update discovery without restarting the workspace, stop only the existing loopback gallery listener and relaunch the identical committed source in a retained terminal:
+Application code, tests, Dockerfile and runtime Kustomization live exclusively in [bingops-com/dev](https://github.com/bingops-com/dev). Its `dev-labprod` Argo CD Application follows that repository and deploys `Deployment/dev`, `Service/dev` and content-hashed server/web/font ConfigMaps in the existing `coder` namespace, using a public Node image pinned by digest. This buildless application has no npm dependencies or registry credential. Source changes roll only its stateless Deployment. LabOps owns the Argo declaration, repository allowlist and existing DNS/TLS/ingress; `dev-access.yaml` forwards to `Service/dev`. The previous inline `coder-dev-portal` workload and duplicate sources have been removed. The Dev application also owns the `coder-workspace-gallery` ConfigMap in `coder-workspaces`, mounted read-only at `/etc/coder-gallery/server.py`; template startup launches it on `127.0.0.1:4175`. An existing workspace can adopt the mount through Coder **Update**, which restarts its processes. To update discovery without restarting the workspace, stop only the existing loopback gallery listener and relaunch the identical committed source in a retained terminal:
 
 ```sh
-python3 /home/coder/projects/labops/apps/workloads/coder/base/gallery.py --root /home/coder/projects --port 4175
+python3 /home/coder/projects/dev/workspace/agent.py --root /home/coder/projects --port 4175
 ```
 
 The RPG process remains owned by its project (`cd /home/coder/projects/rpg && npm run dev`, port 4173). No proxy starts application processes. Reboot/replacement requires restarting development servers separately. The old dedicated RPG NodePort and `/rpg/` ingress have been replaced by generic aliases.
@@ -72,9 +72,12 @@ The RPG process remains owned by its project (`cd /home/coder/projects/rpg && np
 #### Verification and reconstruction
 
 ```sh
-node --test hacks/tests/test_coder_dev_proxy.mjs
-python3 -m unittest discover -s hacks/tests -p test_coder_gallery.py
-node hacks/tests/test_coder_dev_ui.mjs
+cd /home/coder/projects/dev
+npm test
+npm run test:agent
+npm run test:browser
+kubectl kustomize . > /tmp/dev-render.yaml
+cd /home/coder/projects/labops
 kubectl kustomize apps/workloads/coder/clusters/labprod > /tmp/coder-render.yaml
 ```
 
@@ -84,10 +87,10 @@ After reconciliation, verify TLS and authentication redirects without printing c
 
 | Reconstruction question | Answer |
 | --- | --- |
-| Rebuild without chat history? | Yes: manifests, dashboard, discovery and template startup are declared here; existing workspace adoption is documented above. |
+| Rebuild without chat history? | Yes: Argo/ingress/template startup are declared here and app/discovery sources in `bingops-com/dev`; existing workspace adoption is documented above. |
 | Inputs outside Git? | No new input. Existing Coder/Authentik accounts, issuer credentials and retained home recovery remain in this runbook's Inputs outside Git and backup sections. |
 | Partial failure / repeated operation? | GitOps reconciliation is idempotent; hashed dashboard updates roll automatically. Only one gallery listener may own port 4175. |
-| Ownership and order? | Existing DNS/issuer → Coder control plane and ConfigMaps → workspace/gallery → project processes. GitOps owns infrastructure; the owner runs development servers. |
+| Ownership and order? | Existing DNS/issuer → Coder namespaces/control plane → `dev-labprod` and its agent ConfigMap → workspace/gallery → project processes. GitOps owns infrastructure; the owner runs development servers. |
 | Safe verification? | Offline fixture tests plus TLS/status checks and owner-session browser checks, without printing tokens or private configuration. |
 
 Kubernetes projects ConfigMap keys under a directory with mode 0777, even on a read-only mount. OpenSSH rejects that directory as an ordinary authorized-keys file path with `StrictModes yes`. The server keeps that check enabled and loads only the declared public keys through `AuthorizedKeysCommand /usr/bin/cat /etc/coder-ssh/authorized_keys`, executed as the existing non-root `coder` user. The command is root-owned in the image and its input is the read-only GitOps ConfigMap; local home keys are not an additional login source.

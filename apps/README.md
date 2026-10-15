@@ -42,6 +42,9 @@ Coder's operator-managed database and retained experimentation workspace are
 defined in `workloads/coder`. Its native SSH NodePort remains private through
 the existing LAN/Tailscale route. Deployment and recovery acceptance are
 tracked in [the Coder runbook](workloads/coder/README.md).
+The independent `dev-labprod` Application follows
+[`bingops-com/dev`](https://github.com/bingops-com/dev) for the development dashboard
+and discovery/gallery agent; LabOps retains its Coder ingress, TLS and repository allowlist.
 
 Render before delivery:
 
