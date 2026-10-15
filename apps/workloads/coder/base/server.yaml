@@ -33,6 +33,7 @@ spec:
           env:
             - {name: CODER_HTTP_ADDRESS, value: "0.0.0.0:8080"}
             - {name: CODER_ACCESS_URL, value: "https://coder.lab.bingo"}
+            - {name: CODER_WILDCARD_ACCESS_URL, value: "*.dev.lab.bingo"}
             - name: CODER_PG_CONNECTION_URL
               valueFrom:
                 secretKeyRef: {name: coder-postgresql-app, key: uri}

@@ -1,0 +1,50 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coder-dev-portal
+  namespace: coder
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: coder-dev-portal}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: coder-dev-portal}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: portal
+          image: ghcr.io/bingops-com/homeops-dev@sha256:394c9228dc2a8a3954157492d91abf4ce7fd7fbb3adaca799273644d71cb0766
+          command: [python3, -m, http.server, '8080', --directory, /srv/dev]
+          ports:
+            - {name: http, containerPort: 8080}
+          readinessProbe:
+            httpGet: {path: /, port: http}
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {cpu: 100m, memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: portal, mountPath: /srv/dev, readOnly: true}
+      volumes:
+        - name: portal
+          configMap: {name: coder-dev-portal}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coder-dev-portal
+  namespace: coder
+spec:
+  selector: {app.kubernetes.io/name: coder-dev-portal}
+  ports:
+    - {name: http, port: 80, targetPort: http}

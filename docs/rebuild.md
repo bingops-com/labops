@@ -149,9 +149,11 @@ configs are sensitive generated state, not documentation.
    inputs, never image layers. The real `/home/coder` startup directory avoids
    runc's failure on the project symlink while mounting the persistent home.
    See [the Coder runbook](../apps/workloads/coder/README.md) for ordering,
-   external inputs, private iSH access, the HTTPS RPG preview at `/rpg/` and the
+   external inputs, private iSH access, dynamic previews and the read-only image gallery at `dev.lab.bingo` and the
    single-node availability limit. Restore/start the RPG process in the retained
-   workspace separately; its declarative Service does not launch the application.
+   workspace separately; the dynamic proxy does not launch project servers.
+   Reconcile the private wildcard DNS and DNS-01 certificate before validating
+   previews; adopt the gallery mount/startup via a Coder workspace update.
 10. Create the bucket-scoped Project Zomboid R2 token in Bitwarden, reconcile
     its mappings and the workload, then verify a Restic snapshot and a
     disposable restore before retiring the Build 41 VM.

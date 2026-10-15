@@ -1,0 +1,27 @@
+---
+name: Coder read-only gallery
+
+'on':
+  pull_request:
+    branches: [master]
+    paths:
+      - apps/workloads/coder/base/gallery.py
+      - hacks/tests/test_coder_gallery.py
+      - .github/workflows/coder-gallery-test.yml
+  push:
+    branches: [master]
+    paths:
+      - apps/workloads/coder/base/gallery.py
+      - hacks/tests/test_coder_gallery.py
+      - .github/workflows/coder-gallery-test.yml
+
+permissions:
+  contents: read
+
+jobs:
+  gallery:
+    name: Read-only gallery access
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m unittest discover -s hacks/tests -p test_coder_gallery.py
