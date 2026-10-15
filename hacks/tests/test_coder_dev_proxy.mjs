@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
+import { mkdtemp, symlink, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { once } from 'node:events';
-import { createGateway, routeHost, responseHeaders } from '../../apps/workloads/coder/base/dev-proxy.mjs';
+import { createGateway, routeHost, responseHeaders, isEntrypoint } from '../../apps/workloads/coder/base/dev-proxy.mjs';
 const canonical = '4173--main--lab--bingops.dev.lab.bingo';
 const short = '4173.dev.lab.bingo';
 
@@ -39,4 +42,14 @@ test('WebSocket upgrades retain the Coder hop and stream both directions', async
   const gateway=createGateway({upstream:`http://127.0.0.1:${coder.address().port}`});gateway.listen(0,'127.0.0.1');await once(gateway,'listening');
   t.after(()=>{gateway.close();coder.close();});
   await new Promise((resolve,reject)=>{const req=http.request({hostname:'127.0.0.1',port:gateway.address().port,path:'/socket',headers:{host:short,connection:'Upgrade',upgrade:'websocket'}});req.on('upgrade',(res,socket)=>{socket.on('error',reject);socket.once('data',data=>{assert.equal(data.toString(),'ping');socket.destroy();resolve();});socket.write('ping');});req.on('error',reject);req.end();});
+});
+
+test('ConfigMap symlink entrypoint starts the executable module', async t => {
+  const directory = await mkdtemp(`${tmpdir()}/coder-dev-entry-`);
+  t.after(() => rm(directory, {recursive:true,force:true}));
+  const source = new URL('../../apps/workloads/coder/base/dev-proxy.mjs', import.meta.url);
+  const link = `${directory}/dev-proxy.mjs`;
+  await symlink(fileURLToPath(source), link);
+  assert.equal(isEntrypoint(link, source.href), true);
+  assert.equal(isEntrypoint(undefined, source.href), false);
 });

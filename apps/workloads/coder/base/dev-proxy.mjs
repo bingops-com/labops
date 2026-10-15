@@ -2,6 +2,7 @@
 // Never log URLs: Coder's login callback carries a temporary credential in its query.
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 const suffix = '.dev.lab.bingo';
@@ -79,4 +80,5 @@ export function createGateway({ upstream = 'http://coder.coder.svc.cluster.local
   });
   return server;
 }
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) createGateway().listen(8080, '0.0.0.0');
+export const isEntrypoint = (entry, moduleUrl = import.meta.url) => !!entry && moduleUrl === pathToFileURL(realpathSync(entry)).href;
+if (isEntrypoint(process.argv[1])) createGateway().listen(8080, '0.0.0.0');
