@@ -149,7 +149,7 @@ configs are sensitive generated state, not documentation.
    inputs, never image layers. The real `/home/coder` startup directory avoids
    runc's failure on the project symlink while mounting the persistent home.
    See [the Coder runbook](../apps/workloads/coder/README.md) for ordering,
-   external inputs, private iSH access, the RPG preview on port 30473 and the
+   external inputs, private iSH access, the HTTPS RPG preview at `/rpg/` and the
    single-node availability limit. Restore/start the RPG process in the retained
    workspace separately; its declarative Service does not launch the application.
 10. Create the bucket-scoped Project Zomboid R2 token in Bitwarden, reconcile

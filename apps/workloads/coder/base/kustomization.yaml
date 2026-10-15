@@ -9,6 +9,7 @@ resources:
   - access.yaml
   - workspace.yaml
   - rpg-preview.yaml
+  - rpg-access.yaml
   - backup.yaml
   - bootstrap.yaml
 configMapGenerator:
