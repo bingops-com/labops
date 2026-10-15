@@ -15,31 +15,42 @@ resources:
 configMapGenerator:
   - name: coder-dev-portal
     namespace: coder
+    options:
+      disableNameSuffixHash: false
     files:
       - index.html=dev-portal.html
+      - dev-proxy.mjs=dev-proxy.mjs
   - name: coder-workspace-gallery
     namespace: coder-workspaces
+    options:
+      disableNameSuffixHash: true
     files:
       - server.py=gallery.py
   - name: coder-bootstrap-script
     namespace: coder-workspaces
+    options:
+      disableNameSuffixHash: true
     files:
       - bootstrap.py
   - name: coder-lab-template
     namespace: coder
+    options:
+      disableNameSuffixHash: true
     files:
       - main.tf=template/main.tf
       - startup.sh=template/startup.sh
       - .terraform.lock.hcl=template/.terraform.lock.hcl
   - name: coder-lab-template
     namespace: coder-workspaces
+    options:
+      disableNameSuffixHash: true
     files:
       - main.tf=template/main.tf
       - startup.sh=template/startup.sh
       - .terraform.lock.hcl=template/.terraform.lock.hcl
   - name: coder-workspace-ssh
     namespace: coder-workspaces
+    options:
+      disableNameSuffixHash: true
     files:
       - authorized_keys=authorized_keys
-generatorOptions:
-  disableNameSuffixHash: true

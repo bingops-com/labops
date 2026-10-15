@@ -21,11 +21,11 @@ spec:
       containers:
         - name: portal
           image: ghcr.io/bingops-com/homeops-dev@sha256:394c9228dc2a8a3954157492d91abf4ce7fd7fbb3adaca799273644d71cb0766
-          command: [python3, -m, http.server, '8080', --directory, /srv/dev]
+          command: [node, /srv/dev/dev-proxy.mjs]
           ports:
             - {name: http, containerPort: 8080}
           readinessProbe:
-            httpGet: {path: /, port: http}
+            httpGet: {path: /healthz, port: http}
           resources:
             requests: {cpu: 10m, memory: 32Mi}
             limits: {cpu: 100m, memory: 128Mi}

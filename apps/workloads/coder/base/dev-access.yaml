@@ -28,7 +28,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: coder
+                name: coder-dev-portal
                 port: {name: http}
   tls:
     - hosts: [dev.lab.bingo, '*.dev.lab.bingo']
