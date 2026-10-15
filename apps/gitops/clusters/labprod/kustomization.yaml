@@ -30,3 +30,4 @@ resources:
   - rom.yaml
   - pz-server.yaml
   - coder.yaml
+  - dev.yaml

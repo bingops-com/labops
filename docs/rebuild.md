@@ -150,7 +150,8 @@ configs are sensitive generated state, not documentation.
    runc's failure on the project symlink while mounting the persistent home.
    See [the Coder runbook](../apps/workloads/coder/README.md) for ordering,
    external inputs, private iSH access, the development dashboard and read-only
-   image gallery at `dev.lab.bingo`. Applications use `PORT.dev.lab.bingo` through
+   image gallery at `dev.lab.bingo`. The separate `dev-labprod` Application follows
+   `bingops-com/dev` for its Deployment and agent ConfigMap. Applications use `PORT.dev.lab.bingo` through
    the authenticated alias gateway. Adopt the declared gallery/discovery agent
    for live port inventory; no new credentials are needed. Also observe the
    single-node availability limit. Restore/start the RPG process in the retained

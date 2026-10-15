@@ -1,0 +1,23 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dev-labprod
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: labops-labprod
+  source:
+    repoURL: https://github.com/bingops-com/dev.git
+    targetRevision: master
+    path: .
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: coder
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

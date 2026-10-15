@@ -9,29 +9,9 @@ resources:
   - access.yaml
   - workspace.yaml
   - dev-access.yaml
-  - dev-portal.yaml
   - backup.yaml
   - bootstrap.yaml
 configMapGenerator:
-  - name: coder-dev-portal
-    namespace: coder
-    options:
-      disableNameSuffixHash: false
-    files:
-      - index.html=dev-portal.html
-      - dev.css=dev-portal.css
-      - dev.js=dev-portal.js
-      - display.woff2=dev-fonts/display.woff2
-      - display-ext.woff2=dev-fonts/display-ext.woff2
-      - text.woff2=dev-fonts/text.woff2
-      - text-ext.woff2=dev-fonts/text-ext.woff2
-      - dev-proxy.mjs=dev-proxy.mjs
-  - name: coder-workspace-gallery
-    namespace: coder-workspaces
-    options:
-      disableNameSuffixHash: true
-    files:
-      - server.py=gallery.py
   - name: coder-bootstrap-script
     namespace: coder-workspaces
     options:
