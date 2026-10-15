@@ -8,9 +8,19 @@ resources:
   - server.yaml
   - access.yaml
   - workspace.yaml
+  - dev-access.yaml
+  - dev-portal.yaml
   - backup.yaml
   - bootstrap.yaml
 configMapGenerator:
+  - name: coder-dev-portal
+    namespace: coder
+    files:
+      - index.html=dev-portal.html
+  - name: coder-workspace-gallery
+    namespace: coder-workspaces
+    files:
+      - server.py=gallery.py
   - name: coder-bootstrap-script
     namespace: coder-workspaces
     files:

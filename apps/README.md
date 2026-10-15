@@ -27,7 +27,7 @@ Production names under `lab.bingo` are explicit. Cloudflare Tunnel publishes
 `rom.lab.bingo`, `slots.lab.bingo`, `games.lab.bingo`
 and `status.lab.bingo`; `bingops.com` and
 `www.bingops.com` reach the portfolio. Argo CD and Grafana remain private
-through exact-name Tailscale split-DNS routes, Coder uses the private
+through exact-name Tailscale split-DNS routes, Coder and its dynamic `dev.lab.bingo` previews use the private
 `lab.bingo` parent route, and the LabOps Portal is
 private at the `lab.bingo` apex. The private names resolve to `192.168.10.151`;
 the private DNS zone `lab.bingo` forwards every other name (for example

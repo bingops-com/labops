@@ -4,7 +4,7 @@ Coder provides the private control plane at `https://coder.lab.bingo`. The `bing
 
 ## Ownership and deployment status
 
-Argo CD owns the `coder-labprod` workload, the retained home PVC, SSH Service, secret mappings and backup schedules. Coder's Terraform template owns only the workspace Deployment. Terraform's network stack owns tailnet DNS. Authentik owns identity and authorization. Bitwarden owns the R2 credential.
+Argo CD owns the `coder-labprod` workload, the retained home PVC, SSH Service and dynamic development ingress, secret mappings and backup schedules. Coder's Terraform template owns only the workspace Deployment. Terraform's network stack owns tailnet DNS. Authentik owns identity and authorization. Bitwarden owns the R2 credential.
 
 PRs #148 and #149 are merged and `homeops-dev:0.1.1` is public and digest-pinned. Runtime checks on 2026-10-14 confirm a Ready workspace, successful automatic setup, Authentik-only login, non-root settings, healthy PostgreSQL, continuous WAL archival, a completed database backup and a completed scheduled home backup. Restore acceptance remains pending. LabOps, Slots and City data and the selected operator inputs were transferred to the retained home. Read-only calls from the workspace verified both Kubernetes clusters, Talos, Proxmox SSH/passwordless sudo and GitHub; all three local Terraform state snapshots match the source. Coder is the primary Terraform runner. The declared template now pins the public 0.1.3 image, which includes Claude and screen. Adoption in the existing workspace requires GitOps reconciliation, automatic template import and an explicit Coder update; runtime acceptance of this image remains pending. A disposable Talos probe confirmed that Codex's filesystem sandbox cannot run with this Pod profile; deprecated Landlock still requires bubblewrap and is not a working fallback. No sandbox or approval bypass is configured.
 
@@ -18,6 +18,8 @@ PRs #148 and #149 are merged and `homeops-dev:0.1.1` is public and digest-pinned
 | Workspace | `bingops/lab`, Terraform-managed Deployment in `coder-workspaces`, 2 CPU and 4 GiB limits. |
 | Home | GitOps-owned `coder-bingops-home`, 20 GiB local-path request, retained from Argo pruning/deletion. |
 | SSH | Port 2222 in the pod, private NodePort 30222, public-key authentication only. |
+| Development access | `https://dev.lab.bingo`, Coder wildcard port proxy at `*.dev.lab.bingo`, automatic DNS-01 TLS. |
+| Image gallery | Read-only project image browser on workspace loopback port 4175, protected by the Coder application proxy. |
 | Home backup | Every four hours in UTC to `coder-workspaces/bingops-lab/current`, changed/deleted objects archived for 30 days. |
 | Tools | `homeops-dev`: Codex CLI, Terraform, kubectl/Helm, Talos/CAPI clients, Ansible, language/build/test tools, PostgreSQL 18 clients and native SSH. See the [image inventory](../../../docker/homeops-dev/README.md). |
 | Automatic setup | A five-minute CronJob provisions the OIDC owner and template once, then preserves the existing workspace. |
@@ -34,6 +36,36 @@ The existing Proxmox Tailscale router advertises `192.168.10.0/24`. Tailnet DNS 
 The Coder ingress permits LAN, tailnet and workspace pod sources. No Cloudflare public DNS record or Tunnel route is added. TLS is issued through the existing DNS-01 issuer. Workspace pods have an explicit host alias for the private Coder name because cluster DNS does not use the tailnet resolver.
 
 Native SSH bypasses the Coder CLI transport and uses the operator's iSH and desktop public keys declared in `base/authorized_keys`. Its NodePort is reachable on the LAN and through the subnet route. No Internet port forwarding is part of this setup. Tailnet ACL ownership remains with the operator; restrict the subnet route to the intended devices/users.
+
+### Dynamic development access and image gallery
+
+Open **https://dev.lab.bingo/**, select the workspace, then open a development port or its read-only image gallery. The portal lists the declared `bingops/lab` workspace with agent `main`, matching the template's existing single-workspace restriction. Changing that restriction requires updating the portal's workspace options as well.
+
+Coder runs with `CODER_WILDCARD_ACCESS_URL=*.dev.lab.bingo`. A server listening on a workspace port is accessible at `https://PORT--main--lab--bingops.dev.lab.bingo/`; the portal accepts non-privileged ports 1024–65535. The existing Coder dashboard's **Open Ports** control automatically detects listening ports. Each application is served at its hostname root, supporting ordinary asset paths and WebSocket development servers without per-port Kubernetes Services, certificates or PRs. See [Coder's wildcard access](https://coder.com/docs/admin/networking/wildcard-access-url) and [port forwarding](https://coder.com/docs/admin/networking/port-forwarding) documentation.
+
+The `dev.lab.bingo` portal is a static landing page with workspace names and links only, restricted by the same LAN/tailnet/workspace IP allowlist as Coder. App subdomains forward through the authenticated Coder control plane; ports remain owner-private by default. Opening one may redirect through the existing Coder/Authentik sign-in. This does not create anonymous read-only access to the whole workspace, or expose a shell/editor through the gallery.
+
+`dev-access.yaml` declares apex and wildcard ingress routes. cert-manager issues and renews `coder/coder-dev-tls` with both `dev.lab.bingo` and `*.dev.lab.bingo` through the existing `letsencrypt-cloudflare` DNS-01 ClusterIssuer. The TLS Secret is generated state, never copied into Git; recover the existing issuer credential through its established Bitwarden process. Private CoreDNS owns the apex and one-label wildcard responses to `192.168.10.151`. The existing `lab.bingo` Tailscale split-DNS parent covers them. No public DNS application record, Internet tunnel or new credential is required.
+
+The gallery source lives in `base/gallery.py`, supplied by the `coder-workspace-gallery` ConfigMap. The workspace template mounts it read-only at `/etc/coder-gallery` and startup launches its loopback listener on 4175. The optional mount keeps initial bootstrap and SSH acceptance independent of gallery availability. After template reconciliation, use Coder **Update** to adopt this mount/startup in an existing workspace; it restarts that workspace and interrupts its processes. For the already running workspace, the same source can be started without a rebuild:
+
+```sh
+python3 /home/coder/projects/labops/apps/workloads/coder/base/gallery.py --root /home/coder/projects --port 4175
+```
+
+Run it in a retained terminal session until the updated template is adopted. The gallery only lists project directories and supported raster images, previews originals up to 32 MiB, and accepts GET/HEAD. It refuses writes, hidden paths, parent traversal, symlinks and non-image file access. Its root excludes account caches and private home configuration. This is application-level read-only access; the workspace owner still retains their normal SSH/Coder permissions. SVG is intentionally not served as an active document.
+
+The RPG remains owned by its retained-home project. Start it with `cd /home/coder/projects/rpg` then `npm run dev`, and open port 4173 from the portal. Applications must be running; the proxy does not start them. After workspace replacement, restart project servers. The dedicated RPG NodePort and `/rpg/` ingress were replaced by this generic proxy.
+
+Non-sensitive verification:
+
+```sh
+kubectl --context labprod -n coder get certificate coder-dev-tls
+curl --fail https://dev.lab.bingo/ -o /dev/null
+dig @192.168.10.160 4173--main--lab--bingops.dev.lab.bingo
+```
+
+An unauthenticated application request must redirect to Coder authentication rather than return workspace content. Sign in as the owner to verify the final forwarded application and gallery. Reapplying manifests is idempotent. Reconstruction order: existing issuer and private DNS, Coder ingress/control plane and gallery ConfigMap, retained workspace/template, then running application processes. The portal reuses the pinned workspace image solely for its Python static server, without credentials or a workspace volume mount.
 
 Kubernetes projects ConfigMap keys under a directory with mode 0777, even on a read-only mount. OpenSSH rejects that directory as an ordinary authorized-keys file path with `StrictModes yes`. The server keeps that check enabled and loads only the declared public keys through `AuthorizedKeysCommand /usr/bin/cat /etc/coder-ssh/authorized_keys`, executed as the existing non-root `coder` user. The command is root-owned in the image and its input is the read-only GitOps ConfigMap; local home keys are not an additional login source.
 

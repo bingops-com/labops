@@ -128,6 +128,11 @@ resource "kubernetes_deployment_v1" "lab" {
             mount_path = "/etc/coder-ssh"
             read_only  = true
           }
+          volume_mount {
+            name       = "gallery"
+            mount_path = "/etc/coder-gallery"
+            read_only  = true
+          }
         }
         volume {
           name = "home"
@@ -139,6 +144,13 @@ resource "kubernetes_deployment_v1" "lab" {
           name = "ssh-access"
           config_map {
             name = "coder-workspace-ssh"
+          }
+        }
+        volume {
+          name = "gallery"
+          config_map {
+            name     = "coder-workspace-gallery"
+            optional = true
           }
         }
       }

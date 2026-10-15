@@ -48,6 +48,11 @@ CONFIG
 /usr/sbin/sshd -t -f /home/coder/.config/lab/sshd_config
 /usr/sbin/sshd -D -e -f /home/coder/.config/lab/sshd_config >> /home/coder/.config/lab/sshd.log 2>&1 &
 
+# Optional during initial bootstrap/acceptance. GitOps supplies the read-only source.
+if [[ -f /etc/coder-gallery/server.py ]]; then
+  python3 /etc/coder-gallery/server.py --root /home/coder/projects --port 4175 >> /home/coder/.config/lab/gallery.log 2>&1 &
+fi
+
 if [[ ! -f /home/coder/.profile ]]; then
   # The profile expands these variables when the user logs in.
   # shellcheck disable=SC2016
