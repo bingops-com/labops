@@ -18,7 +18,8 @@ owns the ObjectStore and scheduled backup; its automatic synchronization follows
 the reviewed LabOps declaration. Prepare reconstruction inputs and the recovery
 pause described in [the Games runbook](../../apps/workloads/games/README.md)
 before a rebuild or restore. Slots
-similarly owns `slots-postgresql` in `slots` with the `slots` R2 prefix.
+similarly owns `slots-postgresql` in `slots` with the `slots` R2 prefix, and
+Ghost `ghost-postgresql` in `ghost` with the `ghost` R2 prefix.
 
 The prepared common-account successor is `games/arcade-postgresql`, database
 `arcade`, with a dedicated `arcade` backup prefix. It is excluded from the active

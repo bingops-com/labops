@@ -35,6 +35,9 @@ config:
     - name: Games
       description: Jeux multijoueurs entre amis
       url: https://games.lab.bingo
+    - name: Ghost
+      description: Défis d'arcade du jour contre les fantômes
+      url: https://ghost.lab.bingo
   # Hand-written announcements, most recent first:
   #   - date: 2026-10-12
   #     title: Maintenance du stockage

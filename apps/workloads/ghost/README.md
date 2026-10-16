@@ -1,83 +1,56 @@
 # Ghost
 
-**Dormant: prepared, not connected to the GitOps root, not deployed.** Ghost
-runs only on the common lab.bingo database prepared by
-[Arcade](../arcade/README.md), which is itself not in production yet. The
-Application `apps/gitops/clusters/labprod/ghost.yaml` is deliberately absent
-from that directory's `kustomization.yaml`.
-
 Ghost is a set of four short daily arcade games at `https://ghost.lab.bingo`:
 the same course for everyone each day, raced against the ghosts (replays) of
-the other players. Anyone can play; publishing a ghost needs the lab.bingo
-account shared with Games and Slots. Argo CD will combine the Helm chart and
-immutable application commit from the public `bingops-com/ghost` repository
-with the production values and the prerequisite resources in this directory.
-The GHCR package must be public because the pod has no registry credential.
+the other players. Anyone can play; publishing a ghost needs an account. Argo
+CD combines the Helm chart and immutable application commit from the public
+`bingops-com/ghost` repository with the production values and prerequisite
+resources in this directory. The GHCR package is public because the pod has no
+registry credential. Ghost follows the automatic synchronization policy of
+every active Application.
+
+Like Games and Slots, Ghost has its own database and its own pseudonymous
+player accounts. It also has the same opt-in shared-accounts mode
+(`database.sharedAccounts`), off in production; see
+[Shared accounts](#shared-accounts).
 
 ## Acceptance gate
 
-- Database: none of its own. Ghost uses database `arcade` of the CNPG cluster
-  `games/arcade-postgresql`. It reads `identity.users`, opens and closes its
-  sessions in `identity.sessions` (cookie `ghost_session`, host-only), and
-  keeps its runs in its own schema `ghost`, created and migrated at startup by
-  the role `arcade` that owns the database. It refuses to start unless
-  `identity.schema_version` is 1, and never creates, imports or changes an
-  account. Password changes, recoveries and administrator revocations in Games
-  therefore also end Ghost sessions.
-- Credential: CNPG generates `games/arcade-postgresql-app`. The arcade
-  reconciler (`games/arcade-credentials-sync`) copies its URI, hostname
-  normalized, into `ghost/arcade-database` (key `uri`), as it does for Slots.
-  The target Role in this namespace (`clusters/labprod/arcade-credentials.yaml`)
-  allows Secret creation there and reads/patches of that one Secret only. No
-  new secret, Bitwarden entry or R2 key is introduced.
-- Backup: the arcade WAL archive and daily backup (prefix `arcade`) include the
-  `ghost` schema. A restore of the common database brings the runs back with
-  the accounts; runs older than seven days are pruned by the application, so
-  their loss only resets the boards in progress.
-- Authentik and administrators: not applicable. Player accounts are the
-  pseudonymous lab.bingo identities; Ghost has no privileged role and no
-  operator UI.
-- Other durable data: none. The container is read-only and stateless.
-- Network: the chart's NetworkPolicy allows Traefik in on TCP/3779, DNS out,
-  and TCP/5432 to the `arcade-postgresql` pods of `games` only. The observed
-  Flannel installation does not enforce NetworkPolicy; do not claim isolation
-  from the rendered YAML.
+- Database: `ghost-postgresql`, a one-instance CloudNativePG cluster on
+  `local-path`, database and owner `ghost`, kept on uninstall. The application
+  consumes CNPG's generated `uri` credential and creates its tables (`users`,
+  `sessions`, `runs`) at startup.
+- Backup: continuous WAL archival and a daily backup (03:45) use the
+  `ghost-postgresql` ObjectStore, the shared `bingops-cnpg-labprod` bucket and
+  the dedicated `ghost` prefix. The namespace-local `ghost-r2-credentials`
+  mapping reuses the existing bucket-scoped R2 key pair of Games and Slots from
+  Bitwarden; the token bootstrap copies `bw-auth-token` into the namespace.
+- Authentik and administrators: not applicable. Player accounts are
+  pseudonymous game identities with no privileged role; there is no operator UI.
+- Other durable data: none. The container is read-only. Runs older than seven
+  days are pruned by the application; accounts are the only lasting data.
+- Network: the chart's NetworkPolicy allows Traefik in on TCP/3779, DNS out and
+  TCP/5432 to `ghost-postgresql` only. The observed Flannel installation does
+  not enforce NetworkPolicy; do not claim isolation from the rendered YAML.
 
-## Activation
+No new external input: the R2 key and Bitwarden machine token already exist
+(recover and rotate them as documented in the
+[CNPG runbook](../../../docs/infrastructure/cloudnative-pg.md)); CNPG generates
+the database password. The Bitwarden token bootstrap is idempotent and the
+BitwardenSecret and CNPG controllers retry once their dependencies exist.
+The public name `ghost.lab.bingo` is declared in `terraform/cloudflare/locals.tf`
+(CNAME, applied by Terraform) and routed by the tunnel in
+`apps/cloudflare/bingops/values.yaml`.
 
-Requires, in order: the arcade cutover completed and accepted (common backup
-and isolated restore verified), then the published Ghost image. Each step is a
-reviewed LabOps change; merging one is a deployment.
+## Release
 
-1. The pinned pair is commit `583eb238c633938180d32a876a062ae9389fd0de` of
-   `bingops-com/ghost`: its `CI` workflow passed and published
-   `ghcr.io/bingops-com/ghost:sha-583eb238c633938180d32a876a062ae9389fd0de`, public, with a Linux/amd64 image.
-   For a newer release, merge to `master`, wait for the `CI` workflow, verify
-   anonymous Linux/amd64 pull access to the new tag, then move both pins
-   together.
-2. In one LabOps PR:
-   - confirm that the pins in `apps/gitops/clusters/labprod/ghost.yaml` and
-     `clusters/labprod/values.yaml` name the release to deploy;
-   - add `https://github.com/bingops-com/ghost.git` to `sourceRepos` in
-     `apps/gitops/clusters/labprod/project.yaml`, and `ghost.yaml` to
-     `apps/gitops/clusters/labprod/kustomization.yaml`;
-   - publish the name: `ghost.lab.bingo` in `terraform/cloudflare/locals.tf`
-     and the tunnel ingress `http://ghost.ghost.svc.cluster.local:80` in
-     `apps/cloudflare/bingops/values.yaml` (see
-     `docs/infrastructure/cloudflare.md`; the Terraform apply is a separate,
-     authorized operation);
-   - monitor `https://ghost.lab.bingo/healthz` in
-     `apps/workloads/gatus/base/config.yaml` (group `Public`) and list it in
-     `apps/workloads/status/clusters/labprod/values.yaml`;
-   - mark Ghost active in `docs/gitops-applications.md` and remove the dormant
-     wording here.
-3. After synchronization, wait for the reconciler to log
-   `Reconciled ghost/arcade-database` (it logs `Skipped ghost/...` while the
-   namespace or Role is missing), then for the Ghost pod to become ready.
-
-The application owns the `ghost` schema migrations (`ghost.schema_migrations`);
-an image rollback is valid only to a release that knows the current schema
-version. The arcade migration and merge scripts do not touch `ghost`.
+The Application `apps/gitops/clusters/labprod/ghost.yaml` and
+`clusters/labprod/values.yaml` pin the same commit of `bingops-com/ghost`
+(chart and `sha-<commit>` image). To release: merge to `master` in
+`bingops-com/ghost`, wait for its `CI` workflow to publish the image, verify
+anonymous Linux/amd64 pull access to the new tag, then move both pins in one
+LabOps PR. Merging that PR deploys. A database schema only moves forward: roll
+back to a release that knows the current `schema_migrations` version.
 
 ## Verify
 
@@ -85,39 +58,53 @@ Offline, before merging:
 
 ```sh
 kubectl kustomize apps/workloads/ghost/clusters/labprod >/dev/null
-kubectl kustomize apps/workloads/arcade/staging/labprod >/dev/null
 helm template ghost /path/to/ghost/chart --namespace ghost --values apps/workloads/ghost/clusters/labprod/values.yaml >/dev/null
 bash /path/to/ghost/chart/tests/check.sh
 ```
 
-Post-activation, read-only (no Secret data):
+After synchronization, read-only (no Secret data):
 
 ```sh
 kubectl --context labprod get application ghost-labprod -n argocd-system
-kubectl --context labprod get deployment,pod,secret/arcade-database -n ghost
-kubectl --context labprod get cronjob,job -n games
+kubectl --context labprod get deployment,pod,cluster,scheduledbackup,backup -n ghost
 curl -fsS https://ghost.lab.bingo/healthz
 curl -fsS https://ghost.lab.bingo/livez
 ```
 
-Then sign in with a real lab.bingo account, publish one run, check it appears
-on the board from another browser, change that account's password in Games and
-confirm the Ghost session ends.
+Confirm the CNPG cluster is ready, WAL archival succeeds and one `Backup`
+completes, then create an account, publish a run and see it on the board from
+another browser.
 
 ## Recovery and rollback
 
-- Application: revert the pin change; the `ghost` schema stays in place.
-- Database: follow the arcade runbook. Ghost shares its restore point with
-  Games and Slots; it has no separate database restore.
-- Credential rotation: after a CNPG password rotation, wait for the reconciler,
-  then restart the Ghost Deployment (authorized operation) to refresh its
-  environment.
-- Retirement: remove the Application from the root (the namespace and Secret
-  are pruned), then, in a separately approved change, `DROP SCHEMA ghost
-  CASCADE` on the common database. Never touch the `identity` schema.
+Application rollback is a Git revert of the pin change. Database recovery
+follows the [CNPG runbook](../../../docs/infrastructure/cloudnative-pg.md): pause
+automatic synchronization through a reviewed change to `ghost.yaml`, restore
+into a new cluster from `ghost-postgresql-g1` with a new archive generation,
+and never change the bootstrap of an existing cluster or overwrite earlier
+archives. A restore can bring back sessions that were closed after the
+recovery point; they still expire by date. CNPG is protected by Helm keep; do
+not delete the namespace, PVC or R2 archives to roll back application code.
 
-Reproducibility: every Ghost input is in Git or derived from the arcade
-database and CNPG; no non-Git input is added. The reconciler is idempotent and
-skips Ghost until its namespace exists. Ownership: LabOps owns this overlay and
-the credential copy; the Ghost repository owns the chart, image and `ghost`
-schema; the arcade runbook owns the database, its backups and recovery.
+## Shared accounts
+
+Ghost can use the common lab.bingo accounts of Games and Slots, prepared by
+[Arcade](../arcade/README.md) and not in production yet. In that mode it reads
+`identity.users`, opens and closes its sessions in `identity.sessions` (cookie
+`ghost_session`, host-only), keeps its runs in a `ghost` schema, creates no
+account, and refuses to start unless `identity.schema_version` is 1.
+
+The switch follows the arcade cutover of Games and Slots, in its own reviewed
+change: set `database.sharedAccounts: true`, `database.existingSecret.name:
+arcade-database` and `networkPolicy.databaseTo` to the `arcade-postgresql`
+pods of the `games` namespace, keeping `database.cnpg.enabled: true` so that
+Argo does not prune `ghost-postgresql`. The arcade reconciler copies
+`ghost/arcade-database` once `clusters/labprod/arcade-credentials.yaml` is
+present (it already is). Ghost's own accounts are not merged: its players sign
+in with their lab.bingo account and the boards in progress (seven days at
+most) restart. Retiring `ghost-postgresql` afterwards is a separate, explicitly
+approved change.
+
+Reproducibility: every input is in Git, Bitwarden (existing R2 key and token)
+or generated by CNPG. Ownership: LabOps owns this overlay, backups and recovery;
+the Ghost repository owns the chart, image and schema.
