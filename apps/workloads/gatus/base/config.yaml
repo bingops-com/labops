@@ -62,6 +62,11 @@ endpoints:
     url: https://games.lab.bingo/healthz
     interval: 60s
     conditions: ["[STATUS] == 200", "[RESPONSE_TIME] < 2000", "[CERTIFICATE_EXPIRATION] > 168h"]
+  - name: Ghost
+    group: Public
+    url: https://ghost.lab.bingo/healthz
+    interval: 60s
+    conditions: ["[STATUS] == 200", "[RESPONSE_TIME] < 2000", "[CERTIFICATE_EXPIRATION] > 168h"]
   - name: ROMarr
     group: Services
     url: http://romarr.rom.svc.cluster.local:6868/api/health

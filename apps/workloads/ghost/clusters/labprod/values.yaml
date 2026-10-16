@@ -3,7 +3,7 @@
 # published commit of bingops-com/ghost (see ../../README.md).
 image:
   repository: ghcr.io/bingops-com/ghost
-  tag: sha-583eb238c633938180d32a876a062ae9389fd0de
+  tag: sha-9d8316a03afa891f2bed15a0068b4b479b6db4f1
   pullPolicy: IfNotPresent
 
 ingress:
@@ -18,24 +18,23 @@ ingress:
 
 trustProxy: true
 
-signupUrl: https://games.lab.bingo
-
-# The common lab.bingo database: CNPG cluster games/arcade-postgresql, database
-# arcade. The URI is copied into this namespace by the arcade reconciler.
+# Own database and accounts, like Games and Slots. Shared lab.bingo accounts
+# (database.sharedAccounts) follow the arcade cutover: see ../../README.md.
 database:
-  existingSecret:
-    name: arcade-database
-    key: uri
-
-networkPolicy:
-  enabled: true
-  databaseTo:
-    - namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: games
-      podSelector:
-        matchLabels:
-          cnpg.io/cluster: arcade-postgresql
+  sharedAccounts: false
+  cnpg:
+    enabled: true
+    instances: 1
+    storage:
+      size: 1Gi
+      storageClass: local-path
+    backup:
+      enabled: true
+      objectStore: ghost-postgresql
+      serverName: ghost-postgresql-g1
+      schedule: "0 45 3 * * *"
+    podMonitor:
+      enabled: true
 
 resources:
   requests:

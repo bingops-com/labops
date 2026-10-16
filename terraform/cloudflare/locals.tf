@@ -16,6 +16,7 @@ locals {
     "rom.lab.bingo",
     "slots.lab.bingo",
     "games.lab.bingo",
+    "ghost.lab.bingo",
     "status.lab.bingo",
   ])
 

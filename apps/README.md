@@ -24,7 +24,7 @@ file archive and Barman backup remain the recovery sources.
 
 Production names under `lab.bingo` are explicit. Cloudflare Tunnel publishes
 `auth.lab.bingo`, `portfolio.lab.bingo`, `rom-requests.lab.bingo`,
-`rom.lab.bingo`, `slots.lab.bingo`, `games.lab.bingo`
+`rom.lab.bingo`, `slots.lab.bingo`, `games.lab.bingo`, `ghost.lab.bingo`
 and `status.lab.bingo`; `bingops.com` and
 `www.bingops.com` reach the portfolio. Argo CD and Grafana remain private
 through exact-name Tailscale split-DNS routes, Coder and its dynamic `dev.lab.bingo` previews use the private

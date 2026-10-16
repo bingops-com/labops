@@ -76,16 +76,17 @@ normalized to the games namespace FQDN before copying. Kubernetes `create`
 cannot be restricted to a resource name; each target Role therefore permits
 Secret creation in its namespace, while reads/patches are limited to
 `arcade-database`. The Slots Role is declared here; the Ghost Role is declared
-with the Ghost namespace ([Ghost runbook](../ghost/README.md)), and until both
-exist the job logs that it skipped Ghost (HTTP 403/404) without failing Slots.
+with the Ghost namespace ([Ghost runbook](../ghost/README.md)). If either is
+missing the job logs that it skipped Ghost (HTTP 403/404) without failing Slots.
 The service account is only mounted by this job. No credential is printed or
 committed. After CNPG password rotation, wait for reconciliation and perform an
 authorized restart of every consuming application to refresh its environment.
 
-Ghost keeps its own schema, `ghost`, in the `arcade` database and only reads
-`identity.users` and writes its own rows in `identity.sessions`. The migration
-and merge scripts here never create or touch it; common backups and restores
-include it.
+Ghost runs on its own database today. After this cutover it can opt into the
+common accounts like Games and Slots (see the [Ghost runbook](../ghost/README.md)):
+it then reads `identity.users`, writes only its own rows in `identity.sessions`
+and keeps its runs in a `ghost` schema that the migration and merge scripts here
+never create or touch; common backups and restores include it.
 
 Non-Git inputs: the existing bucket-scoped R2 key and Bitwarden machine token
 (recover/rotate as documented in the [CNPG runbook](../../../docs/infrastructure/cloudnative-pg.md)),
