@@ -1,0 +1,34 @@
+# Dormant: deliberately absent from kustomization.yaml. Ghost runs only on the
+# common arcade database; activate it after the arcade cutover, following
+# apps/workloads/ghost/README.md. This pin and the image tag in
+# apps/workloads/ghost/clusters/labprod/values.yaml name the same published commit.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ghost-labprod
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: labops-labprod
+  sources:
+    - repoURL: https://github.com/bingops-com/ghost.git
+      targetRevision: 583eb238c633938180d32a876a062ae9389fd0de
+      path: chart
+      helm:
+        releaseName: ghost
+        valueFiles:
+          - $values/apps/workloads/ghost/clusters/labprod/values.yaml
+    - repoURL: https://github.com/bingops-com/labops.git
+      targetRevision: master
+      ref: values
+      path: apps/workloads/ghost/clusters/labprod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ghost
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
