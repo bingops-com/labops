@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Dormant: the ghost-labprod Application is excluded from the GitOps root until
+# the common arcade database is in production (see ../../README.md).
+resources:
+  - namespace.yaml
+  - arcade-credentials.yaml
+
+labels:
+  - pairs:
+      environment: labprod

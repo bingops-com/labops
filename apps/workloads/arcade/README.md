@@ -71,13 +71,21 @@ and published charts. CNPG generates `games/arcade-postgresql-app` (role
 bootstrap from the Games runbook. Terraform owns the bucket.
 
 The credential CronJob reads only that named CNPG Secret and reconciles
-`slots/arcade-database`. Its URI hostname is normalized to the games namespace
-FQDN before copying. Kubernetes `create` cannot be restricted to a resource
-name; its Slots Role therefore permits Secret creation in that namespace,
-while reads/patches are limited to `arcade-database`. The service account is
-only mounted by this job. No credential is printed or committed. After CNPG
-password rotation, wait for reconciliation and perform an authorized restart
-of both applications to refresh their environment.
+`slots/arcade-database`, then `ghost/arcade-database`. Its URI hostname is
+normalized to the games namespace FQDN before copying. Kubernetes `create`
+cannot be restricted to a resource name; each target Role therefore permits
+Secret creation in its namespace, while reads/patches are limited to
+`arcade-database`. The Slots Role is declared here; the Ghost Role is declared
+with the Ghost namespace ([Ghost runbook](../ghost/README.md)), and until both
+exist the job logs that it skipped Ghost (HTTP 403/404) without failing Slots.
+The service account is only mounted by this job. No credential is printed or
+committed. After CNPG password rotation, wait for reconciliation and perform an
+authorized restart of every consuming application to refresh its environment.
+
+Ghost keeps its own schema, `ghost`, in the `arcade` database and only reads
+`identity.users` and writes its own rows in `identity.sessions`. The migration
+and merge scripts here never create or touch it; common backups and restores
+include it.
 
 Non-Git inputs: the existing bucket-scoped R2 key and Bitwarden machine token
 (recover/rotate as documented in the [CNPG runbook](../../../docs/infrastructure/cloudnative-pg.md)),
