@@ -27,6 +27,7 @@ spec:
           env:
             - {name: RCLONE_CONFIG_R2_TYPE, value: s3}
             - {name: RCLONE_CONFIG_R2_PROVIDER, value: Cloudflare}
+            - {name: RCLONE_CONFIG_R2_NO_CHECK_BUCKET, value: "true"}
             - {name: RCLONE_CONFIG_R2_ENDPOINT, value: "https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com"}
             - name: RCLONE_CONFIG_R2_ACCESS_KEY_ID
               valueFrom: {secretKeyRef: {name: coder-r2-credentials, key: ACCESS_KEY_ID}}

@@ -342,11 +342,15 @@ Treat the workspace project as user data protected by its file backup. The local
 
 PostgreSQL has WAL archival and daily full backups through the operator's Barman plugin. Workspace files use the existing private R2 bucket, every four hours, with version archives for changed or deleted objects. Credentials are mounted only into backup jobs, not the development container.
 
-The file backup includes projects, output, personal client configurations (including enrolled kubeconfig/Talos/Codex credentials, Claude's `.credentials.json`, settings and `.claude.json`) and the SSH host key. Caches, package installations and virtual environments are excluded. It is a live file copy, not an atomic filesystem or application snapshot. A running simulator should write checkpoints atomically; a database introduced inside the workspace would need its own consistent backup procedure.
+The file backup includes projects, output, personal client configurations (including enrolled kubeconfig/Talos/Codex credentials, Claude's `.credentials.json`, settings and `.claude.json`) and the SSH host key. Caches, package installations, virtual environments and generated SSH/gallery PID/log files are excluded. It is a live file copy, not an atomic filesystem or application snapshot. A running simulator should write checkpoints atomically; a database introduced inside the workspace would need its own consistent backup procedure.
 
 These R2 files use bucket access control and HTTPS; no separate client-side encryption layer is configured. The full home can include personal tokens, so treat its R2 access pair as privileged. More restrictive backup credentials or encryption require a separately recoverable key.
 
 The marker check makes an uninitialized home fail backup rather than silently replace a prior backup with an empty directory. Freeze the CronJob before a deliberate disk-loss rebuild until files are restored and verified. Thirty-day archive pruning must occur only after a successful sync.
+
+The R2 remote sets `RCLONE_CONFIG_R2_NO_CHECK_BUCKET=true` because the bucket is provisioned separately and the backup credential has object-level permissions. Cloudflare [requires `no_check_bucket` for these keys](https://developers.cloudflare.com/r2/examples/rclone/); otherwise an archive/upload can fail with `S3: CreateBucket` / `403 AccessDenied` despite working object access. The restore-check remote uses the same setting. Do not broaden the key to bucket administration to fix this error.
+
+On 2026-10-28 the CronJob still scheduled every four hours, but repeated jobs failed on that operation and `lastSuccessfulTime` remained `2026-10-14T13:11:35Z`. The declarative correction applies to future Jobs after GitOps reconciliation; it does not repair old failed Jobs or establish that a fresh backup has succeeded. Verify a new Job reaches `Complete` and the CronJob's `lastSuccessfulTime` advances. Run a manual Job only for an explicitly authorized recovery, after confirming no backup is already active. Use status fields and redacted error summaries; never print credential values or object contents. Existing bucket/credential ownership and recovery remain in Inputs outside Git.
 
 ## Safe runtime verification
 

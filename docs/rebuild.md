@@ -128,7 +128,9 @@ configs are sensitive generated state, not documentation.
    retained home before starting recovered workspaces; keep file backups
    suspended until restoration is verified. The public OIDC client adds no
    secret, and Coder reuses the existing bucket-scoped R2 key through
-   Bitwarden mappings. Its automatic setup provisions only the `bingops`
+   Bitwarden mappings. The backup/restore R2 remote declares `no_check_bucket`
+   for the pre-provisioned bucket and object-scoped key; verify a fresh backup
+   Job succeeds after reconciliation. Its automatic setup provisions only the `bingops`
    OIDC owner and imports the Git-tracked template without a persistent setup
    password. Update its bootstrap generation after database-only recovery,
    then perform isolated database/file restore checks.
