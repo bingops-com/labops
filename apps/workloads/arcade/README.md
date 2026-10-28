@@ -71,22 +71,18 @@ and published charts. CNPG generates `games/arcade-postgresql-app` (role
 bootstrap from the Games runbook. Terraform owns the bucket.
 
 The credential CronJob reads only that named CNPG Secret and reconciles
-`slots/arcade-database`, then `ghost/arcade-database`. Its URI hostname is
-normalized to the games namespace FQDN before copying. Kubernetes `create`
-cannot be restricted to a resource name; each target Role therefore permits
-Secret creation in its namespace, while reads/patches are limited to
-`arcade-database`. The Slots Role is declared here; the Ghost Role is declared
-with the Ghost namespace ([Ghost runbook](../ghost/README.md)). If either is
-missing the job logs that it skipped Ghost (HTTP 403/404) without failing Slots.
-The service account is only mounted by this job. No credential is printed or
-committed. After CNPG password rotation, wait for reconciliation and perform an
-authorized restart of every consuming application to refresh its environment.
+`slots/arcade-database`. Its URI hostname is normalized to the Games namespace
+FQDN before copying. Kubernetes `create` cannot be restricted to a resource
+name; the target Role therefore permits Secret creation in Slots, while
+reads/patches are limited to `arcade-database`. The service account is only
+mounted by this job. No credential is printed or committed. After CNPG password
+rotation, wait for reconciliation and perform an authorized restart of every
+consuming application to refresh its environment.
 
-Ghost runs on its own database today. After this cutover it can opt into the
-common accounts like Games and Slots (see the [Ghost runbook](../ghost/README.md)):
-it then reads `identity.users`, writes only its own rows in `identity.sessions`
-and keeps its runs in a `ghost` schema that the migration and merge scripts here
-never create or touch; common backups and restores include it.
+Ghost is retired. The reconciler no longer copies credentials into its
+namespace and its target Role/RoleBinding are removed. Its retained standalone
+database remains independent of any Arcade migration; see the
+[Ghost runbook](../ghost/README.md).
 
 Non-Git inputs: the existing bucket-scoped R2 key and Bitwarden machine token
 (recover/rotate as documented in the [CNPG runbook](../../../docs/infrastructure/cloudnative-pg.md)),

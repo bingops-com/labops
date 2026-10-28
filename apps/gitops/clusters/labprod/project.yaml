@@ -22,7 +22,6 @@ spec:
     - https://github.com/bingops-com/pz-server.git
     - https://github.com/bingops-com/slots.git
     - https://github.com/bingops-com/games.git
-    - https://github.com/bingops-com/ghost.git
     - https://github.com/bingops-com/dev.git
   destinations:
     - server: https://kubernetes.default.svc

@@ -1,0 +1,52 @@
+# Retained recovery data only. No Ghost application or private chart dependency.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: ghost-postgresql
+  namespace: ghost
+  annotations:
+    helm.sh/resource-policy: keep
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie
+  instances: 1
+  bootstrap:
+    initdb:
+      database: ghost
+      owner: ghost
+      dataChecksums: true
+  storage:
+    size: 1Gi
+    storageClass: local-path
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: ghost-postgresql
+        serverName: ghost-postgresql-g1
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: ghost-postgresql-daily
+  namespace: ghost
+spec:
+  schedule: "0 45 3 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: ghost-postgresql
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: ghost-postgresql
+  namespace: ghost
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: ghost-postgresql
+  podMetricsEndpoints:
+    - port: metrics
