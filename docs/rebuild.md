@@ -99,11 +99,13 @@ configs are sensitive generated state, not documentation.
    credential recovery and the recovery overlay are in
    `apps/workloads/arcade/README.md`. Never enable shared mode before the common
    database is restored/prepared, or retire source storage during a cutover.
-   Ghost depends on the public `bingops-com/ghost` repository and its public
-   GHCR image, pinned with its chart in `apps/gitops/clusters/labprod/ghost.yaml`.
-   Its PostgreSQL archive reuses the existing bucket-scoped R2 key under the
-   dedicated `ghost` prefix; verify WAL archival and one completed backup. See
-   `apps/workloads/ghost/README.md`.
+   Ghost is retired. Its `ghost-labprod` Application reconciles only retained
+   PostgreSQL data, backup and credential resources from LabOps; it does not
+   fetch the private `bingops-com/ghost` repository or its image. Do not
+   redeploy the game during a rebuild. Restore existing accounts from the
+   `ghost-postgresql-g1` R2 archive before reconciling a replacement cluster;
+   see `apps/workloads/ghost/README.md` for the restore gate and ownership.
+
 9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
    verify `https://lab.bingo` through LAN or Tailscale without publishing it
    through the public Cloudflare Tunnel. The portal image is built from

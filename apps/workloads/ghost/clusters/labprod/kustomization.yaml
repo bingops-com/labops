@@ -6,7 +6,7 @@ resources:
   - bitwarden-token-sync.yaml
   - r2-secret.yaml
   - object-store.yaml
-  - arcade-credentials.yaml
+  - postgresql.yaml
 
 labels:
   - pairs:

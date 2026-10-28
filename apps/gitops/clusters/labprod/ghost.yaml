@@ -7,18 +7,11 @@ metadata:
     argocd.argoproj.io/sync-wave: "0"
 spec:
   project: labops-labprod
-  sources:
-    - repoURL: https://github.com/bingops-com/ghost.git
-      targetRevision: 9d8316a03afa891f2bed15a0068b4b479b6db4f1
-      path: chart
-      helm:
-        releaseName: ghost
-        valueFiles:
-          - $values/apps/workloads/ghost/clusters/labprod/values.yaml
-    - repoURL: https://github.com/bingops-com/labops.git
-      targetRevision: master
-      ref: values
-      path: apps/workloads/ghost/clusters/labprod
+  # Ghost is retired: retain only its database and recovery dependencies.
+  source:
+    repoURL: https://github.com/bingops-com/labops.git
+    targetRevision: master
+    path: apps/workloads/ghost/clusters/labprod
   destination:
     server: https://kubernetes.default.svc
     namespace: ghost
