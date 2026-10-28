@@ -26,6 +26,9 @@ configMapGenerator:
       - main.tf=template/main.tf
       - startup.sh=template/startup.sh
       - .terraform.lock.hcl=template/.terraform.lock.hcl
+      - codex.toml=template/codex.toml
+      - claude.json=template/claude.json
+      - tmux.conf=template/tmux.conf
   - name: coder-lab-template
     namespace: coder-workspaces
     options:
@@ -34,6 +37,9 @@ configMapGenerator:
       - main.tf=template/main.tf
       - startup.sh=template/startup.sh
       - .terraform.lock.hcl=template/.terraform.lock.hcl
+      - codex.toml=template/codex.toml
+      - claude.json=template/claude.json
+      - tmux.conf=template/tmux.conf
   - name: coder-workspace-ssh
     namespace: coder-workspaces
     options:

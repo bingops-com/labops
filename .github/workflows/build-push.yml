@@ -132,8 +132,8 @@ jobs:
         with:
           context: ${{ env.BUILD_CONTEXT }}
           file: ${{ env.DOCKERFILE_PATH }}
-          push: ${{ matrix.is_pr != 'true' && matrix.image != 'postfix' }}
-          load: ${{ matrix.image == 'postfix' }}
+          push: ${{ matrix.is_pr != 'true' && matrix.image != 'postfix' && matrix.image != 'homeops-dev' }}
+          load: ${{ matrix.image == 'postfix' || matrix.image == 'homeops-dev' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
@@ -146,8 +146,16 @@ jobs:
           python3 apps/platform/mail/tests/check.py "$candidate"
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro mirror.gcr.io/aquasec/trivy:0.66.0 image --image-src docker --scanners vuln --severity HIGH,CRITICAL --exit-code 1 "$candidate"
 
-      - name: Publish verified Postfix image
-        if: ${{ matrix.image == 'postfix' && matrix.is_pr != 'true' }}
+      - name: Verify HomeOps tools, fonts and native SSH before publication
+        if: ${{ matrix.image == 'homeops-dev' }}
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          candidate=${TAGS%%$'\n'*}
+          bash .github/scripts/test-coder-workspace.sh "$candidate" homeops
+
+      - name: Publish verified image
+        if: ${{ (matrix.image == 'postfix' || matrix.image == 'homeops-dev') && matrix.is_pr != 'true' }}
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |

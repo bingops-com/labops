@@ -51,6 +51,11 @@ TERRAFORM
 chmod 666 "$scratch/template/main.tf"
 touch "$scratch/template/startup.sh"
 cp "$repo_root/apps/workloads/coder/base/template/.terraform.lock.hcl" "$scratch/template/.terraform.lock.hcl"
+for name in codex.toml claude.json tmux.conf; do
+  cp "$repo_root/apps/workloads/coder/base/template/$name" "$scratch/template/$name"
+done
+# The synthetic update phase runs as UID 1000, unlike the hosted runner.
+chmod 666 "$scratch/template/codex.toml"
 cat > "$scratch/oidc.py" <<'PYTHON'
 import http.server
 import json
@@ -82,6 +87,18 @@ if [[ "$mode" == kubernetes ]]; then
   kubectl create namespace coder-workspaces
   kubectl label namespace coder-workspaces pod-security.kubernetes.io/enforce=restricted
   kubectl -n coder-workspaces create configmap coder-workspace-ssh --from-file="authorized_keys=$scratch/client_key.pub"
+  kubectl -n coder-workspaces create configmap coder-lab-template --from-file="codex.toml=$scratch/template/codex.toml" --from-file="claude.json=$scratch/template/claude.json" --from-file="tmux.conf=$scratch/template/tmux.conf"
+  cat > "$scratch/gallery.py" <<'GALLERY'
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+
+HTTPServer(("127.0.0.1", 4175), Handler).serve_forever()
+GALLERY
+  kubectl -n coder-workspaces create configmap coder-workspace-gallery --from-file="server.py=$scratch/gallery.py"
   kubectl apply -f - <<'PVC'
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -140,6 +157,26 @@ if [[ "$mode" == kubernetes ]]; then
     exit 1
   fi
   ssh-keygen -q -t ed25519 -N '' -f "$scratch/unlisted_key"
+  kubectl -n coder-workspaces exec -i deployment/coder-bingops-lab -- python3 - < "$repo_root/.github/scripts/check-coder-tool-config.py"
+  # The app listener must recover after its worker exits, without a Pod restart.
+  kubectl -n coder-workspaces exec -i deployment/coder-bingops-lab -- python3 - <<'GALLERY_CHECK'
+import os, pathlib, signal, time, urllib.request
+
+pidfile = pathlib.Path('/home/coder/.config/lab/gallery.pid')
+previous = int(pidfile.read_text())
+assert urllib.request.urlopen('http://127.0.0.1:4175/', timeout=2).status == 200
+os.kill(previous, signal.SIGTERM)
+for _ in range(50):
+    time.sleep(0.1)
+    try:
+        if int(pidfile.read_text()) != previous and urllib.request.urlopen('http://127.0.0.1:4175/', timeout=1).status == 200:
+            break
+    except OSError:
+        pass
+else:
+    raise AssertionError('The gallery listener did not recover')
+print('Gallery listener recovered without restarting the workspace.')
+GALLERY_CHECK
   if ssh -i "$scratch/unlisted_key" -p "$port" -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 true > "$scratch/unlisted-result" 2>&1; then
     echo 'An unlisted SSH key was accepted' >&2
     exit 1

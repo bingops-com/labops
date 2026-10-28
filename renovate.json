@@ -16,6 +16,7 @@
     "github-actions",
     "kubernetes",
     "kustomize",
+    "npm",
     "terraform"
   ],
   "argocd": {
@@ -28,6 +29,17 @@
     ]
   },
   "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Follow the published HomeOps workspace image while retaining its digest pin",
+      "managerFilePatterns": ["/^apps/workloads/coder/base/template/main\\.tf$/"],
+      "matchStrings": [
+        "image\\s*=\\s*\"(?<depName>ghcr\\.io/bingops-com/homeops-dev)@(?<currentDigest>sha256:[a-f0-9]{64})\""
+      ],
+      "datasourceTemplate": "docker",
+      "currentValueTemplate": "latest",
+      "versioningTemplate": "docker"
+    },
     {
       "customType": "regex",
       "description": "Update tool versions declared in Dockerfile environment variables",
@@ -46,6 +58,19 @@
     }
   ],
   "packageRules": [
+    {
+      "description": "Limit npm maintenance to the development image tools",
+      "matchManagers": ["npm"],
+      "enabled": false
+    },
+    {
+      "description": "Maintain Codex and its lockfile in the development image",
+      "matchManagers": ["npm"],
+      "matchFileNames": ["docker/homeops-dev/package.json"],
+      "enabled": true,
+      "rangeStrategy": "pin",
+      "groupName": "homeops-dev npm tools"
+    },
     {
       "description": "Keep container references reproducible",
       "matchDatasources": ["docker"],

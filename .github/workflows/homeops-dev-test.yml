@@ -10,6 +10,7 @@ name: HomeOps development environment acceptance
       - hacks/tests/test_homeops_dev.py
       - apps/workloads/coder/base/template/**
       - .github/scripts/test-coder-workspace.sh
+      - .github/scripts/check-coder-tool-config.py
       - .github/workflows/homeops-dev-test.yml
   push:
     branches: [master]
@@ -19,6 +20,7 @@ name: HomeOps development environment acceptance
       - hacks/tests/test_homeops_dev.py
       - apps/workloads/coder/base/template/**
       - .github/scripts/test-coder-workspace.sh
+      - .github/scripts/check-coder-tool-config.py
       - .github/workflows/homeops-dev-test.yml
 
 permissions:

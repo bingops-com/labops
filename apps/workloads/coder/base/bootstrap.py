@@ -22,6 +22,7 @@ BASE = "https://coder.lab.bingo"
 OWNER = "bingops"
 EMAIL = "therealbingops@gmail.com"
 TEMPLATE = Path("/opt/lab-template")
+TEMPLATE_FILES = ("main.tf", "startup.sh", ".terraform.lock.hcl", "codex.toml", "claude.json", "tmux.conf")
 STATE = Path("/data/.config/lab/bootstrap.json")
 RESERVED_DOMAIN = "@coder-bootstrap.invalid"
 SENSITIVE = []
@@ -88,7 +89,7 @@ def kubernetes(path):
 
 def desired_state():
     digest = hashlib.sha256()
-    for name in ("main.tf", "startup.sh", ".terraform.lock.hcl"):
+    for name in TEMPLATE_FILES:
         digest.update(name.encode() + b"\0" + (TEMPLATE / name).read_bytes())
     digest.update(Path(__file__).read_bytes())
     digest.update(os.environ["CODER_BOOTSTRAP_GENERATION"].encode())
@@ -203,7 +204,7 @@ def setup(desired):
         if version is None or version["message"] != message:
             log("Importing the declared lab template")
             with tempfile.TemporaryDirectory(prefix="coder-template-") as directory:
-                for filename in ("main.tf", "startup.sh", ".terraform.lock.hcl"):
+                for filename in TEMPLATE_FILES:
                     shutil.copyfile(TEMPLATE / filename, Path(directory) / filename)
                 cli(["templates", "push", "lab", "--directory", directory, "--message", message, "--yes"], token=owner_token)
         cli(["templates", "edit", "lab", "--default-ttl", "0h", "--yes"], token=owner_token)

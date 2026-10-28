@@ -6,7 +6,7 @@ Coder provides the private control plane at `https://coder.lab.bingo`. The `bing
 
 Argo CD owns the `coder-labprod` workload, the retained home PVC, SSH Service and dynamic development ingress, secret mappings and backup schedules. Coder's Terraform template owns only the workspace Deployment. Terraform's network stack owns tailnet DNS. Authentik owns identity and authorization. Bitwarden owns the R2 credential.
 
-PRs #148 and #149 are merged and `homeops-dev:0.1.1` is public and digest-pinned. Runtime checks on 2026-10-14 confirm a Ready workspace, successful automatic setup, Authentik-only login, non-root settings, healthy PostgreSQL, continuous WAL archival, a completed database backup and a completed scheduled home backup. Restore acceptance remains pending. LabOps, Slots and City data and the selected operator inputs were transferred to the retained home. Read-only calls from the workspace verified both Kubernetes clusters, Talos, Proxmox SSH/passwordless sudo and GitHub; all three local Terraform state snapshots match the source. Coder is the primary Terraform runner. The declared template now pins the public 0.1.3 image, which includes Claude and screen. Adoption in the existing workspace requires GitOps reconciliation, automatic template import and an explicit Coder update; runtime acceptance of this image remains pending. A disposable Talos probe confirmed that Codex's filesystem sandbox cannot run with this Pod profile; deprecated Landlock still requires bubblewrap and is not a working fallback. No sandbox or approval bypass is configured.
+PRs #148 and #149 are merged and `homeops-dev:0.1.1` is public and digest-pinned. Runtime checks on 2026-10-14 confirm a Ready workspace, successful automatic setup, Authentik-only login, non-root settings, healthy PostgreSQL, continuous WAL archival, a completed database backup and a completed scheduled home backup. Restore acceptance remains pending. LabOps, Slots and City data and the selected operator inputs were transferred to the retained home. Read-only calls from the workspace verified both Kubernetes clusters, Talos, Proxmox SSH/passwordless sudo and GitHub; all three local Terraform state snapshots match the source. Coder is the primary Terraform runner. The declared template now pins the public 0.1.3 image, which includes Claude and screen. Adoption in the existing workspace requires GitOps reconciliation, automatic template import and an explicit Coder update; runtime acceptance of this image remains pending. A disposable Talos probe confirmed that Codex's nested filesystem sandbox cannot run with this Pod profile. The desired template now declares shared full-access Codex defaults, using the existing Pod as the isolation boundary; adoption and authenticated runtime acceptance of those defaults remain pending.
 
 ## Components
 
@@ -61,13 +61,15 @@ Coder retains `CODER_WILDCARD_ACCESS_URL=*.dev.lab.bingo`. The stateless Node ga
 
 `dev-access.yaml` owns apex/wildcard ingress routes. cert-manager owns `coder/coder-dev-tls` for `dev.lab.bingo` and `*.dev.lab.bingo`, renewed through the existing `letsencrypt-cloudflare` DNS-01 issuer. Private CoreDNS owns apex and one-label wildcard answers to `192.168.10.151`; the `lab.bingo` Tailscale split-DNS route covers them. There is no new credential, public DNS application record, Internet tunnel, per-port Kubernetes Service or workspace volume mount in the dashboard Deployment.
 
-Application code, tests, Dockerfile and runtime Kustomization live exclusively in [bingops-com/dev](https://github.com/bingops-com/dev). Its `dev-labprod` Argo CD Application follows that repository and deploys `Deployment/dev`, `Service/dev` and content-hashed server/web/font ConfigMaps in the existing `coder` namespace, using a public Node image pinned by digest. This buildless application has no npm dependencies or registry credential. Source changes roll only its stateless Deployment. LabOps owns the Argo declaration, repository allowlist and existing DNS/TLS/ingress; `dev-access.yaml` forwards to `Service/dev`. The previous inline `coder-dev-portal` workload and duplicate sources have been removed. The Dev application also owns the `coder-workspace-gallery` ConfigMap in `coder-workspaces`, mounted read-only at `/etc/coder-gallery/server.py`; template startup launches it on `127.0.0.1:4175`. An existing workspace can adopt the mount through Coder **Update**, which restarts its processes. To update discovery without restarting the workspace, stop only the existing loopback gallery listener and relaunch the identical committed source in a retained terminal:
+Application code, tests, Dockerfile and runtime Kustomization live exclusively in [bingops-com/dev](https://github.com/bingops-com/dev). Its `dev-labprod` Argo CD Application follows that repository and deploys `Deployment/dev`, `Service/dev` and content-hashed server/web/font ConfigMaps in the existing `coder` namespace, using a public Node image pinned by digest. This buildless application has no npm dependencies or registry credential. Source changes roll only its stateless Deployment. LabOps owns the Argo declaration, repository allowlist and existing DNS/TLS/ingress; `dev-access.yaml` forwards to `Service/dev`. The previous inline `coder-dev-portal` workload and duplicate sources have been removed. The Dev application also owns the `coder-workspace-gallery` ConfigMap in `coder-workspaces`, mounted read-only at `/etc/coder-gallery/server.py`. This ConfigMap and its `server.py` key are required: reconcile `dev-labprod` before adopting the workspace template. Startup supervises the listener on `127.0.0.1:4175` and restarts a failed worker after two seconds. Its private `gallery.log` and `gallery.pid` under `~/.config/lab` are generated runtime state; the PID file is replaced on each worker start and is not a recovery input. An existing workspace must adopt the mount through Coder **Update**, which restarts its processes.
+
+For a discovery-source update, let the ConfigMap reconcile, then restart only the current gallery worker after verifying its identity; the supervisor reloads the mounted source. Do not run a second listener on the same port. If an older workspace lacks the mount and reports a refused connection to 4175, an operator can temporarily start the committed source in a retained terminal while preparing template adoption:
 
 ```sh
 python3 /home/coder/projects/dev/workspace/agent.py --root /home/coder/projects --port 4175
 ```
 
-The RPG process remains owned by its project (`cd /home/coder/projects/rpg && npm run dev`, port 4173). No proxy starts application processes. Reboot/replacement requires restarting development servers separately. The old dedicated RPG NodePort and `/rpg/` ingress have been replaced by generic aliases.
+That listener is a transient recovery action; Coder **Update** replaces it with the GitOps-mounted, supervised service. Check only the status with `curl --silent --output /dev/null --write-out '%{http_code}\n' http://127.0.0.1:4175/` and expect 200. The RPG process remains owned by its project (`cd /home/coder/projects/rpg && npm run dev`, port 4173). No proxy starts application processes. Reboot/replacement requires restarting development servers separately. The old dedicated RPG NodePort and `/rpg/` ingress have been replaced by generic aliases.
 
 #### Verification and reconstruction
 
@@ -89,7 +91,7 @@ After reconciliation, verify TLS and authentication redirects without printing c
 | --- | --- |
 | Rebuild without chat history? | Yes: Argo/ingress/template startup are declared here and app/discovery sources in `bingops-com/dev`; existing workspace adoption is documented above. |
 | Inputs outside Git? | No new input. Existing Coder/Authentik accounts, issuer credentials and retained home recovery remain in this runbook's Inputs outside Git and backup sections. |
-| Partial failure / repeated operation? | GitOps reconciliation is idempotent; hashed dashboard updates roll automatically. Only one gallery listener may own port 4175. |
+| Partial failure / repeated operation? | GitOps reconciliation is idempotent; hashed dashboard updates roll automatically. The gallery mount/key are required and startup restarts a failed worker. Only one listener may own port 4175. |
 | Ownership and order? | Existing DNS/issuer → Coder namespaces/control plane → `dev-labprod` and its agent ConfigMap → workspace/gallery → project processes. GitOps owns infrastructure; the owner runs development servers. |
 | Safe verification? | Offline fixture tests plus TLS/status checks and owner-session browser checks, without printing tokens or private configuration. |
 
@@ -133,7 +135,7 @@ The generated CNPG password, Coder agent token and Terraform state must never be
 
 These steps change live infrastructure and are for the installation authorized by the operator.
 
-1. `homeops-dev:0.1.3` is built in pull requests and published after an authorized merge. Verify anonymous access and pin its published digest before completing runtime acceptance. GitOps may wait for publication. The bootstrap image has its own lifecycle.
+1. The `homeops-dev` release declared in `docker/homeops-dev/VERSION` is built in pull requests and published after an authorized merge. Verify anonymous access and review the Renovate PR updating its published digest in the template before completing runtime acceptance. GitOps may wait for publication. The bootstrap image has its own lifecycle.
 2. Integrate the reviewed GitOps changes. Let Authentik and private DNS reconcile before Coder becomes available. The existing parent split route already covers the name.
 3. Verify the namespace-local token sync and Bitwarden mappings, then CNPG readiness, Coder health and the certificate.
 4. Let `coder-auto-setup` run in `coder-workspaces`. Its first pod binds the retained home and creates the OIDC owner, imports the template, sets default autostop to zero and creates `bingops/lab` with `--stop-after 0h`.
@@ -182,6 +184,8 @@ Creating another real workspace name or owner is rejected by the template precon
 
 ## Use from iSH
 
+SSH supplies a UTF-8 locale even when iSH does not forward one. After adopting the updated image/template, `locale charmap` through native SSH must print `UTF-8`; `homeops-dev-check` also verifies the image fonts. Existing personal shell profiles can override the supplied locale. Image fonts serve Chromium/local renderers; the terminal's font remains an iOS setting. The [image runbook](../../../docker/homeops-dev/README.md) owns font selection, GitOps maintenance and the host/runtime sandbox dependency.
+
 Install an OpenSSH client in iSH if needed, connect the Tailscale iOS app, then run:
 
 ```sh
@@ -218,7 +222,7 @@ test -d /opt/homeops/labops/.git || git clone https://github.com/bingops-com/lab
 cd /opt/homeops/labops && codex
 ```
 
-The image includes bubblewrap but keeps the current restricted Pod profile. Test actual sandboxed command execution before declaring Codex usable; the [image runbook](../../../docker/homeops-dev/README.md) explains the runtime dependency and links the official container guidance. No automatic sandbox or approval bypass is configured.
+The GitOps template mounts shared Codex defaults at `/etc/codex/config.toml`: full access (`danger-full-access`) and no approval prompts (`never`), with the restricted non-root Pod as the isolation boundary. Shared Claude/tmux settings are mounted at their system paths. Settings changes are included in template hashing/import and adopted through Coder **Update**; personal account files are preserved. Explicit Codex user/project/CLI settings can override system defaults, and resumed threads may retain earlier permissions. Verify effective permissions in `/status` in a new session. The [image runbook](../../../docker/homeops-dev/README.md) owns the settings table, precedence, tests and rollback.
 
 The workspace's autostop is disabled. `tmux` preserves a shell and its jobs across iPhone disconnects. A pod replacement or node outage still stops processes; long simulations must checkpoint to the home volume. The current single-node cluster provides persistence and restart, not high availability.
 
@@ -318,7 +322,7 @@ codex login status
 
 Copied Codex auth is supported by [official authentication guidance](https://learn.chatgpt.com/docs/auth). Prefer independent sign-ins if both machines continue running Codex, because copied refresh-token caches can diverge. A fresh device-code login is needed only once and persists. Neither enrollment nor startup imports the PC's sandbox/approval settings. GitHub HTTPS credential setup uses `gh auth setup-git`; Authentik governs Coder login only. AWS SSO and credentials provided through process environment require provider-specific enrollment.
 
-This recreates HomeOps tools and selected remote privileges. Linux UID 1000 without sudo, no host Docker socket/daemon and no Windows desktop remain runtime boundaries. Actual Codex sandbox compatibility and a Docker build engine still need acceptance. The owning stack runbooks and the input table above are the recovery sources, not the source PC's shell history.
+This recreates HomeOps tools, shared tool settings and selected remote privileges. Linux UID 1000 without sudo, no host Docker socket/daemon and no Windows desktop remain runtime boundaries. The declared Codex mode uses Pod isolation and is tested with synthetic command execution; it does not depend on nested sandbox support. A Docker build engine still needs acceptance. The owning stack runbooks and the input table above are the recovery sources, not the source PC's shell history.
 
 ## Move the existing city design
 
@@ -338,11 +342,15 @@ Treat the workspace project as user data protected by its file backup. The local
 
 PostgreSQL has WAL archival and daily full backups through the operator's Barman plugin. Workspace files use the existing private R2 bucket, every four hours, with version archives for changed or deleted objects. Credentials are mounted only into backup jobs, not the development container.
 
-The file backup includes projects, output, personal client configurations (including enrolled kubeconfig/Talos/Codex credentials, Claude's `.credentials.json`, settings and `.claude.json`) and the SSH host key. Caches, package installations and virtual environments are excluded. It is a live file copy, not an atomic filesystem or application snapshot. A running simulator should write checkpoints atomically; a database introduced inside the workspace would need its own consistent backup procedure.
+The file backup includes projects, output, personal client configurations (including enrolled kubeconfig/Talos/Codex credentials, Claude's `.credentials.json`, settings and `.claude.json`) and the SSH host key. Caches, package installations, virtual environments and generated SSH/gallery PID/log files are excluded. It is a live file copy, not an atomic filesystem or application snapshot. A running simulator should write checkpoints atomically; a database introduced inside the workspace would need its own consistent backup procedure.
 
 These R2 files use bucket access control and HTTPS; no separate client-side encryption layer is configured. The full home can include personal tokens, so treat its R2 access pair as privileged. More restrictive backup credentials or encryption require a separately recoverable key.
 
 The marker check makes an uninitialized home fail backup rather than silently replace a prior backup with an empty directory. Freeze the CronJob before a deliberate disk-loss rebuild until files are restored and verified. Thirty-day archive pruning must occur only after a successful sync.
+
+The R2 remote sets `RCLONE_CONFIG_R2_NO_CHECK_BUCKET=true` because the bucket is provisioned separately and the backup credential has object-level permissions. Cloudflare [requires `no_check_bucket` for these keys](https://developers.cloudflare.com/r2/examples/rclone/); otherwise an archive/upload can fail with `S3: CreateBucket` / `403 AccessDenied` despite working object access. The restore-check remote uses the same setting. Do not broaden the key to bucket administration to fix this error.
+
+On 2026-10-28 the CronJob still scheduled every four hours, but repeated jobs failed on that operation and `lastSuccessfulTime` remained `2026-10-14T13:11:35Z`. The declarative correction applies to future Jobs after GitOps reconciliation; it does not repair old failed Jobs or establish that a fresh backup has succeeded. Verify a new Job reaches `Complete` and the CronJob's `lastSuccessfulTime` advances. Run a manual Job only for an explicitly authorized recovery, after confirming no backup is already active. Use status fields and redacted error summaries; never print credential values or object contents. Existing bucket/credential ownership and recovery remain in Inputs outside Git.
 
 ## Safe runtime verification
 

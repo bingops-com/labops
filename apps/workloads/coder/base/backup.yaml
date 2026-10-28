@@ -28,10 +28,12 @@ spec:
               image: rclone/rclone:1.75.1
               command: [/bin/sh, -ec]
               args:
-                - test -f /data/.lab-initialized; stamp=$(date -u +%Y-%m-%dT%H-%M-%SZ); rclone sync /data r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/current --backup-dir "r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/archive/$stamp" --exclude '/.cache/**' --exclude '/.local/share/pipx/**' --exclude '/.npm/**' --exclude '/.venvs/**' --exclude '**/node_modules/**' --exclude '**/.venv/**' --exclude '**/venv/**' --exclude '/.config/lab/sshd.pid' --exclude '/.config/lab/sshd.log' --checkers 4 --transfers 2 --log-level ERROR; rclone delete r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/archive --min-age 30d --rmdirs --log-level ERROR; echo 'Workspace backup complete'
+                - test -f /data/.lab-initialized; stamp=$(date -u +%Y-%m-%dT%H-%M-%SZ); rclone sync /data r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/current --backup-dir "r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/archive/$stamp" --exclude '/.cache/**' --exclude '/.local/share/pipx/**' --exclude '/.npm/**' --exclude '/.venvs/**' --exclude '**/node_modules/**' --exclude '**/.venv/**' --exclude '**/venv/**' --exclude '/.config/lab/sshd.pid' --exclude '/.config/lab/sshd.log' --exclude '/.config/lab/gallery.pid' --exclude '/.config/lab/gallery.log' --checkers 4 --transfers 2 --log-level ERROR; rclone delete r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/archive --min-age 30d --rmdirs --log-level ERROR; echo 'Workspace backup complete'
               env:
                 - {name: RCLONE_CONFIG_R2_TYPE, value: s3}
                 - {name: RCLONE_CONFIG_R2_PROVIDER, value: Cloudflare}
+                # The bucket already exists; object-scoped R2 keys cannot CreateBucket.
+                - {name: RCLONE_CONFIG_R2_NO_CHECK_BUCKET, value: "true"}
                 - {name: RCLONE_CONFIG_R2_ENDPOINT, value: "https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com"}
                 - name: RCLONE_CONFIG_R2_ACCESS_KEY_ID
                   valueFrom: {secretKeyRef: {name: coder-r2-credentials, key: ACCESS_KEY_ID}}
