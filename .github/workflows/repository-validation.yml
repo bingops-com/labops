@@ -37,6 +37,26 @@ jobs:
           trap 'docker rm "$container_id" >/dev/null; rm -rf "$tool_dir"' EXIT
           docker cp "$container_id:/usr/local/bin/rclone" "$tool_dir/rclone"
           PATH="$tool_dir:$PATH" python3 -m unittest discover -s apps/workloads/coder/tests -p test_home_backup.py -v
+          python_image=$(python3 -c 'import pathlib,re; print(re.search(r"image: (docker\.io/python:\S+)", pathlib.Path("apps/workloads/coder/base/backup.yaml").read_text())[1])')
+          FIXTURE_DIR="$tool_dir/home" python3 - <<'PY'
+          import os, pathlib, sqlite3
+          home = pathlib.Path(os.environ["FIXTURE_DIR"])
+          (home / ".codex").mkdir(parents=True)
+          home.chmod(0o777)
+          (home / ".codex").chmod(0o777)
+          (home / ".lab-initialized").touch()
+          connection = sqlite3.connect(home / ".codex/state_5.sqlite")
+          connection.execute("PRAGMA journal_mode=WAL")
+          connection.execute("CREATE TABLE fixture(value INTEGER)")
+          connection.execute("INSERT INTO fixture VALUES (1)")
+          connection.commit()
+          connection.close()
+          PY
+          docker run --rm --user 1000:1000 --cap-drop ALL --security-opt no-new-privileges --read-only --network none \
+            --mount "type=bind,src=$tool_dir/home,dst=/data" \
+            --mount "type=bind,src=$PWD/apps/workloads/coder/base/snapshot-codex.py,dst=/scripts/snapshot-codex.py,readonly" \
+            --tmpfs /snapshots:uid=1000,gid=1000,mode=0700 "$python_image" \
+            /bin/sh -ec 'python3 -B /scripts/snapshot-codex.py; python3 -c "import sqlite3; c=sqlite3.connect(\"/snapshots/.codex/state_5.sqlite\"); assert c.execute(\"SELECT count(*) FROM fixture\").fetchone()==(1,)"'
 
   kustomize:
     name: Render Kustomize overlays
