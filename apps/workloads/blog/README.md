@@ -39,6 +39,21 @@ Status afterward to expose the blog's availability. Neither a new database nor
 data restoration is needed. Shared credentials remain owned by the LabOps
 operator under the linked Cloudflare runbook.
 
+## Package publication permissions
+
+The existing `bingops-com/blog` image and `bingops-com/helm/blog` chart packages
+must grant this repository Actions write access in their GitHub package settings
+("Manage Actions access"). Organization/package administrators own that external
+setting; restore it there if package access is lost. The existing workflows use
+their short-lived `GITHUB_TOKEN` with `packages: write`, generated and rotated by
+GitHub for each run; no additional personal token belongs in Git or Kubernetes.
+On 2026-10-28, image building and chart packaging succeeded, but both publication
+steps returned `403 permission_denied: write_package`. An administrator must
+check/restore the packages' Actions access before a future release can publish.
+Verify recovery by a successful authorized publication run, without printing its
+token. Public image pulls and this Git-sourced Argo chart remain independent of
+that publication permission, so the already-published pinned image can serve.
+
 ## Validation and incident recovery
 
 Offline checks do not contact the cluster or download chart dependencies:
