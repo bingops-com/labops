@@ -12,6 +12,12 @@ resources:
   - backup.yaml
   - bootstrap.yaml
 configMapGenerator:
+  - name: coder-home-backup-script
+    namespace: coder-workspaces
+    options:
+      disableNameSuffixHash: true
+    files:
+      - snapshot-codex.py
   - name: coder-bootstrap-script
     namespace: coder-workspaces
     options:
