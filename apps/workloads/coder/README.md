@@ -348,6 +348,8 @@ Codex's root `.codex/*.sqlite` databases use an online SQLite backup first. An i
 
 The transfer excludes live SQLite main/WAL/SHM/lock files. It archives the previous root SQLite file set using the existing timestamped archive prefix, then uploads the standalone snapshots. This prevents old WAL/SHM files from being restored alongside a newer main database. A snapshot or transfer failure fails the Job; archive pruning runs only after all steps succeed. Each SQLite database is internally consistent; this is not a transaction across different databases or the entire home. Staging files and PIDs are generated state, not recovery inputs. A new Pod reconstructs staging from the retained home.
 
+Retention deletes objects older than 30 days without requesting directory removal. R2 prefixes are virtual, and combining the age filter with `--rmdirs` can fail when recent archived files keep a directory non-empty. The end-to-end test uses the actual declared rclone release and retains those recent archive objects.
+
 Raw copying of active SQLite files can otherwise fail with “source file is being updated” or `BadDigest`, even after R2 permissions are correct. Synthetic tests cover a live concurrent WAL writer, standalone database restoration, old-journal archiving, file permissions and refusal of symlinks/partial snapshots; they never use real account files or cloud storage.
 
 These R2 files use bucket access control and HTTPS; no separate client-side encryption layer is configured. The full home can include personal tokens, so treat its R2 access pair as privileged. More restrictive backup credentials or encryption require a separately recoverable key.

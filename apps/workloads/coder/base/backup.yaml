@@ -62,7 +62,7 @@ spec:
                     --include '/.codex/*.sqlite*' --checkers 4 --transfers 2 --log-level ERROR
                   rclone copy /snapshots "$current" --checkers 4 --transfers 2 --log-level ERROR
                   rclone delete r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/archive \
-                    --min-age 30d --rmdirs --log-level ERROR
+                    --min-age 30d --log-level ERROR
                   echo 'Workspace backup complete'
               env:
                 - {name: RCLONE_CONFIG_R2_TYPE, value: s3}
