@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: blog-labprod
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: labops-labprod
+  source:
+    repoURL: https://github.com/bingops-com/labops.git
+    targetRevision: master
+    path: charts/blog
+    helm:
+      releaseName: blog
+      valueFiles:
+        - ../../apps/workloads/blog/clusters/labprod/values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: bingops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

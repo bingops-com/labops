@@ -106,6 +106,13 @@ configs are sensitive generated state, not documentation.
    `ghost-postgresql-g1` R2 archive before reconciling a replacement cluster;
    see `apps/workloads/ghost/README.md` for the restore gate and ownership.
 
+   Restore the public static blog from its pinned GHCR artifact after the
+   shared Cloudflare DNS/tunnel and credential are ready. `blog-labprod` owns
+   `blog` in namespace `bingops`, matching the existing tunnel destination.
+   It needs no database, PVC, application secret or SSO; reconcile Gatus and
+   Status afterward. Artifact/source recovery limits and safe verification
+   are documented in [the blog runbook](../apps/workloads/blog/README.md).
+
 9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
    verify `https://lab.bingo` through LAN or Tailscale without publishing it
    through the public Cloudflare Tunnel. The portal image is built from
