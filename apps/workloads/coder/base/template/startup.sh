@@ -42,15 +42,29 @@ GatewayPorts no
 ClientAliveInterval 60
 ClientAliveCountMax 3
 Subsystem sftp internal-sftp
-SetEnv PATH=/home/coder/.local/bin:/usr/local/go/bin:/usr/lib/postgresql/18/bin:/usr/local/bin:/usr/bin:/bin CHROMIUM=/usr/bin/chromium ANSIBLE_COLLECTIONS_PATH=/home/coder/.ansible/collections:/opt/homeops-dev/collections CLUSTERCTL_DISABLE_VERSIONCHECK=true DISABLE_AUTOUPDATER=1
+SetEnv LANG=C.UTF-8 LC_CTYPE=C.UTF-8 PATH=/home/coder/.local/bin:/usr/local/go/bin:/usr/lib/postgresql/18/bin:/usr/local/bin:/usr/bin:/bin CHROMIUM=/usr/bin/chromium ANSIBLE_COLLECTIONS_PATH=/home/coder/.ansible/collections:/opt/homeops-dev/collections CLUSTERCTL_DISABLE_VERSIONCHECK=true DISABLE_AUTOUPDATER=1
 CONFIG
 
 /usr/sbin/sshd -t -f /home/coder/.config/lab/sshd_config
 /usr/sbin/sshd -D -e -f /home/coder/.config/lab/sshd_config >> /home/coder/.config/lab/sshd.log 2>&1 &
 
-# Optional during initial bootstrap/acceptance. GitOps supplies the read-only source.
+# GitOps supplies this required mount in the real workspace template.
+# Basic image-only checks do not run the gallery. Restart a failed worker locally
+# so an application crash does not leave Coder's 4175 proxy pointing at nothing.
 if [[ -f /etc/coder-gallery/server.py ]]; then
-  python3 /etc/coder-gallery/server.py --root /home/coder/projects --port 4175 >> /home/coder/.config/lab/gallery.log 2>&1 &
+  (
+    while true; do
+      python3 /etc/coder-gallery/server.py --root /home/coder/projects --port 4175 &
+      gallery_pid=$!
+      printf '%s\n' "$gallery_pid" > /home/coder/.config/lab/gallery.pid
+      if wait "$gallery_pid"; then
+        echo 'Gallery stopped; restarting in two seconds.'
+      else
+        printf 'Gallery exited with status %s; restarting in two seconds.\n' "$?"
+      fi
+      sleep 2
+    done
+  ) >> /home/coder/.config/lab/gallery.log 2>&1 &
 fi
 
 if [[ ! -f /home/coder/.profile ]]; then

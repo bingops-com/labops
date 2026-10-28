@@ -8,6 +8,7 @@ name: Coder Kubernetes provisioning acceptance
       - apps/workloads/coder/base/template/**
       - apps/workloads/coder/base/bootstrap.py
       - .github/scripts/test-coder-bootstrap.*
+      - .github/scripts/check-coder-tool-config.py
       - .github/workflows/coder-kubernetes-test.yml
   push:
     branches: [master]
@@ -15,6 +16,7 @@ name: Coder Kubernetes provisioning acceptance
       - apps/workloads/coder/base/template/**
       - apps/workloads/coder/base/bootstrap.py
       - .github/scripts/test-coder-bootstrap.*
+      - .github/scripts/check-coder-tool-config.py
       - .github/workflows/coder-kubernetes-test.yml
 
 permissions:

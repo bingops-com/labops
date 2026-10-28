@@ -53,8 +53,11 @@ elif phase == "repeat":
     bootstrap.main()
     assert marker.read_bytes() == previous, "An unchanged setup rewrote its state"
 elif phase == "update":
-    with Path("/opt/lab-template/main.tf").open("a") as template:
+    previous = bootstrap.desired_state()["hash"]
+    # A tool-settings-only edit must import a new active template too.
+    with Path("/opt/lab-template/codex.toml").open("a") as template:
         template.write("\n# acceptance definition update\n")
+    assert bootstrap.desired_state()["hash"] != previous, "A tool config edit did not change the desired template"
     bootstrap.main()
 else:
     raise AssertionError("Unknown acceptance phase")

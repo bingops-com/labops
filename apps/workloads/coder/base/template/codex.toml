@@ -1,0 +1,6 @@
+# Shared defaults for the trusted operator workspace; the Pod is the isolation boundary.
+sandbox_mode = "danger-full-access"
+approval_policy = "never"
+cli_auth_credentials_store = "file"
+# Image releases and Renovate own updates.
+check_for_update_on_startup = false

@@ -4,6 +4,10 @@ set -euo pipefail
 test "$(id -u)" = 1000
 test -w /home/coder
 test "$(readlink -f /opt/homeops)" = /home/coder/projects
+test "$(locale charmap)" = UTF-8
+test "$(fc-match --format '%{family}' 'DejaVu Sans Mono')" = 'DejaVu Sans Mono'
+test "$(fc-match --format '%{family}' 'Liberation Sans')" = 'Liberation Sans'
+test "$(fc-match --format '%{family}' emoji)" = 'Noto Color Emoji'
 codex --version
 claude --version
 coder version

@@ -22,12 +22,20 @@ mkdir "$scratch/home"
 sudo chown 1000:1000 "$scratch/home"
 # Match a Kubernetes ConfigMap file: root-owned and readable, never writable.
 sudo chown 0:0 "$scratch/client_key.pub"
-container_id=$(docker run -d --workdir /home/coder --cap-drop ALL --security-opt no-new-privileges --publish 127.0.0.1::2222 --mount "type=bind,src=$scratch/home,dst=/home/coder" --mount "type=bind,src=$scratch/client_key.pub,dst=/etc/coder-ssh/authorized_keys,readonly" --mount "type=bind,src=$repo_root/apps/workloads/coder/base/template/startup.sh,dst=/opt/lab-startup.sh,readonly" "$image" /bin/bash -ec '/bin/bash /opt/lab-startup.sh; exec sleep infinity')
+tool_mounts=()
+if [[ ${2:-basic} == homeops ]]; then
+  tool_mounts=(
+    --mount "type=bind,src=$repo_root/apps/workloads/coder/base/template/codex.toml,dst=/etc/codex/config.toml,readonly"
+    --mount "type=bind,src=$repo_root/apps/workloads/coder/base/template/claude.json,dst=/etc/claude-code/managed-settings.json,readonly"
+    --mount "type=bind,src=$repo_root/apps/workloads/coder/base/template/tmux.conf,dst=/etc/tmux.conf,readonly"
+  )
+fi
+container_id=$(docker run -d --workdir /home/coder --cap-drop ALL --security-opt no-new-privileges --publish 127.0.0.1::2222 --mount "type=bind,src=$scratch/home,dst=/home/coder" --mount "type=bind,src=$scratch/client_key.pub,dst=/etc/coder-ssh/authorized_keys,readonly" --mount "type=bind,src=$repo_root/apps/workloads/coder/base/template/startup.sh,dst=/opt/lab-startup.sh,readonly" "${tool_mounts[@]}" "$image" /bin/bash -ec '/bin/bash /opt/lab-startup.sh; exec sleep infinity')
 port=$(docker inspect --format '{{(index (index .NetworkSettings.Ports "2222/tcp") 0).HostPort}}' "$container_id")
 
 connected=false
 for _ in $(seq 1 20); do
-  if ssh -i "$scratch/client_key" -p "$port" -o HostKeyAlias=coder-fixture -o BatchMode=yes -o ConnectTimeout=2 -o StrictHostKeyChecking=accept-new -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 'test "$(id -u)" = 1000 && python3 -c "import matplotlib,numpy,pandas" && node --version && npm --version && go version && tmux -V' > "$scratch/result" 2> "$scratch/ssh-error"; then
+  if ssh -i "$scratch/client_key" -p "$port" -o HostKeyAlias=coder-fixture -o BatchMode=yes -o ConnectTimeout=2 -o StrictHostKeyChecking=accept-new -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 'test "$(id -u)" = 1000 && test "$(locale charmap)" = UTF-8 && python3 -c "import matplotlib,numpy,pandas" && node --version && npm --version && go version && tmux -V' > "$scratch/result" 2> "$scratch/ssh-error"; then
     connected=true
     break
   fi
@@ -61,12 +69,6 @@ fi
 echo 'Personal account configuration, SSH host identity and projects survive restart.'
 if [[ ${2:-basic} == homeops ]]; then
   ssh -i "$scratch/client_key" -p "$port" -o HostKeyAlias=coder-fixture -o BatchMode=yes -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$scratch/known_hosts" coder@127.0.0.1 homeops-dev-check
-  # This records inner-sandbox support without relaxing the container profile.
-  if ! docker exec "$container_id" codex sandbox -- /usr/bin/true > "$scratch/sandbox-result" 2>&1; then
-    echo 'Codex inner sandbox is unavailable under the restricted CI container profile; a compatible runtime profile or explicit container-isolation mode is required.'
-    tail -n 4 "$scratch/sandbox-result"
-  else
-    echo 'Codex inner sandbox verified.'
-  fi
+  docker exec -i "$container_id" python3 - < "$repo_root/.github/scripts/check-coder-tool-config.py"
 fi
 echo 'Non-root SSH and development tools verified.'

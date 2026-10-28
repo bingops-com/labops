@@ -153,12 +153,24 @@ configs are sensitive generated state, not documentation.
    Selected Proxmox SSH, CLI sessions and AWS files are separate sensitive
    inputs, never image layers. The real `/home/coder` startup directory avoids
    runc's failure on the project symlink while mounting the persistent home.
+   Renovate proposes Codex npm/lockfile updates and the published workspace
+   image digest; the operator reviews image releases and adopts the reconciled
+   template through Coder. Native SSH supplies UTF-8 and image acceptance
+   verifies browser/emoji fonts. iSH terminal font selection belongs to the
+   client device. GitOps also declares shared Codex, Claude and tmux system
+   settings in the Coder template. Their checksum participates in template
+   import and Pod adoption. Codex defaults to full access with no approvals,
+   using the existing restricted Pod as its isolation boundary; it therefore
+   does not require nested user namespaces on Talos. Personal account files
+   stay on the retained home. The [image runbook](../docker/homeops-dev/README.md)
+   owns the setting paths, precedence, non-sensitive tests and rollback.
    See [the Coder runbook](../apps/workloads/coder/README.md) for ordering,
    external inputs, private iSH access, the development dashboard and read-only
    image gallery at `dev.lab.bingo`. The separate `dev-labprod` Application follows
    `bingops-com/dev` for its Deployment and agent ConfigMap. Applications use `PORT.dev.lab.bingo` through
-   the authenticated alias gateway. Adopt the declared gallery/discovery agent
-   for live port inventory; no new credentials are needed. Also observe the
+   the authenticated alias gateway. Reconcile Dev's required gallery ConfigMap
+   before adopting the Coder template; startup supervises its port 4175 worker.
+   Adopt that mount for live port inventory; no new credentials are needed. Also observe the
    single-node availability limit. Restore/start the RPG process in the retained
    workspace separately; the dynamic proxy does not launch project servers.
    Reconcile the private wildcard DNS and DNS-01 certificate before validating
