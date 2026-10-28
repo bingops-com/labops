@@ -1,6 +1,6 @@
 # homeops-dev
 
-`ghcr.io/bingops-com/homeops-dev` recreates the operator's development tools for the retained `bingops/lab` Coder workspace. The candidate release is declared in `VERSION`; the template currently pins the published 0.1.3 digest until a reviewed replacement is published. It targets Linux/amd64. `/opt/homeops` points to `/home/coder/projects`, keeping the existing project path while storing user files on the retained home PVC. After GitOps reconciliation and automatic template import, an existing workspace requires an explicit Coder update; image publication alone does not replace it.
+`ghcr.io/bingops-com/homeops-dev` recreates the operator's development tools for the retained `bingops/lab` Coder workspace. The candidate release is declared in `VERSION`; the template pins the anonymously readable 0.1.4 image by its published digest. It targets Linux/amd64. `/opt/homeops` points to `/home/coder/projects`, keeping the existing project path while storing user files on the retained home PVC. After GitOps reconciliation and automatic template import, an existing workspace requires an explicit Coder update; image publication alone does not replace it.
 
 ## Tools and reproducibility
 
