@@ -54,6 +54,8 @@ cp "$repo_root/apps/workloads/coder/base/template/.terraform.lock.hcl" "$scratch
 for name in codex.toml claude.json tmux.conf; do
   cp "$repo_root/apps/workloads/coder/base/template/$name" "$scratch/template/$name"
 done
+# The synthetic update phase runs as UID 1000, unlike the hosted runner.
+chmod 666 "$scratch/template/codex.toml"
 cat > "$scratch/oidc.py" <<'PYTHON'
 import http.server
 import json
