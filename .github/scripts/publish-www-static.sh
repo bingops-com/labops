@@ -61,5 +61,5 @@ PY
   --label "org.opencontainers.image.revision=$source_revision" \
   --label "org.opencontainers.image.source=https://github.com/bingops-com/www.bingops.com" \
   --tag "$target_image"
-"$crane_bin" validate --remote "$target_image"
+"$crane_bin" validate --remote "$target_image" --fast
 "$crane_bin" digest "$target_image"

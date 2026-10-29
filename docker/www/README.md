@@ -95,8 +95,9 @@ CRANE_BIN=/path/to/google-crane .github/scripts/publish-www-static.sh \
 ```
 
 The digest and tag above are placeholders; use the observed runtime digest and a
-new release name. The helper builds the source, publishes and validates the image,
-then prints only its public digest. This is a registry write, requiring deployment
+new release name. The helper builds the source, publishes and validates the manifest/configuration
+without re-downloading all unchanged base layers, then prints only its public
+digest. Runtime health is verified after GitOps reconciliation. This is a registry write, requiring deployment
 authorization. No workload changes until the following GitOps release step.
 
 Check the workflow result and published package tags without revealing credentials.
