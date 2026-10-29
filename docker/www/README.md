@@ -46,3 +46,29 @@ L'image finale est optimisée :
 Distribué selon la licence du projet [`www.bingops.com`](https://github.com/bingops-com/www.bingops.com).
 
 
+
+## Publication and GitOps deployment
+
+Merging `bingops-com/www.bingops.com` to `main` dispatches the `www` build in
+LabOps. Non-PR builds publish an immutable timestamp tag to `ghcr.io/bingops-com/www`.
+The legacy public package is not linked to a repository and rejects LabOps'
+`GITHUB_TOKEN` with `permission_denied: write_package`. Only the `www` registry
+login uses the existing LabOps Actions secret `GHCR_TOKEN`; other images retain
+`GITHUB_TOKEN`.
+
+`GHCR_TOKEN` is an external sensitive input owned by the maintainers of the
+`bingops-com/www` package. It must be a classic GitHub PAT with `read:packages`
+and `write:packages`, issued to an account with write access to that package.
+Store it only as the LabOps repository Actions secret, never in Git or logs.
+To recover or rotate it, the package maintainer creates a replacement token,
+updates that repository secret using GitHub Settings → Secrets and variables →
+Actions, reruns the failed www build, verifies publication, then revokes the old
+token. Secret values must not be printed during verification.
+
+Check the workflow result and published package tags without revealing credentials.
+After publication, open a deployment PR updating only the `newTag` in
+`apps/workloads/portfolio/clusters/labprod/kustomization.yaml`. Render that overlay
+before merging. Argo CD owns reconciliation of `portfolio-labprod` and the
+Deployment in namespace `portfolio`. Reapplying the same tag is idempotent.
+Verify Argo CD Synced/Healthy, Deployment availability and the served site. Rollback
+is a Git revert of the tag update to the previous published image.

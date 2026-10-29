@@ -98,7 +98,9 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ github.token }}
+          # The legacy www package is not linked to LabOps and does not grant
+          # its GITHUB_TOKEN publication access. Other images keep that token.
+          password: ${{ matrix.image == 'www' && secrets.GHCR_TOKEN || github.token }}
 
       - name: Determine tag prefix
         id: tagprefix
