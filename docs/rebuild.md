@@ -143,6 +143,10 @@ configs are sensitive generated state, not documentation.
    online Codex SQLite snapshots through a GitOps-provided init script, then
    transfers them and archives previous SQLite/journal files. Its staging
    volume is disposable; source account data stays on the retained home.
+   Reconcile the existing backup ConfigMap before enabling its daily CronJob:
+   both `snapshot-codex.py` and `prune-archives.sh` must be present. The file
+   policy and prefix-based archive retention are owned by the
+   [Coder backup runbook](../apps/workloads/coder/README.md#backup-behavior).
    Its automatic setup provisions only the `bingops`
    OIDC owner and imports the Git-tracked template without a persistent setup
    password. Update its bootstrap generation after database-only recovery,

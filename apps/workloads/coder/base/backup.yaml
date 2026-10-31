@@ -5,7 +5,7 @@ metadata:
   name: coder-home-r2-backup
   namespace: coder-workspaces
 spec:
-  schedule: "17 */4 * * *"
+  schedule: "17 0 * * *"
   timeZone: Etc/UTC
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 2
@@ -48,8 +48,9 @@ spec:
                   test -f /data/.lab-initialized
                   stamp=$(date -u +%Y-%m-%dT%H-%M-%SZ)
                   current=r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/current
-                  archive="r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/archive/$stamp"
-                  rclone sync /data "$current" --backup-dir "$archive" \
+                  archive_root=r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/archive
+                  archive="$archive_root/$stamp"
+                  rclone sync /data "$current" --checksum --backup-dir "$archive" \
                     --exclude '/.cache/**' --exclude '/.local/share/pipx/**' \
                     --exclude '/.npm/**' --exclude '/.venvs/**' \
                     --exclude '**/node_modules/**' --exclude '**/.venv/**' --exclude '**/venv/**' \
@@ -60,9 +61,8 @@ spec:
                   # Retire old main/WAL/SHM sets before publishing standalone snapshots.
                   rclone move "$current" "$archive" \
                     --include '/.codex/*.sqlite*' --checkers 4 --transfers 2 --log-level ERROR
-                  rclone copy /snapshots "$current" --checkers 4 --transfers 2 --log-level ERROR
-                  rclone delete r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/archive \
-                    --min-age 30d --fast-list --log-level ERROR
+                  rclone copy /snapshots "$current" --checksum --checkers 4 --transfers 2 --log-level ERROR
+                  /bin/sh /scripts/prune-archives.sh "$archive_root"
                   echo 'Workspace backup complete'
               env:
                 - {name: RCLONE_CONFIG_R2_TYPE, value: s3}
@@ -84,6 +84,7 @@ spec:
               volumeMounts:
                 - {name: home, mountPath: /data, readOnly: true}
                 - {name: snapshots, mountPath: /snapshots, readOnly: true}
+                - {name: backup-script, mountPath: /scripts, readOnly: true}
                 - {name: tmp, mountPath: /tmp}
           volumes:
             - name: home
