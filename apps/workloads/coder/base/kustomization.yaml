@@ -18,6 +18,7 @@ configMapGenerator:
       disableNameSuffixHash: true
     files:
       - snapshot-codex.py
+      - prune-archives.sh
   - name: coder-bootstrap-script
     namespace: coder-workspaces
     options:

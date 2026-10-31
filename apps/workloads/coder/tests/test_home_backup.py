@@ -1,6 +1,7 @@
 """Synthetic backup and restore checks; no operator files or cloud requests."""
 
 from contextlib import closing
+from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import hashlib
 import importlib.util
@@ -8,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import shlex
 import sqlite3
 import subprocess
 import tempfile
@@ -24,6 +26,15 @@ spec.loader.exec_module(snapshots)
 
 
 class HomeBackupTests(unittest.TestCase):
+    def pipeline(self, home, output, current, archive):
+        manifest = (ROOT / "base/backup.yaml").read_text()
+        script = manifest.split("                - |\n", 1)[1].split("\n              env:", 1)[0]
+        script = "\n".join(line[18:] for line in script.splitlines())
+        script = script.replace("/data", str(home)).replace("/snapshots", str(output))
+        script = script.replace("/scripts/prune-archives.sh", str(ROOT / "base/prune-archives.sh"))
+        script = script.replace("r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/current", str(current))
+        return script.replace("r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/archive", str(archive))
+
     def fixture(self, home, name="state_5.sqlite"):
         codex = home / ".codex"
         codex.mkdir(parents=True, exist_ok=True)
@@ -123,19 +134,21 @@ class HomeBackupTests(unittest.TestCase):
                 (home / "project/app.txt").write_text("NEW_VALUE")
                 (current / "project").mkdir()
                 (current / "project/app.txt").write_text("OLD_VALUE")
-                os.utime(current / "project/app.txt", (time.time() - 60,) * 2)
+                # Same size AND mtime; only a content comparison detects this edit.
+                old_time = time.time() - 35 * 86400
+                for path in [home / "project/app.txt", current / "project/app.txt"]:
+                    os.utime(path, (old_time,) * 2)
                 (current / "project/deleted.txt").write_text("TEST_ONLY_DELETED")
-                for name, age in [("expired", 35), ("recent", 1)]:
+                now = datetime.now(timezone.utc)
+                expired = (now - timedelta(days=15)).strftime("%Y-%m-%dT%H-%M-%SZ")
+                recent = (now - timedelta(days=13)).strftime("%Y-%m-%dT%H-%M-%SZ")
+                for name, age in [(expired, 0), (recent, 35), ("unknown-prefix", 35),
+                                  ("2026-02-30T00-00-00Z", 35)]:
                     target = archive / name / "file.txt"
                     target.parent.mkdir(parents=True)
                     target.write_text("TEST_ONLY_ARCHIVE")
                     os.utime(target, (time.time() - age * 86400,) * 2)
-                manifest = (ROOT / "base/backup.yaml").read_text()
-                script = manifest.split("                - |\n", 1)[1].split("\n              env:", 1)[0]
-                script = "\n".join(line[18:] for line in script.splitlines())
-                script = script.replace("/data", str(home)).replace("/snapshots", str(output))
-                script = script.replace("r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/current", str(current))
-                script = script.replace("r2:bingops-cnpg-labprod/coder-workspaces/bingops-lab/archive", str(archive))
+                script = self.pipeline(home, output, current, archive)
                 result = subprocess.run(["/bin/sh", "-ec", script], env={**os.environ, "RCLONE_CONFIG": "/dev/null"}, capture_output=True, text=True, timeout=30)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertIn("Workspace backup complete", result.stdout)
@@ -150,8 +163,18 @@ class HomeBackupTests(unittest.TestCase):
                 self.assertFalse((current / "project/deleted.txt").exists())
                 self.assertEqual(len(list(archive.glob("*/project/deleted.txt"))), 1)
                 self.assertEqual(next(archive.glob("*/project/app.txt")).read_text(), "OLD_VALUE")
-                self.assertFalse((archive / "expired/file.txt").exists())
-                self.assertTrue((archive / "recent/file.txt").exists())
+                self.assertFalse((archive / expired).exists())
+                self.assertTrue((archive / recent / "file.txt").exists())
+                self.assertTrue((archive / "unknown-prefix/file.txt").exists())
+                self.assertTrue((archive / "2026-02-30T00-00-00Z/file.txt").exists())
+                self.assertGreater((time.time() - next(archive.glob("*/project/app.txt")).stat().st_mtime) / 86400, 34)
+                result = subprocess.run(
+                    ["/bin/sh", str(ROOT / "base/prune-archives.sh"), str(archive)],
+                    env={**os.environ, "RCLONE_CONFIG": "/dev/null"},
+                    capture_output=True, text=True, timeout=30,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("0 expired prefixes purged", result.stdout)
                 restore = root / "restored"
                 result = subprocess.run(
                     ["rclone", "copy", str(current), str(restore), "--fast-list"],
@@ -166,20 +189,68 @@ class HomeBackupTests(unittest.TestCase):
             finally:
                 writer.close()
 
+    @unittest.skipUnless(shutil.which("rclone"), "rclone is required for the failure check")
+    def test_failed_snapshot_upload_keeps_expired_archives(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            home, output, current, archive = [root / name for name in ("home", "snapshots", "current", "archive")]
+            (home / ".codex").mkdir(parents=True)
+            (home / ".lab-initialized").touch()
+            (home / ".codex/auth.json").write_text("TEST_ONLY_AUTH")
+            (output / ".codex").mkdir(parents=True)
+            expired = (datetime.now(timezone.utc) - timedelta(days=15)).strftime("%Y-%m-%dT%H-%M-%SZ")
+            protected = archive / expired / "file.txt"
+            protected.parent.mkdir(parents=True)
+            protected.write_text("TEST_ONLY_RECOVERY_FILE")
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            wrapper = fake_bin / "rclone"
+            wrapper.write_text('#!/bin/sh\nif [ "$1" = copy ]; then exit 42; fi\nexec '
+                               + shlex.quote(shutil.which("rclone")) + ' "$@"\n')
+            wrapper.chmod(0o700)
+            env = {**os.environ, "RCLONE_CONFIG": "/dev/null", "PATH": str(fake_bin) + os.pathsep + os.environ["PATH"]}
+            result = subprocess.run(["/bin/sh", "-ec", self.pipeline(home, output, current, archive)],
+                                    env=env, capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 42, result.stderr)
+            self.assertTrue(protected.exists())
+            self.assertNotIn("Archive retention complete", result.stdout)
+
+    def test_retention_rejects_current_as_a_prune_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            current = Path(directory) / "current"
+            current.mkdir()
+            protected = current / "file.txt"
+            protected.write_text("TEST_ONLY_CURRENT")
+            result = subprocess.run(["/bin/sh", str(ROOT / "base/prune-archives.sh"), str(current)],
+                                    capture_output=True, text=True, timeout=5)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertTrue(protected.exists())
+
     @unittest.skipUnless(shutil.which("rclone"), "rclone is required for the S3 listing check")
     def test_fast_list_preserves_paginated_inventory_with_fewer_s3_requests(self):
         # Loopback-only S3 listing fixture: no cloud endpoint or operator credentials.
         keys = [f"current/project-{i:02d}/file-{j:03d}" for i in range(25) for j in range(45)]
         checksum = hashlib.md5(b"fixture").hexdigest()
         requests = []
+        heads = []
 
         class ListingHandler(BaseHTTPRequestHandler):
             def log_message(self, *_args):
                 pass
 
             def do_HEAD(self):
-                self.send_response(200 if urlsplit(self.path).path.rstrip("/") == "/fixture" else 404)
-                self.send_header("Content-Length", "0")
+                path = urlsplit(self.path).path
+                key = path.removeprefix("/fixture/")
+                if key in keys:
+                    heads.append(key)
+                    self.send_response(200)
+                    self.send_header("Content-Length", "7")
+                    self.send_header("ETag", f'"{checksum}"')
+                    self.send_header("Last-Modified", "Thu, 01 Jan 2026 00:00:00 GMT")
+                    self.send_header("X-Amz-Meta-Mtime", str((source / key.removeprefix("current/")).stat().st_mtime))
+                else:
+                    self.send_response(200 if path.rstrip("/") == "/fixture" else 404)
+                    self.send_header("Content-Length", "0")
                 self.end_headers()
 
             def do_GET(self):
@@ -228,6 +299,8 @@ class HomeBackupTests(unittest.TestCase):
                 file = source / key.removeprefix("current/")
                 file.parent.mkdir(parents=True, exist_ok=True)
                 file.write_bytes(b"fixture")
+                fixture_time = datetime(2026, 1, 1, tzinfo=timezone.utc).timestamp()
+                os.utime(file, (fixture_time, fixture_time))
             with ThreadingHTTPServer(("127.0.0.1", 0), ListingHandler) as server:
                 thread = threading.Thread(target=server.serve_forever, daemon=True)
                 thread.start()
@@ -260,11 +333,28 @@ class HomeBackupTests(unittest.TestCase):
                         )
                         self.assertEqual(result.returncode, 0, result.stderr)
                         messages = [json.loads(line) for line in result.stderr.splitlines() if line]
-                        self.assertFalse([line for line in messages if line.get("skipped") or line.get("object")], messages)
+                        changed = [line for line in messages if line.get("skipped") or line.get("object")]
+                        self.assertEqual(len(changed), 0, changed[:3])
                         counts.append(len(requests))
                     self.assertGreater(counts[0], counts[1] * 5)
                     self.assertEqual(counts[1], 2)  # Both recursive pages were read.
                     print(f"S3 fixture listings: {counts[0]} -> {counts[1]} with fast-list")
+                    head_counts = []
+                    for flags in [[], ["--checksum"]]:
+                        heads.clear()
+                        result = subprocess.run(
+                            ["rclone", "sync", str(source), "fixture:fixture/current", "--dry-run",
+                             "--fast-list", "--use-json-log", "--stats", "0", "--retries", "1",
+                             "--low-level-retries", "1", "--timeout", "3s", *flags],
+                            env=env, capture_output=True, text=True, timeout=30,
+                        )
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                        messages = [json.loads(line) for line in result.stderr.splitlines() if line]
+                        changed = [line for line in messages if line.get("skipped") or line.get("object")]
+                        self.assertEqual(len(changed), 0, changed[:3])
+                        head_counts.append(len(heads))
+                    self.assertEqual(head_counts, [len(keys), 0])
+                    print(f"S3 fixture metadata HEADs: {head_counts[0]} -> {head_counts[1]} with checksum")
                 finally:
                     server.shutdown()
                     thread.join(5)
