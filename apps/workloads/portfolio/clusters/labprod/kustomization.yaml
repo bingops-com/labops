@@ -10,7 +10,7 @@ labels:
 
 images:
   - name: ghcr.io/bingops-com/www
-    newTag: portfolio-d6bda12-20261029
+    newTag: portfolio-e51eceb-20261031
 
 patches:
   - target:
