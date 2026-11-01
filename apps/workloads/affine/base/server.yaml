@@ -1,0 +1,156 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: affine
+  namespace: affine
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: affine
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: affine
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      hostAliases:
+        - ip: 192.168.10.151
+          hostnames:
+            - auth.lab.bingo
+      initContainers:
+        - name: migrate
+          image: ghcr.io/toeverything/affine:0.27.4@sha256:b649f5ce2384ffdf13c23bccf81d759e15973d59d0b0058af65d895a84373099
+          command:
+            - /bin/sh
+            - -ec
+            - |-
+              node -e 'const fs=require("fs"); fs.mkdirSync("/data/.affine/config",{recursive:true}); fs.mkdirSync("/data/.affine/storage",{recursive:true}); fs.copyFileSync("/etc/affine/config.json","/data/.affine/config/config.json"); fs.chmodSync("/data/.affine/config/config.json",0o600)'
+              node ./scripts/self-host-predeploy.js
+          env:
+            - name: HOME
+              value: /data
+            - name: DEPLOYMENT_TYPE
+              value: selfhosted
+            - name: AFFINE_INDEXER_ENABLED
+              value: 'false'
+            - name: REDIS_SERVER_HOST
+              value: affine-valkey
+            - name: AFFINE_BACKEND_RUNTIME_CONFIG_PATH
+              value: /data/.affine/config/config.json
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: affine-postgresql-app
+                  key: uri
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: '1'
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data/.affine
+            - name: tmp
+              mountPath: /tmp
+            - name: config
+              mountPath: /etc/affine
+              readOnly: true
+      containers:
+        - name: affine
+          image: ghcr.io/toeverything/affine:0.27.4@sha256:b649f5ce2384ffdf13c23bccf81d759e15973d59d0b0058af65d895a84373099
+          ports:
+            - name: http
+              containerPort: 3010
+          env:
+            - name: HOME
+              value: /data
+            - name: DEPLOYMENT_TYPE
+              value: selfhosted
+            - name: AFFINE_INDEXER_ENABLED
+              value: 'false'
+            - name: REDIS_SERVER_HOST
+              value: affine-valkey
+            - name: AFFINE_BACKEND_RUNTIME_CONFIG_PATH
+              value: /data/.affine/config/config.json
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: affine-postgresql-app
+                  key: uri
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: '2'
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data/.affine
+            - name: tmp
+              mountPath: /tmp
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 20
+            failureThreshold: 6
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: affine-data
+        - name: tmp
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: affine-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: affine
+  namespace: affine
+spec:
+  selector:
+    app.kubernetes.io/name: affine
+  ports:
+    - name: http
+      port: 3010
+      targetPort: http

@@ -64,3 +64,7 @@ kubectl --context labprod apply -f apps/gitops/bootstrap/labprod.yaml
 Those commands are live operations and require explicit authorization. Normal
 delivery is a reviewed merge to `master`; Argo CD then reconciles production.
 See [the application runbook](../docs/gitops-applications.md).
+
+AFFiNE Notes is managed by `affine-labprod` at `notes.lab.bingo`, behind the
+owner-only Authentik proxy and OIDC. Its daily complete archive and CNPG
+backups retain 14 days; see [the AFFiNE runbook](workloads/affine/README.md).

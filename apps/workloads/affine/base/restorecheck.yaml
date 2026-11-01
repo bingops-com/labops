@@ -1,0 +1,124 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: affine-restorecheck
+  namespace: affine
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/sync-wave: '3'
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 26
+        runAsGroup: 26
+        fsGroup: 26
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: download
+          image: rclone/rclone:1.75.1
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              root=r2:bingops-cnpg-labprod/affine-files/snapshots
+              rclone lsf "$root" --files-only --max-depth 1 --log-level ERROR > /tmp/archives
+              latest=$(grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}Z\.tar\.gz$' /tmp/archives | LC_ALL=C sort | tail -n 1)
+              test -n "$latest"
+              rclone copyto "$root/$latest" /restore/affine.tar.gz --log-level ERROR
+          env:
+            - name: RCLONE_CONFIG
+              value: /dev/null
+            - name: RCLONE_CONFIG_R2_TYPE
+              value: s3
+            - name: RCLONE_CONFIG_R2_PROVIDER
+              value: Cloudflare
+            - name: RCLONE_CONFIG_R2_ENDPOINT
+              value: https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com
+            - name: RCLONE_CONFIG_R2_NO_CHECK_BUCKET
+              value: 'true'
+            - name: RCLONE_CONFIG_R2_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: affine-r2-credentials
+                  key: ACCESS_KEY_ID
+            - name: RCLONE_CONFIG_R2_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: affine-r2-credentials
+                  key: ACCESS_SECRET_KEY
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+          volumeMounts:
+            - name: restore
+              mountPath: /restore
+            - name: tmp
+              mountPath: /tmp
+      containers:
+        - name: verify
+          image: ghcr.io/cloudnative-pg/postgresql:18.4-standard-trixie@sha256:ebf3919504d7523a63e8e2fee9b051211de714644b36469275558c624afd50ec
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              umask 077
+              export PATH=/usr/lib/postgresql/18/bin:$PATH
+              export HOME=/tmp
+              mkdir -p /restore/files
+              tar --no-same-owner -xzf /restore/affine.tar.gz -C /restore/files
+              test -s /restore/files/config/private.key
+              test -d /restore/files/storage
+              pg_restore --list /restore/files/affine.dump >/dev/null
+              initdb -D /restore/pgdata --no-locale --encoding=UTF8 --auth=trust >/tmp/initdb.log 2>&1
+              pg_ctl -D /restore/pgdata -o '-k /tmp -h 127.0.0.1 -p 55432' -w start >/tmp/postgres.log 2>&1
+              trap 'pg_ctl -D /restore/pgdata -m fast -w stop >/dev/null 2>&1' EXIT
+              createdb -h 127.0.0.1 -p 55432 affine_restore
+              if ! pg_restore --exit-on-error --no-owner --no-privileges -h 127.0.0.1 -p 55432 -d affine_restore /restore/files/affine.dump >/tmp/restore.log 2>&1; then
+                echo 'Isolated PostgreSQL restore failed; details withheld' >&2
+                exit 1
+              fi
+              result=$(psql -h 127.0.0.1 -p 55432 -d affine_restore -Atc 'SELECT count(*) >= 1 FROM users')
+              test "$result" = t
+              echo 'AFFiNE isolated database, configuration and storage restore verified'
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: '1'
+              memory: 512Mi
+          volumeMounts:
+            - name: restore
+              mountPath: /restore
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: restore
+          emptyDir:
+            sizeLimit: 10Gi
+        - name: tmp
+          emptyDir: {}

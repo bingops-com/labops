@@ -6,3 +6,4 @@ resources:
   - blueprint.yaml
   - branding-assets.yaml
   - bitwarden-secret.yaml
+  - notes-ingress.yaml

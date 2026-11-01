@@ -884,6 +884,106 @@ data:
           enabled: true
           negate: false
           timeout: 30
+      # Notes shares the embedded outpost; keep all provider registrations in
+      # this blueprint so an independent file cannot replace its provider list.
+      - model: authentik_core.group
+        id: notes-admins
+        identifiers:
+          name: notes-admins
+        attrs:
+          is_superuser: false
+          users:
+            - !Find [authentik_core.user, [username, bingops]]
+      - model: authentik_policies_expression.expressionpolicy
+        id: notes-owner-policy
+        identifiers:
+          name: AFFiNE owner only
+        attrs:
+          expression: |
+            return (
+                request.user.is_authenticated
+                and request.user.is_active
+                and request.user.username == "bingops"
+                and request.user.all_groups().filter(name="notes-admins").exists()
+            )
+      - model: authentik_providers_oauth2.scopemapping
+        id: notes-email-scope
+        identifiers:
+          name: AFFiNE verified email
+        attrs:
+          scope_name: email
+          expression: |
+            return {"email": user.email, "email_verified": True}
+      - model: authentik_providers_oauth2.oauth2provider
+        id: notes-oidc-provider
+        identifiers:
+          name: AFFiNE OIDC
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: public
+          client_id: affine-notes
+          grant_types: [authorization_code]
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, profile]]
+            - !KeyOf notes-email-scope
+          redirect_uris:
+            - matching_mode: strict
+              url: https://notes.lab.bingo/oauth/callback
+      - model: authentik_core.application
+        id: notes-oidc-application
+        identifiers:
+          slug: notes-sso
+        attrs:
+          name: AFFiNE OIDC
+          provider: !KeyOf notes-oidc-provider
+          meta_launch_url: https://notes.lab.bingo
+          meta_hide: true
+          policy_engine_mode: all
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !KeyOf notes-oidc-application
+          policy: !KeyOf notes-owner-policy
+          order: 0
+        attrs:
+          target: !KeyOf notes-oidc-application
+          policy: !KeyOf notes-owner-policy
+          order: 0
+          enabled: true
+      - model: authentik_providers_proxy.proxyprovider
+        id: notes-proxy-provider
+        identifiers:
+          name: AFFiNE proxy
+        attrs:
+          mode: proxy
+          external_host: https://notes.lab.bingo
+          internal_host: http://affine.affine.svc.cluster.local:3010
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      - model: authentik_core.application
+        id: notes-application
+        identifiers:
+          slug: notes
+        attrs:
+          name: AFFiNE Notes
+          provider: !KeyOf notes-proxy-provider
+          meta_launch_url: https://notes.lab.bingo
+          policy_engine_mode: all
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !KeyOf notes-application
+          policy: !KeyOf notes-owner-policy
+          order: 0
+        attrs:
+          target: !KeyOf notes-application
+          policy: !KeyOf notes-owner-policy
+          order: 0
+          enabled: true
       - model: authentik_outposts.outpost
         identifiers:
           name: authentik Embedded Outpost
@@ -892,6 +992,7 @@ data:
           type: proxy
           providers:
             - !KeyOf rom-request-proxy-provider
+            - !KeyOf notes-proxy-provider
       # Keep cleanup entries for the former full-access ROMarr proxy.
       - model: authentik_core.application
         state: absent

@@ -37,6 +37,8 @@ jobs:
           trap 'docker rm "$container_id" >/dev/null; rm -rf "$tool_dir"' EXIT
           docker cp "$container_id:/usr/local/bin/rclone" "$tool_dir/rclone"
           PATH="$tool_dir:$PATH" python3 -m unittest discover -s apps/workloads/coder/tests -p test_home_backup.py -v
+          PATH="$tool_dir:$PATH" python3 -m unittest discover -s apps/workloads/affine/tests -v
+          shellcheck apps/workloads/affine/base/backup-files.sh
           docker run --rm --user 1000:1000 --cap-drop ALL --security-opt no-new-privileges --read-only --network none \
             --entrypoint /bin/sh -e RCLONE_CONFIG=/dev/null \
             --mount "type=bind,src=$PWD/apps/workloads/coder/base/prune-archives.sh,dst=/scripts/prune-archives.sh,readonly" \

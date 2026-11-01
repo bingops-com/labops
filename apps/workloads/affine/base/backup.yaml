@@ -1,0 +1,270 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: affine-backup
+  namespace: affine
+spec:
+  schedule: 20 3 * * *
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          initContainers:
+            - name: snapshot
+              image: ghcr.io/cloudnative-pg/postgresql:18.4-standard-trixie@sha256:ebf3919504d7523a63e8e2fee9b051211de714644b36469275558c624afd50ec
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  umask 077
+                  export PATH=/usr/lib/postgresql/18/bin:$PATH
+                  test -s /data/config/private.key
+                  test -d /data/storage
+                  pg_dump --format=custom --no-owner --file=/backup/affine.dump
+                  pg_restore --list /backup/affine.dump >/dev/null
+                  date -u +%Y-%m-%dT%H-%M-%SZ > /backup/stamp
+                  tar -czf /backup/affine.tar.gz -C /backup affine.dump -C /data config storage
+              env:
+                - name: PGHOST
+                  value: affine-postgresql-rw
+                - name: PGDATABASE
+                  value: affine
+                - name: PGUSER
+                  value: affine
+                - name: PGSSLMODE
+                  value: require
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: affine-postgresql-app
+                      key: password
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: '1'
+                  memory: 512Mi
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                - name: tmp
+                  mountPath: /tmp
+                - name: data
+                  mountPath: /data
+                  readOnly: true
+          containers:
+            - name: upload
+              image: rclone/rclone:1.75.1
+              command:
+                - /bin/sh
+                - /scripts/backup-files.sh
+              env:
+                - name: RCLONE_CONFIG
+                  value: /dev/null
+                - name: RCLONE_CONFIG_R2_TYPE
+                  value: s3
+                - name: RCLONE_CONFIG_R2_PROVIDER
+                  value: Cloudflare
+                - name: RCLONE_CONFIG_R2_ENDPOINT
+                  value: https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com
+                - name: RCLONE_CONFIG_R2_NO_CHECK_BUCKET
+                  value: 'true'
+                - name: RCLONE_CONFIG_R2_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: affine-r2-credentials
+                      key: ACCESS_KEY_ID
+                - name: RCLONE_CONFIG_R2_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: affine-r2-credentials
+                      key: ACCESS_SECRET_KEY
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                - name: tmp
+                  mountPath: /tmp
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: affine-data
+            - name: backup
+              emptyDir:
+                sizeLimit: 8Gi
+            - name: tmp
+              emptyDir: {}
+            - name: scripts
+              configMap:
+                name: affine-scripts
+      ttlSecondsAfterFinished: 172800
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: affine-initial-backup
+  namespace: affine
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/sync-wave: '2'
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: snapshot
+          image: ghcr.io/cloudnative-pg/postgresql:18.4-standard-trixie@sha256:ebf3919504d7523a63e8e2fee9b051211de714644b36469275558c624afd50ec
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              umask 077
+              export PATH=/usr/lib/postgresql/18/bin:$PATH
+              test -s /data/config/private.key
+              test -d /data/storage
+              pg_dump --format=custom --no-owner --file=/backup/affine.dump
+              pg_restore --list /backup/affine.dump >/dev/null
+              date -u +%Y-%m-%dT%H-%M-%SZ > /backup/stamp
+              tar -czf /backup/affine.tar.gz -C /backup affine.dump -C /data config storage
+          env:
+            - name: PGHOST
+              value: affine-postgresql-rw
+            - name: PGDATABASE
+              value: affine
+            - name: PGUSER
+              value: affine
+            - name: PGSSLMODE
+              value: require
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: affine-postgresql-app
+                  key: password
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: '1'
+              memory: 512Mi
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+            - name: tmp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+              readOnly: true
+      containers:
+        - name: upload
+          image: rclone/rclone:1.75.1
+          command:
+            - /bin/sh
+            - /scripts/backup-files.sh
+          env:
+            - name: RCLONE_CONFIG
+              value: /dev/null
+            - name: RCLONE_CONFIG_R2_TYPE
+              value: s3
+            - name: RCLONE_CONFIG_R2_PROVIDER
+              value: Cloudflare
+            - name: RCLONE_CONFIG_R2_ENDPOINT
+              value: https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com
+            - name: RCLONE_CONFIG_R2_NO_CHECK_BUCKET
+              value: 'true'
+            - name: RCLONE_CONFIG_R2_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: affine-r2-credentials
+                  key: ACCESS_KEY_ID
+            - name: RCLONE_CONFIG_R2_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: affine-r2-credentials
+                  key: ACCESS_SECRET_KEY
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+            - name: tmp
+              mountPath: /tmp
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: affine-data
+        - name: backup
+          emptyDir:
+            sizeLimit: 8Gi
+        - name: tmp
+          emptyDir: {}
+        - name: scripts
+          configMap:
+            name: affine-scripts

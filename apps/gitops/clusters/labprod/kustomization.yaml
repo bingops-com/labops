@@ -33,3 +33,4 @@ resources:
   - pz-server.yaml
   - coder.yaml
   - dev.yaml
+  - affine.yaml
