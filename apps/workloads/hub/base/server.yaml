@@ -1,0 +1,132 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hub
+  namespace: hub
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hub
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hub
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: caddy
+          image: caddy:2.11.7-alpine@sha256:e70b164da81ef698b3ad19af799ea6086ce6d9e48ed4079eb9fe26f6fbf14ee5
+          command: [/bin/sh, -ec]
+          # The upstream binary has a file capability for privileged ports.
+          # A plain copy omits that xattr and runs with all capabilities dropped.
+          args:
+            - |
+              cp /usr/bin/caddy /tmp/caddy
+              exec /tmp/caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+          ports:
+            - name: http
+              containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 96Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+          volumeMounts:
+            - name: config
+              mountPath: /etc/caddy
+              readOnly: true
+            - name: site
+              mountPath: /srv
+              readOnly: true
+            - name: fonts
+              mountPath: /srv/fonts
+              readOnly: true
+            - name: runtime
+              mountPath: /data
+            - name: runtime-config
+              mountPath: /config
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: hub-config
+        - name: site
+          configMap:
+            name: hub-site
+        - name: fonts
+          configMap:
+            name: hub-fonts
+        - name: runtime
+          emptyDir:
+            sizeLimit: 8Mi
+        - name: runtime-config
+          emptyDir:
+            sizeLimit: 8Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub
+  namespace: hub
+spec:
+  selector:
+    app.kubernetes.io/name: hub
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hub
+  namespace: hub
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-cloudflare
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: lab.bingo
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hub
+                port:
+                  name: http
+  tls:
+    - hosts: [lab.bingo]
+      secretName: hub-tls

@@ -114,13 +114,19 @@ configs are sensitive generated state, not documentation.
    are documented in [the blog runbook](../apps/workloads/blog/README.md).
 
 9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
-   verify `https://lab.bingo` through LAN or Tailscale without publishing it
+   verify `https://portal.lab.bingo` through LAN or Tailscale without publishing it
    through the public Cloudflare Tunnel. The portal image is built from
    `docker/portal`, which clones the `master` branch of `bingops-com/portal`;
    that repository, its public GHCR image and the dispatch token are external
    prerequisites listed in `docker/portal/README.md`. The layout saved from
    the browser lives only on the `portal-data` PVC and is not restored: the
-   portal starts from `apps/workloads/portal/base/portal.yaml`. The public
+   portal starts from `apps/workloads/portal/base/portal.yaml`. Reconcile the
+   stateless `hub-labprod` directory at the public `https://lab.bingo` apex:
+   its entire content and fonts are ConfigMaps from Git, with no database,
+   application secret or PVC. Terraform owns only its public apex CNAME;
+   the Cloudflare Tunnel routes it to `hub.hub.svc.cluster.local:80`, never
+   the private portal. See [the hub runbook](../apps/workloads/hub/README.md)
+   for private DNS, TLS and cutover verification. The public
    status page `https://status.lab.bingo` follows Gatus, which it reads
    in-cluster: its image is built from `docker/status` with the external
    prerequisites listed in `docker/status/README.md`, its DNS record comes

@@ -25,6 +25,7 @@ resources:
   - blog.yaml
   - gatus.yaml
   - portal.yaml
+  - hub.yaml
   - status.yaml
   - slots.yaml
   - games.yaml

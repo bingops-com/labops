@@ -3,6 +3,8 @@ cloudflare:
   secretName: "cloudflare-tunnel-secret"
 
   ingress:
+    - hostname: lab.bingo
+      service: http://hub.hub.svc.cluster.local:80
     - hostname: auth.lab.bingo
       service: http://authentik-labprod-server.authentik.svc.cluster.local:80
     - hostname: www.bingops.com

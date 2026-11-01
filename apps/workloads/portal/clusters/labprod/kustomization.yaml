@@ -15,10 +15,10 @@ patches:
     patch: |-
       - op: replace
         path: /spec/rules/0/host
-        value: lab.bingo
+        value: portal.lab.bingo
       - op: replace
         path: /spec/tls/0/hosts/0
-        value: lab.bingo
+        value: portal.lab.bingo
   - target:
       kind: Deployment
       name: portal
@@ -38,7 +38,7 @@ patches:
                     value: labprod
                   # Editing requires an Authentik login; reading stays open.
                   - name: PORTAL_PUBLIC_URL
-                    value: https://lab.bingo
+                    value: https://portal.lab.bingo
                   - name: PORTAL_OIDC_ISSUER
                     value: https://auth.lab.bingo/application/o/portal/
                   - name: PORTAL_OIDC_CLIENT_ID

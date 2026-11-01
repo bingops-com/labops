@@ -80,7 +80,7 @@ kubectl --context labprod get clusters.postgresql.cnpg.io,backups.postgresql.cnp
 
 `ContinuousArchiving` and `LastBackupSucceeded` must be `True`, and the latest
 Backup must be `completed`. The Sauvegardes widget of the portal
-(`https://lab.bingo`) shows the same state.
+(`https://portal.lab.bingo`) shows the same state.
 
 The Barman client and server certificates must be ready, PostgreSQL must report
 one ready instance and a primary, and both Authentik deployments must be
