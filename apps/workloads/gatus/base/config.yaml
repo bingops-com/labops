@@ -42,6 +42,11 @@ endpoints:
     url: https://auth.lab.bingo/-/health/live/
     interval: 60s
     conditions: ["[STATUS] < 300", "[RESPONSE_TIME] < 2000", "[CERTIFICATE_EXPIRATION] > 168h"]
+  - name: Lab
+    group: Public
+    url: https://lab.bingo/healthz
+    interval: 60s
+    conditions: ["[STATUS] == 200", "[RESPONSE_TIME] < 2000", "[CERTIFICATE_EXPIRATION] > 168h"]
   - name: Portfolio
     group: Public
     url: https://www.bingops.com

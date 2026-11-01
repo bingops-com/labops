@@ -20,6 +20,9 @@ config:
   timezone: Europe/Paris
   # Words and public address of each service; name is the Gatus endpoint name.
   services:
+    - name: Lab
+      description: Annuaire des services publics et privés
+      url: https://lab.bingo
     - name: Authentik
       description: Connexion unique aux applications du lab
       url: https://auth.lab.bingo

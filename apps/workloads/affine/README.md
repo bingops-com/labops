@@ -47,6 +47,15 @@ initializer does not rename existing accounts. Ordinary password signup is
 disabled; OAuth linking remains enabled behind the owner-only IdP policy.
 AI and the optional external indexer are not enabled by this deployment.
 
+AFFiNE can create a browser-local workspace even after the outer SSO login.
+Sign in through AFFiNE's OIDC option too, then enable AFFiNE Sync in that
+workspace's settings (some versions label the action Enable AFFiNE Cloud).
+In this self-hosted web application it promotes the local workspace onto this
+server. A local-only workspace is not in PostgreSQL and is not covered by
+the server backups below; do not clear browser storage before conversion.
+The native desktop application's server selector must likewise point to
+`https://notes.lab.bingo`, rather than the vendor-hosted cloud.
+
 ## Persistence, backups and retention
 
 CNPG owns `affine-postgresql`, using PostgreSQL 18.4 standard with pgvector

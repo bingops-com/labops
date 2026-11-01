@@ -7,7 +7,7 @@ Authentik runs only on `labprod`, backed by
 The tracked blueprint owns four OIDC applications: confidential Argo CD at
 `https://argocd.lab.bingo/auth/callback`, public-PKCE Grafana at
 `https://grafana.lab.bingo/login/generic_oauth`, the public-PKCE LabOps Portal
-at `https://lab.bingo/auth/callback`, and public-PKCE RomM at
+at `https://portal.lab.bingo/auth/callback`, and public-PKCE RomM at
 `https://rom.lab.bingo/api/oauth/openid`. ROMarr is cluster-internal and therefore
 has no direct Authentik provider. The `ROM requests` proxy application publishes
 the restricted portal at `https://rom-requests.lab.bingo` to every authenticated

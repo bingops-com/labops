@@ -52,6 +52,12 @@ Terraform owns the public lab CNAME records through
 not recreate missing DNS records. A healthy pod and Argo CD Application can
 therefore coexist with a public `NXDOMAIN` outage.
 
+The `lab.bingo` apex is explicitly represented as record name `@` and routes
+only to the stateless public service directory. The operational portal at
+`portal.lab.bingo` remains private through CoreDNS and the Traefik allowlist;
+never add it to the public hostname set or tunnel. See
+[the directory cutover runbook](../../apps/workloads/hub/README.md).
+
 Before planning, fetch and compare against current `origin/master`. Use an
 isolated checkout when the operator checkout is on an older branch or has
 unrelated changes. Reuse the existing protected credential inputs and Terraform

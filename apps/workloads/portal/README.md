@@ -2,7 +2,7 @@
 
 The portal is the private landing page of the lab: cluster, Argo CD, Gatus and
 Prometheus status on one page, news and tools on another. It runs only on
-`labprod` and is available at `https://lab.bingo` through the LAN and the
+`labprod` and is available at `https://portal.lab.bingo` through the LAN and the
 Tailscale split-DNS route. Traefik accepts only LAN and tailnet source ranges;
 the hostname is not published through Cloudflare Tunnel.
 
@@ -18,8 +18,10 @@ the hostname is not published through Cloudflare Tunnel.
   portal re-reads the mounted file, so a config-only change needs no image
   release.
 - Availability data: [`apps/workloads/gatus`](../gatus/README.md).
-- DNS: `apps/platform/private-dns` answers the `lab.bingo` apex with the
-  Traefik VIP; `terraform/network` owns the matching Tailscale split-DNS entry.
+- DNS: `apps/platform/private-dns` answers `portal.lab.bingo` with the
+  Traefik VIP; `terraform/network` owns the parent `lab.bingo` Tailscale
+  split-DNS entry. The public `lab.bingo` apex serves the separate
+  [service directory](../hub/README.md), never this application.
 
 ## Layout
 
@@ -81,6 +83,15 @@ saved customizations.
 
 ## State
 
+The hostname migration changes only the ingress, public URL, OIDC callback and
+private DNS. It retains the same Deployment, Service, `portal-data` PVC and
+saved layout. Browser cookies belong to the old origin; editors sign in again
+at the new hostname. The public apex no longer handles portal API requests or
+OIDC callbacks. Roll back the cutover as a coordinated Git revert of the hub
+ingress, portal ingress/public URL, Authentik callback and private DNS; remove
+the public apex DNS/tunnel route through their owners before restoring a
+private portal at that name. Never point the public tunnel at this Service.
+
 The `portal-data` PVC (`local-path`) holds `layout.json`, the layout saved from
 the browser, which overrides the pages of `base/portal.yaml`, and
 `session.key`, the generated key that signs editor sessions, and
@@ -97,7 +108,7 @@ editor and commit the result as `base/portal.yaml`.
 kubectl kustomize apps/workloads/portal/clusters/labprod >/dev/null
 kubectl --context labprod get application portal-labprod -n argocd-system
 kubectl --context labprod get deployment,pod,pvc,ingress,certificate -n portal
-curl --fail --silent --show-error --output /dev/null --write-out '%{http_code}\n' https://lab.bingo/healthz
+curl --fail --silent --show-error --output /dev/null --write-out '%{http_code}\n' https://portal.lab.bingo/healthz
 ```
 
 Replaces: the Cluster Portal prototype and the Glance dashboard. The pruned

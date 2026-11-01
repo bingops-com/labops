@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="fr" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Les services du lab de Corentin Guyon : notes, projets, jeux et outils d’administration. Retrouvez chaque application et son mode d’accès."
+    />
+    <meta name="theme-color" content="#17356d" />
+    <title>lab.bingo — Les services du lab</title>
+    <link rel="canonical" href="https://lab.bingo/" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link
+      rel="preload"
+      href="/fonts/onest-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#services">Aller aux services</a>
+    <svg class="symbols" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <symbol id="i-brand" viewBox="0 0 24 24">
+          <path d="M4 3v18h10a5 5 0 0 0 0-10H4m6-8v8h5a4 4 0 0 0 0-8z" />
+        </symbol>
+        <symbol id="i-out" viewBox="0 0 24 24">
+          <path d="M7 17 17 7M7 7h10v10" />
+        </symbol>
+        <symbol id="i-search" viewBox="0 0 24 24">
+          <circle cx="10.5" cy="10.5" r="6.5" />
+          <path d="m16 16 4.5 4.5" />
+        </symbol>
+        <symbol id="i-close" viewBox="0 0 24 24">
+          <path d="m6 6 12 12M6 18 18 6" />
+        </symbol>
+        <symbol id="i-moon" viewBox="0 0 24 24">
+          <path d="M20 14a8 8 0 0 1-10-10 8.5 8.5 0 1 0 10 10Z" />
+        </symbol>
+        <symbol id="i-sun" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="4" />
+          <path
+            d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
+          />
+        </symbol>
+        <symbol id="i-activity" viewBox="0 0 24 24">
+          <path d="M2 12h4l3-8 6 16 3-8h4" />
+        </symbol>
+        <symbol id="i-note" viewBox="0 0 24 24">
+          <path d="M14 3H5v18h14V8l-5-5Zm0 0v5h5M8 12h8m-8 4h6" />
+        </symbol>
+        <symbol id="i-portal" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="3" />
+          <path d="M3 9h18M9 9v12" />
+        </symbol>
+        <symbol id="i-code" viewBox="0 0 24 24">
+          <path d="m8 6-6 6 6 6m8-12 6 6-6 6m-5 3 2-18" />
+        </symbol>
+        <symbol id="i-dev" viewBox="0 0 24 24">
+          <rect x="2" y="4" width="20" height="14" rx="2" />
+          <path d="M8 22h8m-4-4v4M6 8l3 3-3 3m6 0h4" />
+        </symbol>
+        <symbol id="i-game" viewBox="0 0 24 24">
+          <path
+            d="M6 7h12l3 10c1 4-3 5-5 1l-1-1H9l-1 1c-2 4-6 3-5-1L6 7ZM7 10v5m-2-2.5h4"
+          />
+          <circle cx="16" cy="11" r=".5" />
+          <circle cx="18" cy="14" r=".5" />
+        </symbol>
+        <symbol id="i-rom" viewBox="0 0 24 24">
+          <path d="M6 3h12v18H6zM9 3v5h6V3M9 12h6m-6 4h6" />
+        </symbol>
+        <symbol id="i-request" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="4" />
+          <path d="M12 7v10M7 12h10" />
+        </symbol>
+        <symbol id="i-slots" viewBox="0 0 24 24">
+          <rect x="3" y="5" width="16" height="16" rx="3" />
+          <path d="M8 9v8m6-8v8m5-7h3V5" />
+          <circle cx="22" cy="3" r="1" />
+        </symbol>
+        <symbol id="i-person" viewBox="0 0 24 24">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21v-2a8 8 0 0 1 16 0v2" />
+        </symbol>
+        <symbol id="i-blog" viewBox="0 0 24 24">
+          <path
+            d="M4 4h6a3 3 0 0 1 3 3v14a4 4 0 0 0-4-3H4V4Zm16 0h-4a3 3 0 0 0-3 3m0 14a4 4 0 0 1 4-3h3V4Z"
+          />
+        </symbol>
+        <symbol id="i-argo" viewBox="0 0 24 24">
+          <path d="M12 3v5m0 8v5M3 12h5m8 0h5" />
+          <circle cx="12" cy="12" r="4" />
+          <path d="m8 8-3-3m11 3 3-3M8 16l-3 3m11-3 3 3" />
+        </symbol>
+        <symbol id="i-chart" viewBox="0 0 24 24">
+          <path d="M3 3v18h18M7 16v-5m5 5V7m5 9v-8" />
+        </symbol>
+        <symbol id="i-lock" viewBox="0 0 24 24">
+          <rect x="5" y="10" width="14" height="11" rx="3" />
+          <path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2" />
+        </symbol>
+        <symbol id="i-layers" viewBox="0 0 24 24">
+          <path d="m12 3 10 5-10 5L2 8l10-5Zm-9 9 9 5 9-5M3 17l9 5 9-5" />
+        </symbol>
+      </defs>
+    </svg>
+    <header class="header wrap">
+      <a class="brand" href="/" aria-label="lab.bingo, accueil"
+        ><svg aria-hidden="true" class="brand-mark"><use href="#i-brand" /></svg
+        >lab.bingo</a
+      >
+      <div class="header-actions">
+        <a
+          class="status-link"
+          href="https://status.lab.bingo"
+          aria-label="Consulter l’état des services"
+          ><svg aria-hidden="true"><use href="#i-activity" /></svg
+          ><span>État des services</span></a
+        >
+        <button
+          class="theme-toggle"
+          data-theme-toggle
+          type="button"
+          aria-label="Activer le thème sombre"
+          aria-pressed="false"
+        >
+          <svg aria-hidden="true" class="moon"><use href="#i-moon" /></svg
+          ><svg aria-hidden="true" class="sun"><use href="#i-sun" /></svg>
+        </button>
+      </div>
+    </header>
+    <main class="wrap">
+      <section class="hero" aria-labelledby="welcome-title">
+        <div class="hero-copy">
+          <h1 id="welcome-title">Une adresse.<br />Tout le lab.</h1>
+          <p>
+            Des idées, des projets et quelques jeux. Retrouvez votre prochain
+            point de départ.
+          </p>
+          <span class="signature"
+            ><svg aria-hidden="true"><use href="#i-person" /></svg>Le labo de
+            Corentin Guyon</span
+          >
+        </div>
+        <nav class="switchboard" aria-label="Accès rapides">
+          <div class="switchboard-heading">
+            <span>À portée de main</span
+            ><svg aria-hidden="true"><use href="#i-layers" /></svg>
+          </div>
+          <a class="shortcut" href="https://notes.lab.bingo"
+            ><span class="shortcut-icon"
+              ><svg aria-hidden="true"><use href="#i-note" /></svg></span
+            ><span
+              ><strong>AFFiNE Notes</strong
+              ><small>Écrire, dessiner, garder une idée.</small></span
+            ><svg aria-hidden="true" class="out"><use href="#i-out" /></svg
+          ></a>
+          <a class="shortcut" href="https://portal.lab.bingo"
+            ><span class="shortcut-icon"
+              ><svg aria-hidden="true"><use href="#i-portal" /></svg></span
+            ><span
+              ><strong>Portal</strong
+              ><small>Le tableau de bord privé du lab.</small></span
+            ><svg aria-hidden="true" class="out"><use href="#i-out" /></svg
+          ></a>
+        </nav>
+      </section>
+      <section class="directory" id="services" aria-labelledby="services-title">
+        <div class="directory-top">
+          <h2 id="services-title">Les services</h2>
+          <span
+            id="result-count"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            >14 services</span
+          >
+        </div>
+        <div class="finder" hidden>
+          <div class="search-wrap">
+            <label class="sr-only" for="service-search"
+              >Rechercher un service</label
+            ><svg aria-hidden="true" class="search-icon">
+              <use href="#i-search" /></svg
+            ><input
+              id="service-search"
+              type="search"
+              placeholder="Rechercher un service…"
+              autocomplete="off"
+              spellcheck="false"
+              aria-controls="service-groups"
+            /><kbd aria-hidden="true">/</kbd
+            ><button
+              class="clear"
+              data-clear
+              type="button"
+              aria-label="Effacer la recherche"
+              hidden
+            >
+              <svg aria-hidden="true"><use href="#i-close" /></svg>
+            </button>
+          </div>
+          <div
+            class="filters"
+            role="group"
+            aria-label="Filtrer par mode d’accès"
+          >
+            <button
+              class="filter"
+              data-filter="all"
+              aria-pressed="true"
+              type="button"
+            >
+              Tous
+            </button>
+            <button
+              class="filter"
+              data-filter="public"
+              aria-pressed="false"
+              type="button"
+            >
+              Public
+            </button>
+            <button
+              class="filter"
+              data-filter="sso"
+              aria-pressed="false"
+              type="button"
+            >
+              SSO
+            </button>
+            <button
+              class="filter"
+              data-filter="private"
+              aria-pressed="false"
+              type="button"
+            >
+              Réseau privé
+            </button>
+          </div>
+        </div>
+        <div class="service-groups" id="service-groups">
+          <section
+            class="service-group"
+            data-group
+            aria-label="Créer &amp; organiser"
+          >
+            <h3 class="group-heading">
+              <svg aria-hidden="true"><use href="#i-note" /></svg>Créer &amp;
+              organiser
+            </h3>
+            <ul class="services">
+              <li
+                data-service
+                data-access="sso"
+                data-keywords="écrire dessin organisation affine notes notes.lab.bingo"
+              >
+                <a class="service-link" href="https://notes.lab.bingo"
+                  ><span class="service-icon navy"
+                    ><svg aria-hidden="true"><use href="#i-note" /></svg></span
+                  ><span
+                    ><span class="service-name">AFFiNE Notes</span
+                    ><span class="service-description"
+                      >Notes, documents et tableaux blancs.</span
+                    ></span
+                  ><span class="access sso">SSO</span
+                  ><svg aria-hidden="true" class="out">
+                    <use href="#i-out" /></svg
+                ></a>
+              </li>
+              <li
+                data-service
+                data-access="private"
+                data-keywords="ide code workspace cloud coder.lab.bingo"
+              >
+                <a class="service-link" href="https://coder.lab.bingo"
+                  ><span class="service-icon teal"
+                    ><svg aria-hidden="true"><use href="#i-code" /></svg></span
+                  ><span
+                    ><span class="service-name">Coder</span
+                    ><span class="service-description"
+                      >Votre espace de développement.</span
+                    ></span
+                  ><span class="access private">Privé</span
+                  ><svg aria-hidden="true" class="out">
+                    <use href="#i-out" /></svg
+                ></a>
+              </li>
+              <li
+                data-service
+                data-access="private"
+                data-keywords="preview development galerie dev.lab.bingo"
+              >
+                <a class="service-link" href="https://dev.lab.bingo"
+                  ><span class="service-icon violet"
+                    ><svg aria-hidden="true"><use href="#i-dev" /></svg></span
+                  ><span
+                    ><span class="service-name">Dev</span
+                    ><span class="service-description"
+                      >Vos environnements et aperçus web.</span
+                    ></span
+                  ><span class="access private">Privé</span
+                  ><svg aria-hidden="true" class="out">
+                    <use href="#i-out" /></svg
+                ></a>
+              </li>
+            </ul>
+          </section>
+          <section
+            class="service-group"
+            data-group
+            aria-label="Explorer &amp; jouer"
+          >
+            <h3 class="group-heading">
+              <svg aria-hidden="true"><use href="#i-game" /></svg>Explorer &amp;
+              jouer
+            </h3>
+            <ul class="services">
+              <li
+                data-service
+                data-access="sso"
+                data-keywords="roms emulation catalogue retrogaming rom.lab.bingo"
+              >
+                <a class="service-link" href="https://rom.lab.bingo"
+                  ><span class="service-icon violet"
+                    ><svg aria-hidden="true"><use href="#i-rom" /></svg></span
+                  ><span
+                    ><span class="service-name">RomM</span
+                    ><span class="service-description"
+                      >La bibliothèque de jeux rétro.</span
+                    ></span
+                  ><span class="access sso">SSO</span
+                  ><svg aria-hidden="true" class="out">
+                    <use href="#i-out" /></svg
+                ></a>
+              </li>
+              <li
+                data-service
+                data-access="sso"
+                data-keywords="romarr requêtes request rom-requests.lab.bingo"
+              >
+                <a class="service-link" href="https://rom-requests.lab.bingo"
+                  ><span class="service-icon violet"
+                    ><svg aria-hidden="true">
+                      <use href="#i-request" /></svg></span
+                  ><span
+                    ><span class="service-name">Demandes ROM</span
+                    ><span class="service-description"
+                      >Proposer un ajout à la bibliothèque.</span
+                    ></span
+                  ><span class="access sso">SSO</span
+                  ><svg aria-hidden="true" class="out">
+                    <use href="#i-out" /></svg
+                ></a>
+              </li>
+              <li
+                data-service
+                data-access="public"
+                data-keywords="multijoueur jeu gaming games.lab.bingo"
+              >
+                <a class="service-link" href="https://games.lab.bingo"
+                  ><span class="service-icon teal"
+                    ><svg aria-hidden="true"><use href="#i-game" /></svg></span
+                  ><span
+                    ><span class="service-name">Games</span
+                    ><span class="service-description"
+                      >Se retrouver et jouer en ligne.</span
+                    ></span
+                  ><span class="access public">Public</span
+                  ><svg aria-hidden="true" class="out">
+                    <use href="#i-out" /></svg
+                ></a>
+              </li>
+              <li
+                data-service
+                data-access="public"
+                data-keywords="casino jeu slots.lab.bingo"
+              >
+                <a class="service-link" href="https://slots.lab.bingo"
+                  ><span class="service-icon teal"
+                    ><svg aria-hidden="true"><use href="#i-slots" /></svg></span
+                  ><span
+                    ><span class="service-name">Slots</span
+                    ><span class="service-description"
+                      >Une pause aux machines à sous.</span
+                    ></span
+                  ><span class="access public">Public</span
+                  ><svg aria-hidden="true" class="out">
+                    <use href="#i-out" /></svg
+                ></a>
+              </li>
+            </ul>
+          </section>
+          <section
+            class="service-group"
+            data-group
+            aria-label="Découvrir &amp; suivre"
+          >
+            <h3 class="group-heading">
+              <svg aria-hidden="true"><use href="#i-blog" /></svg>Découvrir
+              &amp; suivre
+            </h3>
+            <ul class="services">
+              <li
+                data-service
+                data-access="public"
+                data-keywords="profil parcours cv contact www.bingops.com"
+              >
+                <a class="service-link" href="https://www.bingops.com"
+                  ><span class="service-icon navy"
+                    ><svg aria-hidden="true">
+                      <use href="#i-person" /></svg></span
+                  ><span
+                    ><span class="service-name">Portfolio</span
+                    ><span class="service-description"
+                      >Corentin Guyon, DevOps &amp; cybersécurité.</span
+                    ></span
+                  ><span class="access public">Public</span
+                  ><svg aria-hidden="true" class="out">
+                    <use href="#i-out" /></svg
+                ></a>
+              </li>
+              <li
+                data-service
+                data-access="public"
+                data-keywords="articles infrastructure kubernetes blog.bingops.com"
+              >
+                <a class="service-link" href="https://blog.bingops.com"
+                  ><span class="service-icon teal"
+                    ><svg aria-hidden="true"><use href="#i-blog" /></svg></span
+                  ><span
+                    ><span class="service-name">Blog</span
+                    ><span class="service-description"
+                      >Retours de terrain et notes techniques.</span
+                    ></span
+                  ><span class="access public">Public</span
+                  ><svg aria-hidden="true" class="out">
+                    <use href="#i-out" /></svg
+                ></a>
+              </li>
+              <li
+                data-service
+                data-access="public"
+                data-keywords="état incidents uptime monitoring status.lab.bingo"
+              >
+                <a class="service-link" href="https://status.lab.bingo"
+                  ><span class="service-icon teal"
+                    ><svg aria-hidden="true">
+                      <use href="#i-activity" /></svg></span
+                  ><span
+                    ><span class="service-name">Status</span
+                    ><span class="service-description"
+                      >La disponibilité des services.</span
+                    ></span
+                  ><span class="access public">Public</span
+                  ><svg aria-hidden="true" class="out">
+                    <use href="#i-out" /></svg
+                ></a>
+              </li>
+            </ul>
+          </section>
+          <section class="service-group" data-group aria-label="Administrer">
+            <h3 class="group-heading">
+              <svg aria-hidden="true"><use href="#i-layers" /></svg>Administrer
+            </h3>
+            <ul class="services">
+              <li
+                data-service
+                data-access="private"
+                data-keywords="labops dashboard kubernetes administration portal.lab.bingo"
+              >
+                <a class="service-link" href="https://portal.lab.bingo"
+                  ><span class="service-icon navy"
+                    ><svg aria-hidden="true">
+                      <use href="#i-portal" /></svg></span
+                  ><span
+                    ><span class="service-name">Portal</span
+                    ><span class="service-description"
+                      >Le tableau de bord privé du cluster.</span
+                    ></span
+                  ><span class="access private">Privé</span
+                  ><svg aria-hidden="true" class="out">
+                    <use href="#i-out" /></svg
+                ></a>
+              </li>
+              <li
+                data-service
+                data-access="private"
+                data-keywords="gitops kubernetes argocd argocd.lab.bingo"
+              >
+                <a class="service-link" href="https://argocd.lab.bingo"
+                  ><span class="service-icon navy"
+                    ><svg aria-hidden="true"><use href="#i-argo" /></svg></span
+                  ><span
+                    ><span class="service-name">Argo CD</span
+                    ><span class="service-description"
+                      >Les applications et leurs déploiements.</span
+                    ></span
+                  ><span class="access private">Privé</span
+                  ><svg aria-hidden="true" class="out">
+                    <use href="#i-out" /></svg
+                ></a>
+              </li>
+              <li
+                data-service
+                data-access="private"
+                data-keywords="observability prometheus monitoring grafana.lab.bingo"
+              >
+                <a class="service-link" href="https://grafana.lab.bingo"
+                  ><span class="service-icon navy"
+                    ><svg aria-hidden="true"><use href="#i-chart" /></svg></span
+                  ><span
+                    ><span class="service-name">Grafana</span
+                    ><span class="service-description"
+                      >Les métriques et tableaux de bord.</span
+                    ></span
+                  ><span class="access private">Privé</span
+                  ><svg aria-hidden="true" class="out">
+                    <use href="#i-out" /></svg
+                ></a>
+              </li>
+              <li
+                data-service
+                data-access="sso"
+                data-keywords="identité authentification sécurité login auth.lab.bingo"
+              >
+                <a class="service-link" href="https://auth.lab.bingo"
+                  ><span class="service-icon violet"
+                    ><svg aria-hidden="true"><use href="#i-lock" /></svg></span
+                  ><span
+                    ><span class="service-name">Authentik</span
+                    ><span class="service-description"
+                      >Les applications et le compte SSO.</span
+                    ></span
+                  ><span class="access sso">SSO</span
+                  ><svg aria-hidden="true" class="out">
+                    <use href="#i-out" /></svg
+                ></a>
+              </li>
+            </ul>
+          </section>
+        </div>
+        <div class="empty" id="empty-results" hidden>
+          <h3>Aucun service trouvé</h3>
+          <p>Essayez un autre nom ou changez le filtre d’accès.</p>
+          <button class="reset" type="button" data-reset>
+            Afficher tous les services
+          </button>
+        </div>
+        <aside class="access-guide" aria-label="Comprendre les accès">
+          <svg aria-hidden="true"><use href="#i-lock" /></svg>
+          <p>
+            <strong>Public</strong> : accessible sur Internet, avec un compte
+            selon le service. <strong>SSO</strong> : connexion avec votre compte
+            LabOps. <strong>Privé</strong> : connectez-vous au réseau local ou à
+            Tailscale avant d’ouvrir le service.
+          </p>
+        </aside>
+      </section>
+    </main>
+    <footer class="footer wrap">
+      <span>Un lab personnel, en mouvement.</span>
+      <div class="footer-links">
+        <a href="https://www.bingops.com">Corentin Guyon</a
+        ><a href="https://github.com/bingops-com/labops"
+          ><svg aria-hidden="true"><use href="#i-code" /></svg>Le projet
+          LabOps</a
+        >
+      </div>
+    </footer>
+  </body>
+</html>

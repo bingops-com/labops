@@ -23,7 +23,7 @@ resource "cloudflare_record" "lab_tunnel_routes" {
   for_each = local.lab_tunnel_hostnames
 
   zone_id = var.cloudflare_lab_zone_id
-  name    = trimsuffix(each.value, ".lab.bingo")
+  name    = each.value == "lab.bingo" ? "@" : trimsuffix(each.value, ".lab.bingo")
   content = "${cloudflare_zero_trust_tunnel_cloudflared.tunnels[var.lab_tunnel_name].id}.cfargotunnel.com"
   type    = "CNAME"
   proxied = true

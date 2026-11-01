@@ -85,6 +85,14 @@ jobs:
         with:
           version: v3.19.4
       - run: bash .github/scripts/validate-kustomize.sh
+      - name: Check public directory and private portal isolation
+        run: python3 -m unittest discover -s apps/workloads/hub/tests -v
+      - name: Validate the static server with its pinned image
+        run: |
+          caddy_image=$(python3 -c 'import pathlib,re; print(re.search(r"image: (caddy:\S+)", pathlib.Path("apps/workloads/hub/base/server.yaml").read_text())[1])')
+          docker run --rm --user 1000:1000 --cap-drop ALL --security-opt no-new-privileges --read-only --network none \
+            --mount "type=bind,src=$PWD/apps/workloads/hub/base/Caddyfile,dst=/etc/caddy/Caddyfile,readonly" \
+            --entrypoint caddy "$caddy_image" validate --config /etc/caddy/Caddyfile --adapter caddyfile
 
   renovate:
     name: Validate Renovate configuration

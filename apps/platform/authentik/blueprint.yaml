@@ -688,14 +688,14 @@ data:
             - !Find [authentik_providers_oauth2.scopemapping, [scope_name, email]]
           redirect_uris:
             - matching_mode: strict
-              url: https://lab.bingo/auth/callback
+              url: https://portal.lab.bingo/auth/callback
       - model: authentik_core.application
         identifiers:
           slug: portal
         attrs:
           name: LabOps Portal production
           provider: !KeyOf portal-provider
-          meta_launch_url: https://lab.bingo
+          meta_launch_url: https://portal.lab.bingo
   coder.yaml: |
     version: 1
     metadata:

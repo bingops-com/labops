@@ -23,14 +23,16 @@ namespace and local volumes were retired after the accepted migration; the R2
 file archive and Barman backup remain the recovery sources.
 
 Production names under `lab.bingo` are explicit. Cloudflare Tunnel publishes
-`auth.lab.bingo`, `portfolio.lab.bingo`, `rom-requests.lab.bingo`,
+`lab.bingo`, `auth.lab.bingo`, `notes.lab.bingo`, `portfolio.lab.bingo`, `rom-requests.lab.bingo`,
 `rom.lab.bingo`, `slots.lab.bingo`, `games.lab.bingo`
 and `status.lab.bingo`; `bingops.com` and
 `www.bingops.com` reach the portfolio. `blog.bingops.com` reaches the
 [static blog](workloads/blog/README.md) in namespace `bingops`. Argo CD and Grafana remain private
 through exact-name Tailscale split-DNS routes, Coder and its dynamic `dev.lab.bingo` previews use the private
 `lab.bingo` parent route, and the LabOps Portal is
-private at the `lab.bingo` apex. The private names resolve to `192.168.10.151`;
+private at `portal.lab.bingo`. The apex `lab.bingo` serves the separate public
+[service directory](workloads/hub/README.md), including when accessed privately.
+The private names resolve to `192.168.10.151`;
 the private DNS zone `lab.bingo` forwards every other name (for example
 `auth.lab.bingo`) to public resolvers. TLS uses the Bitwarden-delivered
 cert-manager token and Cloudflare DNS-01.
