@@ -1,0 +1,88 @@
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: affine-postgresql
+  namespace: affine
+  annotations:
+    argocd.argoproj.io/sync-wave: '-2'
+spec:
+  configuration:
+    destinationPath: s3://bingops-cnpg-labprod/affine
+    endpointURL: https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com
+    s3Credentials:
+      accessKeyId:
+        name: affine-r2-credentials
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: affine-r2-credentials
+        key: ACCESS_SECRET_KEY
+    wal:
+      compression: gzip
+    data:
+      compression: gzip
+  retentionPolicy: 14d
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: affine-postgresql
+  namespace: affine
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-standard-trixie@sha256:ebf3919504d7523a63e8e2fee9b051211de714644b36469275558c624afd50ec
+  bootstrap:
+    initdb:
+      database: affine
+      owner: affine
+      dataChecksums: true
+      postInitApplicationSQL:
+        - CREATE EXTENSION IF NOT EXISTS vector;
+  storage:
+    size: 4Gi
+    storageClass: local-path
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: '1'
+      memory: 1Gi
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: affine-postgresql
+        serverName: affine-postgresql-g1
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: affine-postgresql-daily
+  namespace: affine
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  schedule: 0 10 3 * * *
+  immediate: true
+  backupOwnerReference: self
+  cluster:
+    name: affine-postgresql
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: affine-postgresql
+  namespace: affine
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: affine-postgresql
+  podMetricsEndpoints:
+    - port: metrics

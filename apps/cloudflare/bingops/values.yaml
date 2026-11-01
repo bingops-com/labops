@@ -21,6 +21,8 @@ cloudflare:
       service: http://slots.slots.svc.cluster.local:80
     - hostname: games.lab.bingo
       service: http://games.games.svc.cluster.local:80
+    - hostname: notes.lab.bingo
+      service: http://authentik-labprod-server.authentik.svc.cluster.local:80
     - hostname: status.lab.bingo
       service: http://status.status.svc.cluster.local:80
 

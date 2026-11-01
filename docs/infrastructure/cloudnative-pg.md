@@ -90,3 +90,8 @@ disposable restore without exposing application data or credentials.
 The retired `bingops-cnpg-labtest` bucket may be deleted only after explicit
 confirmation that its historical backups are no longer required. The
 [Cloudflare runbook](cloudflare.md) owns the required empty-bucket procedure.
+
+AFFiNE Notes uses `affine/affine-postgresql`, PostgreSQL standard with pgvector,
+and the dedicated `affine` R2 prefix. It also creates a daily complete database,
+configuration and file archive under `affine-files`, with an isolated restore
+check. Both recovery paths retain 14 days. See [the AFFiNE runbook](../../apps/workloads/affine/README.md).

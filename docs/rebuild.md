@@ -214,3 +214,11 @@ Bitwarden and external R2 credentials only after all consumers are gone.
 The operations are idempotent when an already-absent cluster, DNS route or
 bucket is treated as absent. Safe verification is based on resource existence,
 node readiness and Argo CD health; never print state, kubeconfigs or Secrets.
+
+## AFFiNE Notes
+
+Reconcile the `affine-labprod` Application after CNPG/Barman, Bitwarden and
+Authentik. Restore the paired database and configuration/files before enabling
+the server and its daily archive job; retain the old data until the isolated
+restore check and OIDC acceptance pass. The [AFFiNE runbook](../apps/workloads/affine/README.md)
+owns reconstruction order, generated inputs, 14-day retention and recovery.

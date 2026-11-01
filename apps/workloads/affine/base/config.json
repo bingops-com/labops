@@ -1,0 +1,20 @@
+{
+  "server": {
+    "name": "LabOps Notes",
+    "externalUrl": "https://notes.lab.bingo",
+    "https": true,
+    "host": "notes.lab.bingo"
+  },
+  "auth": { "allowSignup": false, "allowSignupForOauth": true },
+  "oauth": {
+    "providers.oidc": {
+      "clientId": "affine-notes",
+      "clientSecret": "public-pkce-client-not-a-secret",
+      "issuer": "https://auth.lab.bingo/application/o/notes-sso/",
+      "allowPrivateNetwork": true,
+      "args": { "scope": "openid email profile" }
+    }
+  },
+  "copilot": { "enabled": false },
+  "indexer": { "enabled": false }
+}
