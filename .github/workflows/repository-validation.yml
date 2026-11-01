@@ -92,7 +92,11 @@ jobs:
           caddy_image=$(python3 -c 'import pathlib,re; print(re.search(r"image: (caddy:\S+)", pathlib.Path("apps/workloads/hub/base/server.yaml").read_text())[1])')
           docker run --rm --user 1000:1000 --cap-drop ALL --security-opt no-new-privileges --read-only --network none \
             --mount "type=bind,src=$PWD/apps/workloads/hub/base/Caddyfile,dst=/etc/caddy/Caddyfile,readonly" \
-            --entrypoint caddy "$caddy_image" validate --config /etc/caddy/Caddyfile --adapter caddyfile
+            --tmpfs /tmp:uid=1000,gid=1000,mode=0700,size=128m \
+            --entrypoint /bin/sh "$caddy_image" -ec '
+              cp /usr/bin/caddy /tmp/caddy
+              /tmp/caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+            '
 
   renovate:
     name: Validate Renovate configuration

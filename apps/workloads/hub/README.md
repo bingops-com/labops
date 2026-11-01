@@ -32,6 +32,10 @@ health metrics or promise current availability; it links to Status instead.
 Caddy 2.11.7 is pinned by digest. It serves ConfigMaps on port 8080 as UID 1000
 with a read-only root filesystem, dropped capabilities and no ServiceAccount
 token. Hashed ConfigMap names roll the Deployment when content changes.
+The official Caddy binary carries a privileged-port file capability. Startup
+copies it without that extended attribute into the bounded temporary volume,
+then executes the copy on unprivileged port 8080; no capability is added back.
+CI checks this with the same nonroot, read-only and capability-free settings.
 The static site uses no CDN, analytics, third-party fonts or browser API calls.
 The Content Security Policy permits only local scripts/styles/fonts/images;
 the Caddy admin API is disabled. `/healthz` is a simple readiness endpoint.

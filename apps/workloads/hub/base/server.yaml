@@ -25,8 +25,13 @@ spec:
       containers:
         - name: caddy
           image: caddy:2.11.7-alpine@sha256:e70b164da81ef698b3ad19af799ea6086ce6d9e48ed4079eb9fe26f6fbf14ee5
-          command: [caddy]
-          args: [run, --config, /etc/caddy/Caddyfile, --adapter, caddyfile]
+          command: [/bin/sh, -ec]
+          # The upstream binary has a file capability for privileged ports.
+          # A plain copy omits that xattr and runs with all capabilities dropped.
+          args:
+            - |
+              cp /usr/bin/caddy /tmp/caddy
+              exec /tmp/caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
           ports:
             - name: http
               containerPort: 8080
@@ -85,7 +90,7 @@ spec:
             sizeLimit: 8Mi
         - name: tmp
           emptyDir:
-            sizeLimit: 8Mi
+            sizeLimit: 128Mi
 ---
 apiVersion: v1
 kind: Service
