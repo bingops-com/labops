@@ -15,7 +15,8 @@ metadata:
   name: affine-data
   namespace: affine
   annotations:
-    argocd.argoproj.io/sync-wave: '-2'
+    # local-path waits for the server Pod before binding the volume.
+    argocd.argoproj.io/sync-wave: '0'
     argocd.argoproj.io/sync-options: Prune=false,Delete=false
 spec:
   accessModes:
