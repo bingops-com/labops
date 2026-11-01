@@ -10,7 +10,9 @@ or ad-hoc host installation is required. The upstream deployment reference is
 LabOps owns the namespace, retained PVC, CNPG database, migrations, cache,
 initialization, backup/restore Jobs, SSO blueprint, tunnel route and DNS record.
 The app and its migration init container run without a ServiceAccount token as
-UID 1000. PostgreSQL uses the operator-managed application credential; it has
+UID 1000. The server runs in production mode and generates its GraphQL schema
+in a bounded, disposable `/app/src` volume; the rest of its root filesystem
+remains read-only. PostgreSQL uses the operator-managed application credential; it has
 no trust-authentication or public Service. Valkey is an internal, disposable
 cache, not the recovery source for notes.
 

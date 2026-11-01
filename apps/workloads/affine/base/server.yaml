@@ -40,6 +40,8 @@ spec:
               node -e 'const fs=require("fs"); fs.mkdirSync("/data/.affine/config",{recursive:true}); fs.mkdirSync("/data/.affine/storage",{recursive:true}); fs.copyFileSync("/etc/affine/config.json","/data/.affine/config/config.json"); fs.chmodSync("/data/.affine/config/config.json",0o600)'
               node ./scripts/self-host-predeploy.js
           env:
+            - name: NODE_ENV
+              value: production
             - name: HOME
               value: /data
             - name: DEPLOYMENT_TYPE
@@ -83,6 +85,8 @@ spec:
             - name: http
               containerPort: 3010
           env:
+            - name: NODE_ENV
+              value: production
             - name: HOME
               value: /data
             - name: DEPLOYMENT_TYPE
@@ -112,6 +116,8 @@ spec:
               cpu: '2'
               memory: 2Gi
           volumeMounts:
+            - name: schema
+              mountPath: /app/src
             - name: data
               mountPath: /data/.affine
             - name: tmp
@@ -133,6 +139,9 @@ spec:
             periodSeconds: 20
             failureThreshold: 6
       volumes:
+        - name: schema
+          emptyDir:
+            sizeLimit: 16Mi
         - name: data
           persistentVolumeClaim:
             claimName: affine-data
