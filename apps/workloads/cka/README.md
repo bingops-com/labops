@@ -30,3 +30,28 @@ Private snapshots can be created with hacks/backup-cka-controller.py when no
 lifecycle job is running. Hash-checked snapshots enter the existing daily
 retained-home backup scope. This helper is operator-triggered, not a scheduled
 controller-volume backup, and does not back up disposable guest disks.
+
+## Private source access and reconstruction
+
+The CKA repository is private. Its Application and AppProject use the SSH
+source git@github.com:bingops-com/cka.git. Before reconciling a release, run
+python3 hacks/bootstrap-cka-repository.py --apply from the retained Coder home.
+It creates or adopts one repository-scoped read-only GitHub deploy key and the
+argocd-system/cka-git-repository Secret. Existing differing inputs are refused,
+never overwritten. No operator PAT or SSH identity enters the application Pod.
+GitHub's existing Argo SSH host-key pin must remain enabled.
+
+The generated key lives under ~/.local/share/cka-gitops with mode 0600 and is
+covered by retained-home backup. Restore it to reconstruct access. If it is
+lost, authorize rotation of only the named labprod-argocd-cka-readonly GitHub
+key and cka-git-repository Secret before regenerating. Minimum operator access
+is repository deploy-key administration and get/create on that one Secret.
+The helper is idempotent after partial creation; GitOps owns the source and
+image revisions, and the existing production PVC/controller remains the sole
+state owner. Verify repository comparison, application health, image revisions,
+public health and anonymous SSO rejection without displaying credentials.
+
+The study-account database integration in the application is optional until
+the separately owned Arcade migration and CKA schema/credential activation.
+Deploying the web image alone does not migrate Games/Slots or activate durable
+study progress. See the owning CKA runbook for that activation order.
