@@ -77,7 +77,7 @@ come from their respective original accounts; separate balances are never
 summed. Foreign keys, reports/audit IDs, room and podium JSON exact ID references
 are remapped. Modified original identity/progress rows and losing recovery
 hashes remain in the private `identity.account_merge_archive`, covered by the
-common encrypted-access backup boundary. `identity.account_aliases` retains old
+common backup and its access controls. `identity.account_aliases` retains old
 IDs; account_links retains service provenance. Unknown composite references or
 conflicting primary keys abort the transaction for operator review. No source
 cluster, PVC or archive is deleted.

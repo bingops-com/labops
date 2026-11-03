@@ -74,7 +74,8 @@ See apps/workloads/cka/README.md for ownership and recovery.
 Run python3 hacks/backup-cka-controller.py after a lab lifecycle operation has
 finished and before infrastructure maintenance. It copies SQLite online backup,
 Terraform state and current guest connection identities into the ignored
-retained-home backup scope, checks hashes internally and refuses a concurrent
+retained-home backup scope (`.runtime/production-backups`, ignored at the
+repository root; CKA_BACKUP_DIRECTORY can override it), checks hashes internally and refuses a concurrent
 lifecycle change. Snapshot files are sensitive and must never be printed or
 committed. No VM disk or operator credential is included. Recovery must fence
 the active writer and reconcile live VM identities before restoring state.

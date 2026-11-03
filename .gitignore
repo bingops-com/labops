@@ -34,3 +34,6 @@ __pycache__/
 
 # Local Coder dashboard browser captures (fixture data only).
 /hacks/tests/artifacts/
+
+# Private operator recovery snapshots (retained-home backup scope).
+/.runtime/

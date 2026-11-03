@@ -40,7 +40,7 @@ if result.returncode:raise SystemExit("Snapshot refused; wait for the lab lifecy
 payload=json.loads(result.stdout)
 for name,value in payload["files"].items():
     assert hashlib.sha256(base64.b64decode(value,validate=True)).hexdigest()==payload["checksums"][name]
-target=Path(os.environ.get("CKA_BACKUP_DIRECTORY","/home/coder/projects/labops/terraform/cka-ui/.runtime/production-backups"))
+target=Path(os.environ.get("CKA_BACKUP_DIRECTORY",str(Path(__file__).resolve().parents[1]/".runtime/production-backups")))
 target.mkdir(mode=0o700,parents=True,exist_ok=True)
 path=target/(time.strftime("%Y%m%dT%H%M%SZ",time.gmtime())+".json")
 with path.open("x") as output:json.dump(payload,output)
