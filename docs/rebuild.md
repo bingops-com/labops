@@ -231,7 +231,10 @@ owns reconstruction order, generated inputs, 14-day retention and recovery.
 
 ## CKA training
 
-The CKA source and images live in bingops-com/cka. Apply the Authentik CKA
+The private CKA source and published images live in bingops-com/cka. Argo
+reads the deployment-only snapshot in apps/workloads/cka/labprod from LabOps,
+with image pins and source checksums documented by its README. No private Git
+credential is required for reconciliation. Apply the Authentik CKA
 blueprint and DNS/tunnel declaration, bootstrap the private controller input
 Secret, then adopt the retired Coder Terraform/SQLite state before enabling
 the controller. The retained PVC is the sole production writer. Recovery,
