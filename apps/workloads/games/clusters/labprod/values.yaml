@@ -1,5 +1,5 @@
-# Temporary write freeze for the verified common Arcade migration.
-maintenance: true
+# Common Arcade identities; original databases remain declared for recovery.
+maintenance: false
 # Chart and image commit are pinned together by the Argo CD Application.
 production: true
 publicUrl: https://games.lab.bingo
@@ -14,6 +14,13 @@ image:
   repository: ghcr.io/bingops-com/games
   tag: sha-33fb5d752b538db203b629483ad9fb8f85d4e444
 networkPolicy:
+  databaseTo:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: games
+      podSelector:
+        matchLabels:
+          cnpg.io/cluster: arcade-postgresql
   enabled: true
   # Authentik's public issuer is served by Cloudflare. Restrict TCP/443 to
   # https://www.cloudflare.com/ips-v4 (reviewed 2026-10-12); Go also enforces
@@ -43,6 +50,11 @@ networkPolicy:
           app.kubernetes.io/name: cloudflare-tunnel
           app.kubernetes.io/instance: bingops
 database:
+  sharedAccounts: true
+  existingSecret:
+    name: arcade-postgresql-app
+    key: uri
+    backupRunbook: apps/workloads/arcade/README.md
   cnpg:
     enabled: true
     instances: 1
