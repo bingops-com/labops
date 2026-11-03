@@ -116,3 +116,15 @@ data stay intact. The helper checks readiness and the completed common backup,
 is idempotent and cannot target the three production/source clusters. These
 operator-generated migration copies remain outside GitOps. The Arcade runbook
 owns their resume procedure; deletion requires separate explicit targets.
+
+### Arcade canonical accounts and profiles
+
+`python3 hacks/unify-arcade-accounts.py --target rehearsal` is a read-only
+preflight of the retained common restore clone. `--apply` executes the two
+idempotent upgrades and compares original credentials, independent balances,
+references and archives without printing records. Production requires
+`--target production --backup NAME --apply`, a fresh completed common backup
+and all three web writers frozen by GitOps. The CKA controller stays running.
+SQL capabilities are owned by arcade, not postgres. Source data and PVCs stay
+retained. See the current Arcade runbook for the authorized policy, maintenance,
+SSO claim boundary, backup restoration and reopening order.

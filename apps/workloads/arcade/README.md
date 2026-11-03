@@ -6,7 +6,7 @@ activation requires a restored-data rehearsal, aggregate conservation checks,
 a completed common backup and a verified isolated restore. CKA consumes only
 the restricted cka_app role after its schema migration.
 
-## Production activation — 2026-11-03
+## Original activation — 2026-11-03 (historical preservation mode)
 
 The common target contains all 4 Games and 7 Slots source principals. Both
 homonymous pairs are preserved separately; no passwords were collected or
@@ -61,56 +61,90 @@ SQL role. Enabling a policy engine is a separate cluster-wide change, because
 it would also enforce existing policies for other workloads. Do not claim
 network isolation from rendered YAML.
 
-## Collision policy and proof
+## Canonical accounts and profiles — approved policy, 2026-11-04
 
-An overlapping, case-insensitive pseudo is merged only after its owner signs in
-with **both** passwords. The resulting ID, display pseudo and password come
-from Games, its recovery codes stay valid, and its Slots wallet/statistics are
-preserved. Unique accounts keep their ID/password and gain access to both games.
+Games, Slots and CKA use one case-insensitive username directory. For a legacy
+collision, retain the earliest `(created_at, id COLLATE "C")` account: its ID,
+username, creation time and password remain authoritative. The operator has
+explicitly selected this policy; no service selector or double-login proof is
+required for this upgrade. The losing password and recovery credentials stop
+working. All password sessions are revoked once; players reconnect using the
+retained account. Do not change this policy during recovery.
 
-Each affected player runs the helper locally for their own accounts:
+`migration/unify-accounts.sql` upgrades the historical preserve-collisions
+layout atomically. Games-owned profile/credits and Slots-owned wallet/score
+come from their respective original accounts; separate balances are never
+summed. Foreign keys, reports/audit IDs, room and podium JSON exact ID references
+are remapped. Modified original identity/progress rows and losing recovery
+hashes remain in the private `identity.account_merge_archive`, covered by the
+common encrypted-access backup boundary. `identity.account_aliases` retains old
+IDs; account_links retains service provenance. Unknown composite references or
+conflicting primary keys abort the transaction for operator review. No source
+cluster, PVC or archive is deleted.
 
-```sh
-python3 hacks/link-game-accounts.py --output /private/path/my-account-link.csv
-```
+`migration/account-contract.sql` owns the common profile, preferences and stable
+verified LabOps SSO subject mapping. Public profiles are opt-in; email, security
+settings and preferences remain private. CKA calls eight narrowly scoped SQL
+capabilities as `cka_app`; functions are owned by `arcade`, never `postgres`,
+use a fixed pg_catalog search path, and grant no direct archive/profile access.
+The trusted CKA backend verifies the current session, CSRF and password proofs.
+SSO-only identities can create a first password in their own profile. Recovery
+codes use the existing Games hash format and work across all three services.
 
-The helper uses only the two fixed HTTPS login origins, rejects redirects and
-prompts for passwords without echo. No password or bearer cookie is persisted.
-Its exclusive mode-0600 CSV contains the pseudo and SHA-256 session hashes.
-The player sends only this private proof to the migration operator through an
-existing private channel. Never collect players' passwords. Proofs are generated
-private state, not Git configuration; remove them after acceptance.
+The initial approved username directory is allowlisted once for SSO attachment.
+Subsequent registrations cannot claim an unrelated SSO username: linking then
+requires the common password plus the verified same-name SSO session. Provider
+and subject, rather than a mutable username, keep later SSO logins stable.
 
-Migration verifies both hashes against the **current restored source sessions**,
-their user IDs, pseudo and expiration. A revoked/expired proof is refused.
-Collect proofs before the final write freeze/backup so those sessions are in
-the restore. A same password or same pseudo alone proves nothing. If any
-collision lacks proof, the whole merge is refused with no partial changes;
-do not discard, silently rename or take over that account to force a cutover.
+Future applications consume the same identity directory and credential contract,
+with their data in a separate schema. They must not add a login service selector
+or another password table. account_links accepts safe service identifiers rather
+than a fixed Games/Slots list. New services still require their own reviewed
+integration, session/CSRF boundary and least-privilege role.
 
-## Preserving homonymous accounts without collecting passwords
+### Upgrade an existing common database
 
-For the authorized migration that preserves every principal, use
-migration/preserve-collisions.sql instead of merge.sql. It never combines
-homonymous identities: all source display names, password hashes, balances,
-statistics and source-ID mappings remain separate. Unique and newly registered
-accounts are common to both sites. The Games and Slots users views keep each
-legacy homonym in its original application; no player is silently renamed.
-CKA lets the learner select Games or Slots as their account origin.
+1. Run the loopback integration_unified.py rehearsal against the real published
+   Games/Slots binaries. Wake only the retained `games/arcade-common-restore`
+   clone, wait for its primary, then run:
 
-The identity name_key of a Slots homonym is internally prefixed slots:, while
-the visible pseudo is unchanged. The two game views expose the original login
-alias and scope homonyms to the correct source. New-account insertion is shared
-and serialized by the common uniqueness constraint. Password/session revocation
-for a shared principal still applies across applications. There is no cross-user
-password takeover or wallet merge. Tests/integration_preserve.py exercises the
-actual Games/Slots binaries, origin-specific credentials, registration races,
-revocation, idempotent migration and dump/restore on disposable PostgreSQL.
+   ```sh
+   python3 hacks/unify-arcade-accounts.py --target rehearsal
+   python3 hacks/unify-arcade-accounts.py --target rehearsal --apply
+   ```
 
-This mode needs no owner password or proof collection. It is an explicit
-alternative to verified account linking; do not later merge the retained
-homonyms merely because their display names match. Restore the complete common
-identity database and its views together, then reapply the idempotent migration.
+   The helper compares credentials, independent service fields, references and
+   original archives in memory; it outputs counts only. No new physical restore
+   volume is needed. Rehibernate the clone after acceptance.
+2. Prepare and publish compatible CKA images before the maintenance window.
+   Gracefully freeze Games/Slots with both production maintenance flags. Freeze
+   only the CKA web Deployment using a temporary committed Application Kustomize
+   replicas patch; leave the private controller running. Wait until all three
+   web Pods are gone. This also stops CKA profile/progress writers.
+3. Create a fresh completed common CNPG plugin Backup after the freeze and
+   require healthy WAL archiving. Retain all source data and old backups.
+   Execute the committed helper with that backup name:
+
+   ```sh
+   python3 hacks/unify-arcade-accounts.py --target production --backup BACKUP_NAME --apply
+   ```
+
+   It refuses a live writer, stale/mismatched backup or unready target. SQL is
+   executed as the non-superuser schema owner. Each migration marker and its
+   transaction make retries safe; original import scripts are historical only.
+4. Require a completed post-upgrade backup. Verify a fresh logical dump/restore
+   inside the isolated existing clone with private internal comparisons. This
+   proves current SQL/data restoration; the original Barman physical restore
+   was separately qualified on November 3. A new full physical recovery needs
+   additional disk headroom and must not overwrite an existing cluster.
+5. Deploy the prepared CKA image, remove its temporary freeze patch and both game
+   maintenance flags through GitOps. Verify both user views match, public pages
+   respond, profile APIs reject anonymous access, and all apps are Healthy/Synced.
+
+Both SQL upgrades are idempotent, including after restore. Before reopening,
+rollback requires a reviewed common backup/PITR, never the old frozen Games or
+Slots source databases. After writes resume, freeze again before recovery.
+No original database, PVC or archive retirement is included.
 
 ## Ownership, inputs and reconstruction
 
@@ -137,8 +171,8 @@ database remains independent of any Arcade migration; see the
 
 Non-Git inputs: the existing bucket-scoped R2 key and Bitwarden machine token
 (recover/rotate as documented in the [CNPG runbook](../../../docs/infrastructure/cloudnative-pg.md)),
-published application images, and Barman backup objects. Player proofs apply only to the optional verified-merge mode; the production
-preserve-collisions mode needs none. After the first migration, after cutover restore the common backup,
+published application images, and Barman backup objects. The current canonical upgrade uses the explicit earliest-account policy, not
+player proof collection. After the first migration, after cutover restore the common backup,
 never repeat the legacy merge. The Authentik identity/signing-key recovery
 process remains in `docs/authentik.md`.
 
@@ -152,7 +186,7 @@ bootstrap on an existing cluster. The database image is pinned to
 2026-10-13. Use PostgreSQL 18 clients for the actual import; the local synthetic
 rehearsal uses PostgreSQL 18 and does not validate Barman or the production CNI.
 
-## Migration sequence
+## Original first-cutover sequence (historical, not an upgrade runbook)
 
 1. Publish/review the Games and Slots changes with shared mode **off**. Keep
    chart/image pins aligned with published merge commits. Deploying, pushing
@@ -276,8 +310,8 @@ Retiring the old clusters/restore copies and their historical archives requires
 explicit approval of each exact target and is a separate PR.
 
 On a new empty installation with no accounts, initialize the two published
-schemas in disposable development databases, stage them and merge without any
-proofs. On recovery of an existing installation, use the common backup overlay.
+schemas in disposable development databases, stage with preserve-collisions.sql,
+then apply unify-accounts.sql and account-contract.sql as arcade. On recovery of an existing installation, use the common backup overlay.
 Do not initialize an empty database over lost account data.
 
 ## Verification
