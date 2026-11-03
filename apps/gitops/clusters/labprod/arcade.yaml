@@ -3,6 +3,9 @@ kind: Application
 metadata:
   name: arcade-labprod
   namespace: argocd-system
+  annotations:
+    # Compare admitted CNPG defaults without ignoring declared role/image drift.
+    argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
 spec:
   project: labops-labprod
   source:
