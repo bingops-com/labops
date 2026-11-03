@@ -68,3 +68,13 @@ and verifies the copied Terraform/SQLite files before writing the production
 migration marker. It refuses an existing target or a repeated fenced transfer.
 A partial copy requires operator reconciliation, never automatic overwrite.
 See apps/workloads/cka/README.md for ownership and recovery.
+
+### CKA private recovery snapshot
+
+Run python3 hacks/backup-cka-controller.py after a lab lifecycle operation has
+finished and before infrastructure maintenance. It copies SQLite online backup,
+Terraform state and current guest connection identities into the ignored
+retained-home backup scope, checks hashes internally and refuses a concurrent
+lifecycle change. Snapshot files are sensitive and must never be printed or
+committed. No VM disk or operator credential is included. Recovery must fence
+the active writer and reconcile live VM identities before restoring state.

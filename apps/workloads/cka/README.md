@@ -25,3 +25,8 @@ Verification: public /healthz returns 200; unauthenticated/spoofed lab APIs
 return 401; /labs redirects to Authentik; private /healthz responds over the
 Unix socket. Positive login uses the learner's browser. Do not inspect secret
 values, tokens or raw Terraform output in verification.
+
+Private snapshots can be created with hacks/backup-cka-controller.py when no
+lifecycle job is running. Hash-checked snapshots enter the existing daily
+retained-home backup scope. This helper is operator-triggered, not a scheduled
+controller-volume backup, and does not back up disposable guest disks.
