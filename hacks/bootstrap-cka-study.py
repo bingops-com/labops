@@ -35,7 +35,9 @@ def main():
         password = base64.b64decode(existing["data"]["password"]).decode()
     else:
         password = secrets.token_urlsafe(48)
-        kubectl(["create", "-f", "-", "-o", "json"], {"apiVersion": "v1", "kind": "Secret", "metadata": {"name": "cka-database-role", "namespace": "games"}, "type": "kubernetes.io/basic-auth", "stringData": {"username": "cka_app", "password": password}})
+        kubectl(["create", "-f", "-", "-o", "json"], {"apiVersion": "v1", "kind": "Secret", "metadata": {"name": "cka-database-role", "namespace": "games", "labels": {"cnpg.io/reload": "true"}}, "type": "kubernetes.io/basic-auth", "stringData": {"username": "cka_app", "password": password}})
+    if existing and existing.get("metadata",{}).get("labels",{}).get("cnpg.io/reload") != "true":
+        kubectl(["patch","secret","cka-database-role","-n","games","--type=merge","--patch-file","-","-o","json"], {"metadata":{"labels":{"cnpg.io/reload":"true"}}})
     uri = "postgresql://cka_app:" + urllib.parse.quote(password, safe="") + "@arcade-postgresql-rw.games.svc.cluster.local:5432/arcade?sslmode=verify-full&sslrootcert=/run/cka-db/ca.crt"
     desired = {"uri": base64.b64encode(uri.encode()).decode(), "ca.crt": ca}
     target = kubectl(["get", "secret", "cka-database", "-n", "cka", "--ignore-not-found", "-o", "json"])
