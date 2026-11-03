@@ -9,12 +9,12 @@ spec:
   project: labops-labprod
   source:
     repoURL: https://github.com/bingops-com/cka.git
-    targetRevision: 2c7569ae3d9d6313218023e105bf3c7eb55d7008
+    targetRevision: 646c613a7fe395b3864b15ab9a748560fce8417b
     path: deploy
     kustomize:
       images:
-        - ghcr.io/bingops-com/cka-web=ghcr.io/bingops-com/cka-web:2c7569ae3d9d6313218023e105bf3c7eb55d7008
-        - ghcr.io/bingops-com/cka-controller=ghcr.io/bingops-com/cka-controller:2c7569ae3d9d6313218023e105bf3c7eb55d7008
+        - ghcr.io/bingops-com/cka-web=ghcr.io/bingops-com/cka-web:646c613a7fe395b3864b15ab9a748560fce8417b
+        - ghcr.io/bingops-com/cka-controller=ghcr.io/bingops-com/cka-controller:646c613a7fe395b3864b15ab9a748560fce8417b
   destination:
     server: https://kubernetes.default.svc
     namespace: cka
