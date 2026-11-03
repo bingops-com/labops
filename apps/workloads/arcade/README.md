@@ -6,6 +6,23 @@ activation requires a restored-data rehearsal, aggregate conservation checks,
 a completed common backup and a verified isolated restore. CKA consumes only
 the restricted cka_app role after its schema migration.
 
+## Production activation — 2026-11-03
+
+The common target contains all 4 Games and 7 Slots source principals. Both
+homonymous pairs are preserved separately; no passwords were collected or
+identities merged. Final source backups were taken after both deployments
+stopped gracefully. The final import was compared against the fresh restored
+sources, and cka/001 schema plus the restricted role passed a rollback-only
+write/read check over trusted TLS. Backup cka-common-accepted-20261103 was
+restored into arcade-common-restore; all identity fields, ID mappings, both
+statistics tables and CKA schema matched exactly before reopening.
+
+The original clusters, PVCs, archive generations and isolated migration copies
+remain retained. Their retirement requires a separately scoped approval; they
+are not production consumers. Rebuild production from the common backup,
+never from the frozen pre-cutover source databases. Existing cookies were
+revoked at cutover and users must sign in again.
+
 ## Data and access
 
 One CNPG cluster, `games/arcade-postgresql`, owns database `arcade` and R2 prefix
@@ -135,7 +152,12 @@ rehearsal uses PostgreSQL 18 and does not validate Barman or the production CNI.
 1. Publish/review the Games and Slots changes with shared mode **off**. Keep
    chart/image pins aligned with published merge commits. Deploying, pushing
    and synchronizing require separate explicit authorization.
-2. Rehearse the entire flow on disposable restored copies. The excluded
+2. Verify node disk headroom before provisioning copies. This production
+   restore encountered DiskPressure with concurrent copies; image GC recovered
+   space, but local-path source/target/verification volumes all share the node
+   disk. Account for all retained copies and leave ample margin above eviction
+   thresholds. Do not bypass DiskPressure with a toleration or delete retained
+   databases/PVCs to make a migration proceed. Rehearse the entire flow on disposable restored copies. The excluded
    `rehearsal/labprod` overlay creates three dedicated `-rehearsal` clusters,
    without archivers or public application connections. Use those suffixed
    cluster/service names for the clone rename/port-forward commands below and
