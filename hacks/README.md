@@ -106,3 +106,13 @@ ARCADE_GAMES_RESTORE_SERVICE, ARCADE_SLOTS_RESTORE_SERVICE and
 ARCADE_TARGET_SERVICE. It compares original identity fields and both game
 statistics tables without logging rows; only aggregate account counts appear.
 Never point restore services at a live source primary.
+
+### Retain accepted Arcade migration copies
+
+After isolated common-backup restoration is accepted and both game Deployments
+are healthy in shared mode, run python3 hacks/hibernate-arcade-copies.py --apply.
+Only six fixed rehearsal/restore copies are stopped; CRs/PVCs and source/archive
+data stay intact. The helper checks readiness and the completed common backup,
+is idempotent and cannot target the three production/source clusters. These
+operator-generated migration copies remain outside GitOps. The Arcade runbook
+owns their resume procedure; deletion requires separate explicit targets.

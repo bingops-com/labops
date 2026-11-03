@@ -18,7 +18,12 @@ restored into arcade-common-restore; all identity fields, ID mappings, both
 statistics tables and CKA schema matched exactly before reopening.
 
 The original clusters, PVCs, archive generations and isolated migration copies
-remain retained. Their retirement requires a separately scoped approval; they
+remain retained. After acceptance, hacks/hibernate-arcade-copies.py --apply
+stops only the six named copies, retaining their CRs/PVCs. This generated
+migration state is outside GitOps; re-running is safe. Resume a specific copy
+with kubectl annotate cluster NAME -n NAMESPACE cnpg.io/hibernation=off
+--overwrite when needed. Never apply this to the common consumer or either
+source cluster. Their retirement requires a separately scoped approval; they
 are not production consumers. Rebuild production from the common backup,
 never from the frozen pre-cutover source databases. Existing cookies were
 revoked at cutover and users must sign in again.
