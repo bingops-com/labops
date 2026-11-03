@@ -27,8 +27,9 @@ with tempfile.TemporaryDirectory() as temp:
         for name in ("gateway_key","gateway_key.pub","node_key","node_key.pub","known_hosts","ssh_config","scenario-started","scenario-ready","lab.auto.tfvars.json"):
             source=root/"runtime"/identity/name
             if source.exists():files["runtime/"+identity+"/"+name]=source.read_bytes()
-        for source in (root/"runtime"/identity).glob("exam-*"):
-            if source.is_file():files["runtime/"+identity+"/"+source.name]=source.read_bytes()
+        for pattern in ("exam-*","cka-*-cluster-ready","cka-*-cluster-started"):
+            for source in (root/"runtime"/identity).glob(pattern):
+                if source.is_file():files["runtime/"+identity+"/"+source.name]=source.read_bytes()
     assert before==stamp() and state==(root/"terraform.tfstate").read_bytes(),"State changed during snapshot; retry"
     print(json.dumps({"version":1,"files":{name:base64.b64encode(value).decode() for name,value in files.items()},"checksums":{name:hashlib.sha256(value).hexdigest() for name,value in files.items()}}))
 '''
