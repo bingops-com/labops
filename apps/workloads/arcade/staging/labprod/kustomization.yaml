@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: games
-# Deliberately outside the GitOps root. Preparation is not a production rollout.
+# The arcade-labprod Application owns this common database; app cutover is separate.
 resources:
   - cluster.yaml
   - object-store.yaml

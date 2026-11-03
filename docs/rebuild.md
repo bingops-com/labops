@@ -91,10 +91,11 @@ configs are sensitive generated state, not documentation.
    codes, backup and isolated restore before public use. Existing accounts
    create their own codes from “Mon compte” using their current password.
    Ownership and repeatable setup: `apps/workloads/games/README.md`.
-   Common Games/Slots accounts are prepared but not activated by the GitOps
-   root. The reviewed candidate keeps the original clusters while introducing
+   Common Games/Slots accounts use the GitOps-owned Arcade cluster.
+   The migration keeps the original clusters while introducing
    `games/arcade-postgresql` and the `arcade` R2 prefix. First migration requires
-   proof of both passwords for collisions; reconstruction after cutover restores
+   preserving homonymous principals separately (or verified double-login proof
+   for optional merging); reconstruction after cutover restores
    the common backup instead. Ownership, maintenance write freeze, generated
    credential recovery and the recovery overlay are in
    `apps/workloads/arcade/README.md`. Never enable shared mode before the common
@@ -240,4 +241,8 @@ Secret, then adopt the retired Coder Terraform/SQLite state before enabling
 the controller. The retained PVC is the sole production writer. Recovery,
 credential rotation and current limitations are documented in the CKA
 [production runbook](https://github.com/bingops-com/cka/blob/main/docs/production.md).
+Recover the common Arcade identities and cka.progress schema before enabling
+account login/progress, then reconcile the generated cka_app credential with
+hacks/bootstrap-cka-study.py. cert-manager owns the dedicated controller TLS
+CA and certificates; deploy web wave 0 before singleton controller wave 1.
 Public simulations must stay usable without SSO; all real-lab APIs require SSO.

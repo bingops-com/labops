@@ -13,6 +13,15 @@ spec:
       database: arcade
       owner: arcade
       dataChecksums: true
+  managed:
+    roles:
+      - name: cka_app
+        ensure: present
+        login: true
+        superuser: false
+        createdb: false
+        createrole: false
+        passwordSecret: {name: cka-database-role}
   storage:
     size: 8Gi
     storageClass: local-path

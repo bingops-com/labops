@@ -98,6 +98,21 @@ class Helpers(unittest.TestCase):
             services.generate(target, [55463, 55464, 55465], rehearsal=True)
             self.assertEqual({call[5] for call in calls}, {"arcade-games-restore-rehearsal-app", "arcade-slots-restore-rehearsal-app", "arcade-postgresql-rehearsal-app"})
 
+    def test_direct_cluster_connections_verify_ca_and_server_name(self):
+        def kubectl(command,**kwargs):
+            secret=command[5]
+            user='games' if secret.startswith('arcade-games-restore-') else 'slots' if secret.startswith('arcade-slots-restore-') else 'arcade'
+            data={'ca.crt':base64.b64encode(b'synthetic CA fixture').decode()} if secret.endswith('-ca') else {'username':base64.b64encode(user.encode()).decode(),'password':base64.b64encode(b'fixture-password').decode()}
+            return subprocess.CompletedProcess(command,0,json.dumps({'data':data}).encode(),b'')
+        with tempfile.TemporaryDirectory() as directory,patch.object(services.subprocess,'run',kubectl):
+            target=Path(directory);services.generate(target,[55463,55464,55465],rehearsal=True,direct=True)
+            content=(target/'pg_service.conf').read_text()
+            self.assertEqual(content.count('sslmode=verify-full'),3)
+            self.assertIn('arcade-games-restore-rehearsal-rw.games.svc.cluster.local',content)
+            self.assertNotIn('127.0.0.1',content)
+            self.assertEqual(len(list(target.glob('*-ca.crt'))),3)
+            self.assertTrue(all(p.stat().st_mode&0o777==0o600 for p in target.iterdir()))
+
 
 if __name__ == "__main__":
     unittest.main()
