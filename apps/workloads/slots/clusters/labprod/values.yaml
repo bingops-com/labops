@@ -1,5 +1,5 @@
 # Common Arcade identities; original databases remain declared for recovery.
-maintenance: false
+maintenance: true
 # labprod values for the chart pinned by the slots Argo CD Application.
 image:
   repository: ghcr.io/bingops-com/slots

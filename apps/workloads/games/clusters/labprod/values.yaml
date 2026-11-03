@@ -1,5 +1,5 @@
 # Common Arcade identities; original databases remain declared for recovery.
-maintenance: false
+maintenance: true
 # Chart and image commit are pinned together by the Argo CD Application.
 production: true
 publicUrl: https://games.lab.bingo
