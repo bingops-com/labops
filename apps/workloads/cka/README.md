@@ -48,6 +48,15 @@ the snapshot and release.json checksums, render Kustomize, and publish the
 LabOps release only after CI/image publication succeeds. Re-running the helper
 at the same commit is deterministic; it performs no cluster operations.
 
+When adopting this source from the earlier CKA-repository Application, apply
+the reviewed apps/gitops/clusters/labprod/cka.yaml once during the authorized
+rollout. The root Application deliberately respects ignored targetRevision
+fields, so it can preserve the old CKA commit after the repository URL changes;
+that commit does not exist in LabOps. The adoption sets targetRevision to the
+declared master branch. Refresh CKA comparison afterward, verify the new image
+revisions, then wait for the rollout. Do not confuse an old healthy Pod with a
+completed deployment. This adoption needs no PVC or guest VM operation.
+
 The snapshot is generated release state committed to Git. Rebuild requires
 only LabOps, the pinned published images, existing Authentik inputs and the
 existing controller Secret/PVC recovery described above. The private CKA source
