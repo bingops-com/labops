@@ -58,3 +58,13 @@ The helper seeds the platform bootstrap namespaces. Project Zomboid then
 inherits token creation and rotation from `argocd-system` through its
 GitOps-managed, least-privilege CronJob; do not inject the token into
 `pz-server` manually.
+
+### CKA controller adoption
+
+Run python3 hacks/migrate-cka-controller.py once from the retained Coder home,
+after the CKA Pod exists and before activating the controller. It requires an
+empty lab, fences/stops the old local controller, retains a private snapshot,
+and verifies the copied Terraform/SQLite files before writing the production
+migration marker. It refuses an existing target or a repeated fenced transfer.
+A partial copy requires operator reconciliation, never automatic overwrite.
+See apps/workloads/cka/README.md for ownership and recovery.
