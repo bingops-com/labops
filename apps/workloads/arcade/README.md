@@ -1,9 +1,10 @@
 # Common Games / Slots accounts and PostgreSQL
 
-Prepared locally; **not connected to the GitOps root or deployed**. Existing
-production pins, databases, backups, namespaces, ingress and Authentik are
-unchanged. Do not merge a values switch before the two new application images
-and charts are published and the migration has been rehearsed on restored data.
+The common-account activation follows the reviewed migration below. Keep the
+source databases and their backups until explicit retirement. Production
+activation requires a restored-data rehearsal, aggregate conservation checks,
+a completed common backup and a verified isolated restore. CKA consumes only
+the restricted cka_app role after its schema migration.
 
 ## Data and access
 
@@ -60,6 +61,30 @@ Collect proofs before the final write freeze/backup so those sessions are in
 the restore. A same password or same pseudo alone proves nothing. If any
 collision lacks proof, the whole merge is refused with no partial changes;
 do not discard, silently rename or take over that account to force a cutover.
+
+## Preserving homonymous accounts without collecting passwords
+
+For the authorized migration that preserves every principal, use
+migration/preserve-collisions.sql instead of merge.sql. It never combines
+homonymous identities: all source display names, password hashes, balances,
+statistics and source-ID mappings remain separate. Unique and newly registered
+accounts are common to both sites. The Games and Slots users views keep each
+legacy homonym in its original application; no player is silently renamed.
+CKA lets the learner select Games or Slots as their account origin.
+
+The identity name_key of a Slots homonym is internally prefixed slots:, while
+the visible pseudo is unchanged. The two game views expose the original login
+alias and scope homonyms to the correct source. New-account insertion is shared
+and serialized by the common uniqueness constraint. Password/session revocation
+for a shared principal still applies across applications. There is no cross-user
+password takeover or wallet merge. Tests/integration_preserve.py exercises the
+actual Games/Slots binaries, origin-specific credentials, registration races,
+revocation, idempotent migration and dump/restore on disposable PostgreSQL.
+
+This mode needs no owner password or proof collection. It is an explicit
+alternative to verified account linking; do not later merge the retained
+homonyms merely because their display names match. Restore the complete common
+identity database and its views together, then reapply the idempotent migration.
 
 ## Ownership, inputs and reconstruction
 

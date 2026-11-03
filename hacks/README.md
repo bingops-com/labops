@@ -86,3 +86,14 @@ FULL_COMMIT_SHA to refresh the five declared Kubernetes manifests and source
 checksums in apps/workloads/cka/labprod. It uses immutable local Git objects,
 performs no deployment and exports no source code, solutions or credentials.
 See the CKA README for image pinning, ownership and reconstruction order.
+
+### CKA durable study progress
+
+After the Arcade cluster is provisioned with the cka_app managed role, run
+python3 hacks/bootstrap-cka-study.py --apply. It creates/adopts the generated
+role password and reconciles only cka/cka-database with the TLS URI and CA.
+It prints no credential and does not migrate data or restart applications.
+CNPG owns the role; Arcade backups own identity and CKA progress recovery.
+Apply the CKA db/001-study.sql migration through an operator connection before
+activating the web configuration. Regenerate credentials only through the
+owning helper, reconcile CNPG and roll the web after an authorized rotation.
