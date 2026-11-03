@@ -18,6 +18,7 @@ locals {
     "rom.lab.bingo",
     "slots.lab.bingo",
     "games.lab.bingo",
+    "cka.lab.bingo",
     "status.lab.bingo",
   ])
 

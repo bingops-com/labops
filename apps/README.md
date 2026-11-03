@@ -70,3 +70,6 @@ See [the application runbook](../docs/gitops-applications.md).
 AFFiNE Notes is managed by `affine-labprod` at `notes.lab.bingo`, behind the
 owner-only Authentik proxy and OIDC. Its daily complete archive and CNPG
 backups retain 14 days; see [the AFFiNE runbook](workloads/affine/README.md).
+
+CKA: public simulations and SSO-owned Proxmox labs. Source/images are owned by
+[bingops-com/cka](https://github.com/bingops-com/cka); see [the deployment runbook](workloads/cka/README.md).

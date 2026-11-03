@@ -228,3 +228,13 @@ Authentik. Restore the paired database and configuration/files before enabling
 the server and its daily archive job; retain the old data until the isolated
 restore check and OIDC acceptance pass. The [AFFiNE runbook](../apps/workloads/affine/README.md)
 owns reconstruction order, generated inputs, 14-day retention and recovery.
+
+## CKA training
+
+The CKA source and images live in bingops-com/cka. Apply the Authentik CKA
+blueprint and DNS/tunnel declaration, bootstrap the private controller input
+Secret, then adopt the retired Coder Terraform/SQLite state before enabling
+the controller. The retained PVC is the sole production writer. Recovery,
+credential rotation and current limitations are documented in the CKA
+[production runbook](https://github.com/bingops-com/cka/blob/main/docs/production.md).
+Public simulations must stay usable without SSO; all real-lab APIs require SSO.

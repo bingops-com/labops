@@ -29,6 +29,7 @@ resources:
   - status.yaml
   - slots.yaml
   - games.yaml
+  - cka.yaml
   - ghost.yaml
   - rom.yaml
   - pz-server.yaml

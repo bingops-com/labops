@@ -108,3 +108,7 @@ authorized merge or an explicitly authorized live operation.
 
 Rollback by reverting the production commit or restoring `master`, then wait
 for Argo CD to report Synced and Healthy.
+
+CKA (cka-labprod) pins bingops-com/cka source and both immutable GHCR images.
+It owns namespace cka, a public web Service and a private single-writer lab
+controller. See [the CKA runbook](../apps/workloads/cka/README.md).

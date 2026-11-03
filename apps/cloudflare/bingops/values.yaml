@@ -3,6 +3,8 @@ cloudflare:
   secretName: "cloudflare-tunnel-secret"
 
   ingress:
+    - hostname: cka.lab.bingo
+      service: http://cka.cka.svc.cluster.local:80
     - hostname: lab.bingo
       service: http://hub.hub.svc.cluster.local:80
     - hostname: auth.lab.bingo

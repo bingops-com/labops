@@ -158,3 +158,11 @@ For each relying application, log in as `bingops`, confirm the administrator
 role, then log in with one non-privileged test identity and confirm it does not
 receive that role. In Authentik, inspect the five privileged groups and confirm
 that their only member is `bingops` with email `therealbingops@gmail.com`.
+
+## CKA labs
+
+The cka provider is a public authorization-code client with PKCE and exact
+production/dev callbacks. The cka-lab-users group initially grants bingops access.
+The groups scope includes active membership; CKA checks userinfo on every
+protected request. Public simulations bypass authentication at application level;
+Cloudflare routes directly to the CKA web Service. See the CKA production runbook.
