@@ -7,6 +7,8 @@ on:
       - apps/workloads/arcade/**
       - hacks/link-game-accounts.py
       - hacks/arcade-pg-services.py
+      - hacks/unify-arcade-accounts.py
+      - hacks/verify-arcade-unified-restore.py
       - .github/workflows/arcade-accounts.yml
   push:
     branches: [master]
@@ -14,6 +16,8 @@ on:
       - apps/workloads/arcade/**
       - hacks/link-game-accounts.py
       - hacks/arcade-pg-services.py
+      - hacks/unify-arcade-accounts.py
+      - hacks/verify-arcade-unified-restore.py
       - .github/workflows/arcade-accounts.yml
 
 permissions:
@@ -91,3 +95,5 @@ jobs:
         run: TMPDIR="$RUNNER_TEMP" ARCADE_GAMES_BINARY="$RUNNER_TEMP/arcade-games" ARCADE_SLOTS_BINARY="$RUNNER_TEMP/arcade-slots" python3 -B apps/workloads/arcade/tests/integration.py
       - name: Rehearse distinct homonymous accounts without collecting passwords
         run: TMPDIR="$RUNNER_TEMP" ARCADE_GAMES_BINARY="$RUNNER_TEMP/arcade-games" ARCADE_SLOTS_BINARY="$RUNNER_TEMP/arcade-slots" python3 -B apps/workloads/arcade/tests/integration_preserve.py
+      - name: Rehearse the unified account policy and common profile contract
+        run: TMPDIR="$RUNNER_TEMP" ARCADE_GAMES_BINARY="$RUNNER_TEMP/arcade-games" ARCADE_SLOTS_BINARY="$RUNNER_TEMP/arcade-slots" python3 -B apps/workloads/arcade/tests/integration_unified.py

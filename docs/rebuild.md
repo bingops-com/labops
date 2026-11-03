@@ -93,10 +93,11 @@ configs are sensitive generated state, not documentation.
    Ownership and repeatable setup: `apps/workloads/games/README.md`.
    Common Games/Slots accounts use the GitOps-owned Arcade cluster.
    The migration keeps the original clusters while introducing
-   `games/arcade-postgresql` and the `arcade` R2 prefix. First migration requires
-   preserving homonymous principals separately (or verified double-login proof
-   for optional merging); reconstruction after cutover restores
-   the common backup instead. Ownership, maintenance write freeze, generated
+   `games/arcade-postgresql` and the `arcade` R2 prefix. The canonical account policy retains the earliest
+   creation time, then smallest ID for duplicate usernames. CKA profiles and
+   verified SSO mappings live in the same backup; all services use one directory.
+   Reapply the idempotent canonical/profile contracts as the arcade owner after
+   restoring the common backup; never repeat the historical source import. Ownership, maintenance write freeze, generated
    credential recovery and the recovery overlay are in
    `apps/workloads/arcade/README.md`. Never enable shared mode before the common
    database is restored/prepared, or retire source storage during a cutover.

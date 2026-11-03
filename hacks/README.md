@@ -74,7 +74,8 @@ See apps/workloads/cka/README.md for ownership and recovery.
 Run python3 hacks/backup-cka-controller.py after a lab lifecycle operation has
 finished and before infrastructure maintenance. It copies SQLite online backup,
 Terraform state and current guest connection identities into the ignored
-retained-home backup scope, checks hashes internally and refuses a concurrent
+retained-home backup scope (`.runtime/production-backups`, ignored at the
+repository root; CKA_BACKUP_DIRECTORY can override it), checks hashes internally and refuses a concurrent
 lifecycle change. Snapshot files are sensitive and must never be printed or
 committed. No VM disk or operator credential is included. Recovery must fence
 the active writer and reconcile live VM identities before restoring state.
@@ -116,3 +117,22 @@ data stay intact. The helper checks readiness and the completed common backup,
 is idempotent and cannot target the three production/source clusters. These
 operator-generated migration copies remain outside GitOps. The Arcade runbook
 owns their resume procedure; deletion requires separate explicit targets.
+
+### Arcade canonical accounts and profiles
+
+`python3 hacks/unify-arcade-accounts.py --target rehearsal` is a read-only
+preflight of the retained common restore clone. `--apply` executes the two
+idempotent upgrades and compares original credentials, independent balances,
+references and archives without printing records. Production requires
+`--target production --backup NAME --apply`, a fresh completed common backup
+and all three web writers frozen by GitOps. The CKA controller stays running.
+SQL capabilities are owned by arcade, not postgres. Source data and PVCs stay
+retained. See the current Arcade runbook for the authorized policy, maintenance,
+SSO claim boundary, backup restoration and reopening order.
+
+`python3 hacks/verify-arcade-unified-restore.py --backup NAME --apply` checks a
+fresh common logical dump in a new randomly named database on the already
+retained common restore clone while web writes are frozen. Only that newly
+created verification database is dropped afterward. Rows, passwords and dump
+contents never appear in output or files. This is not a new Barman physical
+recovery test; disk headroom and the Arcade runbook govern that separate step.
