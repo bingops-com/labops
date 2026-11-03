@@ -12,13 +12,9 @@ spec:
     targetRevision: master
     path: apps/workloads/cka/labprod
     kustomize:
-      # Temporary web write freeze for the canonical account migration.
-      replicas:
-        - name: cka
-          count: 0
       images:
-        - ghcr.io/bingops-com/cka-web=ghcr.io/bingops-com/cka-web:b00ba5e6c78ae9b563ad2675248d65ec13a3dd6a
-        - ghcr.io/bingops-com/cka-controller=ghcr.io/bingops-com/cka-controller:b00ba5e6c78ae9b563ad2675248d65ec13a3dd6a
+        - ghcr.io/bingops-com/cka-web=ghcr.io/bingops-com/cka-web:e649d78998ad4e211e60d8951894b32edeaad79a
+        - ghcr.io/bingops-com/cka-controller=ghcr.io/bingops-com/cka-controller:e649d78998ad4e211e60d8951894b32edeaad79a
   destination:
     server: https://kubernetes.default.svc
     namespace: cka
