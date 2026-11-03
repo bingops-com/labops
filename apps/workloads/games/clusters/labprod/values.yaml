@@ -1,3 +1,5 @@
+# Temporary write freeze for the verified common Arcade migration.
+maintenance: true
 # Chart and image commit are pinned together by the Argo CD Application.
 production: true
 publicUrl: https://games.lab.bingo
