@@ -18,6 +18,8 @@ spec:
       - name: cka_app
         ensure: present
         login: true
+        inherit: true
+        connectionLimit: -1
         superuser: false
         createdb: false
         createrole: false
