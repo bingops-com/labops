@@ -78,3 +78,11 @@ retained-home backup scope, checks hashes internally and refuses a concurrent
 lifecycle change. Snapshot files are sensitive and must never be printed or
 committed. No VM disk or operator credential is included. Recovery must fence
 the active writer and reconcile live VM identities before restoring state.
+
+### CKA deployment-only release snapshot
+
+Run python3 hacks/package-cka-release.py --source /path/to/cka --revision
+FULL_COMMIT_SHA to refresh the five declared Kubernetes manifests and source
+checksums in apps/workloads/cka/labprod. It uses immutable local Git objects,
+performs no deployment and exports no source code, solutions or credentials.
+See the CKA README for image pinning, ownership and reconstruction order.

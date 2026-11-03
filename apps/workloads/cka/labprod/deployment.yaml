@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cka
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cka
+  template:
+    metadata:
+      labels:
+        app: cka
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: web
+          image: ghcr.io/bingops-com/cka-web:development
+          ports:
+            - containerPort: 3000
+          env:
+            - {name: CKA_PUBLIC_ORIGIN, value: "https://cka.lab.bingo"}
+            - {name: CKA_OIDC_ISSUER, value: "https://auth.lab.bingo/application/o/cka/"}
+            - {name: CKA_OIDC_CLIENT_ID, value: cka}
+            - {name: CKA_LAB_GROUP, value: cka-lab-users}
+            - {name: CKA_CONTROL_SOCKET, value: /run/cka/control.sock}
+            - name: CKA_DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: cka-database, key: uri, optional: true}
+          readinessProbe:
+            httpGet: {path: /healthz, port: 3000}
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet: {path: /healthz, port: 3000}
+            initialDelaySeconds: 30
+          resources:
+            requests: {cpu: 100m, memory: 192Mi}
+            limits: {cpu: "1", memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: socket, mountPath: /run/cka}
+            - {name: web-tmp, mountPath: /tmp}
+            - {name: next-cache, mountPath: /app/.next/cache}
+            - {name: study-db-ca, mountPath: /run/cka-db, readOnly: true}
+        - name: controller
+          image: ghcr.io/bingops-com/cka-controller:development
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 100m, memory: 192Mi}
+            limits: {cpu: "1", memory: 768Mi}
+          volumeMounts:
+            - {name: socket, mountPath: /run/cka}
+            - {name: data, mountPath: /data}
+            - {name: inputs, mountPath: /secrets, readOnly: true}
+            - {name: private, mountPath: /run/private}
+            - {name: private, mountPath: /home/cka}
+            - {name: controller-tmp, mountPath: /tmp}
+      volumes:
+        - name: study-db-ca
+          secret:
+            secretName: cka-database
+            optional: true
+            items:
+              - {key: ca.crt, path: ca.crt}
+        - {name: socket, emptyDir: {}}
+        - {name: web-tmp, emptyDir: {}}
+        - {name: next-cache, emptyDir: {}}
+        - {name: private, emptyDir: {}}
+        - {name: controller-tmp, emptyDir: {}}
+        - name: data
+          persistentVolumeClaim: {claimName: cka-controller}
+        - name: inputs
+          secret:
+            secretName: cka-controller-inputs
+            defaultMode: 288

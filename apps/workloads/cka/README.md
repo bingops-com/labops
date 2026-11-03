@@ -1,7 +1,8 @@
 # CKA on labprod
 
-Source and deployment manifests: https://github.com/bingops-com/cka.
-Argo pins source and both GHCR images in apps/gitops/clusters/labprod/cka.yaml.
+Private application source: https://github.com/bingops-com/cka.
+Argo reads the deployment-only snapshot under apps/workloads/cka/labprod in
+LabOps and pins both GHCR images in apps/gitops/clusters/labprod/cka.yaml.
 Public hostname cka.lab.bingo routes through Cloudflare directly to cka/cka:80.
 Simulations are public; application OIDC protects /labs and all lab APIs.
 Authentik owns public PKCE client cka and group cka-lab-users (initially bingops).
@@ -30,3 +31,31 @@ Private snapshots can be created with hacks/backup-cka-controller.py when no
 lifecycle job is running. Hash-checked snapshots enter the existing daily
 retained-home backup scope. This helper is operator-triggered, not a scheduled
 controller-volume backup, and does not back up disposable guest disks.
+
+## Private source and release manifests
+
+CKA code, scenario preparation and worked solutions stay in the private CKA
+repository. GitHub organization policy disables deploy keys, so Argo reads only
+non-secret deployment manifests from the existing LabOps GitOps source. No new
+Git credential, broad user PAT, policy relaxation or application secret is
+required. CI publishes the two runtime images from the private source.
+
+For each release, run python3 hacks/package-cka-release.py --source /path/to/cka
+--revision FULL_COMMIT_SHA, then pin both images to that same source commit in
+the CKA Application. The helper reads five fixed deploy/ files from that exact
+local Git object, never uncommitted files, fault injection or solutions. Review
+the snapshot and release.json checksums, render Kustomize, and publish the
+LabOps release only after CI/image publication succeeds. Re-running the helper
+at the same commit is deterministic; it performs no cluster operations.
+
+The snapshot is generated release state committed to Git. Rebuild requires
+only LabOps, the pinned published images, existing Authentik inputs and the
+existing controller Secret/PVC recovery described above. The private CKA source
+is needed to develop a new release, not to reconcile the deployed manifests.
+GitOps owns runtime configuration; CKA owns application code and upstream
+manifest templates. Compare release.json hashes before the image rollout and
+verify health, source/image revisions and anonymous SSO rejection afterward.
+
+The optional study-account database integration is not activated by this
+release. Arcade migration, role/Secret creation and the CKA schema remain a
+separate prerequisite; Games and Slots are unchanged.

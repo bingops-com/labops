@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/bingops-com/cka",
+  "revision": "f8c88cd6d022088a43f637cd941ac68f40479d44",
+  "sha256": {
+    "kustomization.yaml": "db79dc576243efffc3d98ceeafdfa72e34afbb68789cd70ec626446f35703588",
+    "namespace.yaml": "cd5fdbe3a52aaa22da28712b3d858da3874563f37bb6247937432a3c6bf25ff2",
+    "storage.yaml": "334d3d3630a69cd6795b32d855a03e4dc11800aa0b6085b612080e6610a04d39",
+    "deployment.yaml": "6a274e2a56944e83806f61507dc55b2910035aecfcc4f6f435817313efcd66f3",
+    "service.yaml": "00e69d0f8bf9650897d0a8ce5bd752d0af608fc6bc178bf6e36ba468952076cf"
+  }
+}
