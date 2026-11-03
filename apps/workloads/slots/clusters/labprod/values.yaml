@@ -1,5 +1,5 @@
-# Temporary write freeze for the verified common Arcade migration.
-maintenance: true
+# Common Arcade identities; original databases remain declared for recovery.
+maintenance: false
 # labprod values for the chart pinned by the slots Argo CD Application.
 image:
   repository: ghcr.io/bingops-com/slots
@@ -19,6 +19,10 @@ ingress:
 trustProxy: true
 
 database:
+  sharedAccounts: true
+  existingSecret:
+    name: arcade-database
+    key: uri
   cnpg:
     enabled: true
     instances: 1
