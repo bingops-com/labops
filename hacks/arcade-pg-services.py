@@ -20,7 +20,7 @@ def atomic_private(path, content):
             os.unlink(temporary)
 
 
-def generate(directory, ports, *, rehearsal=False):
+def generate(directory, ports, *, rehearsal=False, direct=False):
     directory = directory.resolve()
     if any((p / ".git").is_file() or (p / ".git" / "HEAD").is_file() for p in (directory, *directory.parents)):
         raise ValueError("Generated credentials must be outside Git")
@@ -42,9 +42,19 @@ def generate(directory, ports, *, rehearsal=False):
         password = base64.b64decode(data["password"], validate=True).decode()
         if decoded_user != user or not password or "\n" in password or "\r" in password:
             raise ValueError("Unexpected generated CNPG credential format")
-        config.append(f"[{service}]\nhost=127.0.0.1\nport={port}\ndbname={database}\nuser={user}\nsslmode=require\nconnect_timeout=10\n")
+        hostname="127.0.0.1"
+        tls="sslmode=require\n"
+        if direct:
+            prefix=secret.removesuffix("-app")
+            hostname=prefix+"-rw."+namespace+".svc.cluster.local"
+            port=5432
+            certificate=subprocess.run(["kubectl","--context","labprod","get","secret",prefix+"-ca","-n",namespace,"-o","json"],capture_output=True,check=True)
+            ca=base64.b64decode(json.loads(certificate.stdout)["data"]["ca.crt"],validate=True).decode()
+            atomic_private(directory/(service+"-ca.crt"),ca)
+            tls="sslmode=verify-full\nsslrootcert="+str(directory/(service+"-ca.crt"))+"\n"
+        config.append(f"[{service}]\nhost={hostname}\nport={port}\ndbname={database}\nuser={user}\n"+tls+"connect_timeout=10\n")
         escaped = password.replace("\\", "\\\\").replace(":", "\\:")
-        passwords.append(f"127.0.0.1:{port}:{database}:{user}:{escaped}\n")
+        passwords.append(f"{hostname}:{port}:{database}:{user}:{escaped}\n")
     atomic_private(directory / "pg_service.conf", "\n".join(config))
     atomic_private(directory / "pgpass", "".join(passwords))
 
@@ -56,15 +66,16 @@ def main():
     parser.add_argument("--slots-port", type=int, default=55464)
     parser.add_argument("--target-port", type=int, default=55465)
     parser.add_argument("--rehearsal", action="store_true", help="Read only the three isolated -rehearsal cluster credentials")
+    parser.add_argument("--direct-cluster", action="store_true", help="Use fixed in-cluster restore services with verify-full TLS, without port-forwarding")
     args = parser.parse_args()
     ports = [args.games_port, args.slots_port, args.target_port]
     if any(p < 1024 or p > 65535 for p in ports) or len(set(ports)) != 3:
         parser.error("Use three distinct unprivileged local ports")
     try:
-        generate(args.directory, ports, rehearsal=args.rehearsal)
+        generate(args.directory, ports, rehearsal=args.rehearsal,direct=args.direct_cluster)
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError):
         parser.exit(1, "Configuration not completed; check private directory and access to the three named restored/target Secrets. No credential was logged.\n")
-    print("Private libpq files generated. Use the matching loopback port-forwards and remove files after the operation.")
+    print("Private libpq files generated. Use the selected TLS connection mode and remove files after the operation.")
 
 
 if __name__ == "__main__":

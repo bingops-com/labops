@@ -32,8 +32,12 @@ operator panel; player accounts acquire no administrative role.
 
 The first version deliberately trusts both backends as owners of the common
 account database; this is not SQL isolation between the two applications.
-NetworkPolicy enforcement remains a production gate (the observed Flannel
-installation does not enforce it). Do not claim isolation from rendered YAML.
+The current Flannel installation does not enforce NetworkPolicy. This rollout
+therefore provides no packet-level isolation between applications. Games and
+Slots remain trusted database owners; CKA uses verify-full TLS and a restricted
+SQL role. Enabling a policy engine is a separate cluster-wide change, because
+it would also enforce existing policies for other workloads. Do not claim
+network isolation from rendered YAML.
 
 ## Collision policy and proof
 
@@ -111,8 +115,8 @@ database remains independent of any Arcade migration; see the
 
 Non-Git inputs: the existing bucket-scoped R2 key and Bitwarden machine token
 (recover/rotate as documented in the [CNPG runbook](../../../docs/infrastructure/cloudnative-pg.md)),
-published application images, and Barman backup objects. Player proofs are
-needed for the first migration only; after cutover restore the common backup,
+published application images, and Barman backup objects. Player proofs apply only to the optional verified-merge mode; the production
+preserve-collisions mode needs none. After the first migration, after cutover restore the common backup,
 never repeat the legacy merge. The Authentik identity/signing-key recovery
 process remains in `docs/authentik.md`.
 
@@ -124,7 +128,7 @@ published application charts using shared mode → public readiness checks.
 bootstrap on an existing cluster. The database image is pinned to
 `18.4-system-trixie`, matching both source cluster specifications read on
 2026-10-13. Use PostgreSQL 18 clients for the actual import; the local synthetic
-rehearsal uses PostgreSQL 17 and does not validate Barman or the production CNI.
+rehearsal uses PostgreSQL 18 and does not validate Barman or the production CNI.
 
 ## Migration sequence
 
@@ -138,12 +142,11 @@ rehearsal uses PostgreSQL 17 and does not validate Barman or the production CNI.
    `arcade-pg-services.py --rehearsal` in a separate private client directory.
    Their databases retain the guarded `arcade_*_restore` and `arcade` names.
    Never use the final target for rehearsal or reuse earlier restored snapshots
-   for the final cutover. `application.yaml`
-   is the manual-sync Application candidate, excluded from the GitOps root.
-   After authorization, add it to the root in the reviewed provisioning change;
-   reconcile `staging/labprod` and wait for the new cluster/backups/credential
+   for the final cutover. The canonical
+   `apps/gitops/clusters/labprod/arcade.yaml` Application owns
+   the common database. Reconcile `staging/labprod` and wait for the new cluster/backups/credential
    CronJob. This does not switch either app. Keep both old clusters declared.
-3. Collect player proofs. For the final cutover, set `maintenance: true` in
+3. Choose preserve-collisions mode, or collect proofs for verified merging. For the final cutover, set `maintenance: true` in
    **both** application production values, commit and synchronize those values
    under the authorized maintenance window. This declaratively sets both
    Deployments to zero and allows Slots to return in-memory table stakes on
@@ -178,7 +181,10 @@ python3 hacks/arcade-pg-services.py --directory /private/path/arcade-clients
 export PGSERVICEFILE=/private/path/arcade-clients/pg_service.conf PGPASSFILE=/private/path/arcade-clients/pgpass
 ```
 
-Keep each port-forward in its own terminal. The service generator requires only
+From an authorized in-cluster operator workspace, --direct-cluster uses the
+three fixed restore/target service FQDNs with verify-full TLS and their CNPG
+CA Secrets. This avoids unreliable port-forwarding. Otherwise keep each
+loopback port-forward in its own terminal. The service generator requires only
 `get` on `games/arcade-games-restore-app`, `slots/arcade-slots-restore-app` and
 `games/arcade-postgresql-app`; renaming additionally requires operator pod exec
 on the two clones. The output directory must be 0700 and outside Git; files
@@ -199,8 +205,14 @@ access configuration and can be changed together with the helper's options.
 ARCADE_GAMES_RESTORE_SERVICE=arcade-games-copy ARCADE_SLOTS_RESTORE_SERVICE=arcade-slots-copy ARCADE_TARGET_SERVICE=arcade-target bash apps/workloads/arcade/migration/stage-copies.sh
 PGSERVICE=arcade-target psql -X -v ON_ERROR_STOP=1 -c '\copy migration.links FROM STDIN WITH (FORMAT csv)' < /private/path/all-account-links.csv
 PGSERVICE=arcade-target psql -X -f apps/workloads/arcade/migration/preflight.sql
-PGSERVICE=arcade-target psql -X -f apps/workloads/arcade/migration/merge.sql
+PGSERVICE=arcade-target psql -X -v ON_ERROR_STOP=1 -f apps/workloads/arcade/migration/merge.sql
 ```
+
+For preserve-collisions mode, run preserve-collisions.sql after staging instead
+of importing proofs/preflight/merge.sql. Then run
+hacks/verify-arcade-preservation.py with the same three service environment
+variables. It compares all original account fields and game_stats in memory,
+prints aggregate counts only, and refuses acceptance on any mismatch.
 
 The preflight prints counts only. Require `missing_valid_proofs=0`. If an import
 failed before COMMIT the target is unchanged and the clone schema renaming is

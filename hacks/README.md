@@ -82,7 +82,7 @@ the active writer and reconcile live VM identities before restoring state.
 ### CKA deployment-only release snapshot
 
 Run python3 hacks/package-cka-release.py --source /path/to/cka --revision
-FULL_COMMIT_SHA to refresh the five declared Kubernetes manifests and source
+FULL_COMMIT_SHA to refresh the seven declared Kubernetes manifests and source
 checksums in apps/workloads/cka/labprod. It uses immutable local Git objects,
 performs no deployment and exports no source code, solutions or credentials.
 See the CKA README for image pinning, ownership and reconstruction order.
@@ -97,3 +97,12 @@ CNPG owns the role; Arcade backups own identity and CKA progress recovery.
 Apply the CKA db/001-study.sql migration through an operator connection before
 activating the web configuration. Regenerate credentials only through the
 owning helper, reconcile CNPG and roll the web after an authorized rotation.
+
+### Arcade conservation check
+
+After staging restored copies and applying preserve-collisions.sql, run
+python3 hacks/verify-arcade-preservation.py with PGSERVICEFILE/PGPASSFILE and
+ARCADE_GAMES_RESTORE_SERVICE, ARCADE_SLOTS_RESTORE_SERVICE and
+ARCADE_TARGET_SERVICE. It compares original identity fields and both game
+statistics tables without logging rows; only aggregate account counts appear.
+Never point restore services at a live source primary.

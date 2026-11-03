@@ -7,7 +7,12 @@ Public hostname cka.lab.bingo routes through Cloudflare directly to cka/cka:80.
 Simulations are public; application OIDC protects /labs and all lab APIs.
 Authentik owns public PKCE client cka and group cka-lab-users (initially bingops).
 
-One Recreate Pod contains web and private controller sharing only a Unix socket.
+Two separate Recreate Deployments run web and the private controller.
+The web talks to cka-controller:8443 using a dedicated cert-manager CA and
+mutual TLS. Only the client CN cka-web is accepted. Certificates rotate
+through mounted Secrets without a controller restart. Rollout wave 0 replaces
+the old monolithic web Pod before wave 1 starts the retained singleton
+controller; a global state lock also prevents simultaneous writers.
 Only the controller mounts cka-controller-inputs and the retained controller PVC.
 The external Secret is bootstrapped from backed-up retained-home credentials by
 the CKA helper; no plaintext secret is stored in either Git repository. This
@@ -24,7 +29,7 @@ controller-volume off-site backup exists yet.
 
 Verification: public /healthz returns 200; unauthenticated/spoofed lab APIs
 return 401; /labs redirects to Authentik; private /healthz responds over the
-Unix socket. Positive login uses the learner's browser. Do not inspect secret
+mutually authenticated TLS endpoint. Positive login uses the learner's browser. Do not inspect secret
 values, tokens or raw Terraform output in verification.
 
 Private snapshots can be created with hacks/backup-cka-controller.py when no
@@ -42,7 +47,7 @@ required. CI publishes the two runtime images from the private source.
 
 For each release, run python3 hacks/package-cka-release.py --source /path/to/cka
 --revision FULL_COMMIT_SHA, then pin both images to that same source commit in
-the CKA Application. The helper reads five fixed deploy/ files from that exact
+the CKA Application. The helper reads seven fixed deploy/ files from that exact
 local Git object, never uncommitted files, fault injection or solutions. Review
 the snapshot and release.json checksums, render Kustomize, and publish the
 LabOps release only after CI/image publication succeeds. Re-running the helper
@@ -65,6 +70,9 @@ GitOps owns runtime configuration; CKA owns application code and upstream
 manifest templates. Compare release.json hashes before the image rollout and
 verify health, source/image revisions and anonymous SSO rejection afterward.
 
-The optional study-account database integration is not activated by this
-release. Arcade migration, role/Secret creation and the CKA schema remain a
-separate prerequisite; Games and Slots are unchanged.
+Study accounts use the common Arcade database after the preserve-collisions
+migration. CNPG owns cka_app and its generated password;
+hacks/bootstrap-cka-study.py reconciles the web-only URI and trusted database
+CA. Apply db/001-study.sql from the pinned CKA source with an operator
+connection before restarting the web. Recover Arcade before web account
+login/progress. SSO remains mandatory for VM operations.

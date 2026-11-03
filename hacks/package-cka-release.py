@@ -16,7 +16,7 @@ def main():
     if not re.fullmatch(r'[a-f0-9]{40}', args.revision):
         parser.error('Use the exact 40-character source commit.')
     target = Path(__file__).resolve().parents[1] / 'apps/workloads/cka/labprod'
-    names = ('kustomization.yaml', 'namespace.yaml', 'storage.yaml', 'deployment.yaml', 'service.yaml')
+    names = ('kustomization.yaml', 'namespace.yaml', 'storage.yaml', 'deployment.yaml', 'controller.yaml', 'transport.yaml', 'service.yaml')
     content = {name: subprocess.check_output(['git', '-C', str(args.source), 'show', args.revision + ':deploy/' + name]) for name in names}
     # Only this explicit manifest allowlist is released, never controller faults,
     # worked solutions, source code, local environment or runtime state.

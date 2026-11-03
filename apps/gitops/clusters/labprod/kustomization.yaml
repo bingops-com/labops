@@ -28,6 +28,7 @@ resources:
   - hub.yaml
   - status.yaml
   - slots.yaml
+  - arcade.yaml
   - games.yaml
   - cka.yaml
   - ghost.yaml
