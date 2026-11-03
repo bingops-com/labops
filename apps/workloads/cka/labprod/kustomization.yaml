@@ -6,3 +6,5 @@ resources:
   - storage.yaml
   - deployment.yaml
   - service.yaml
+  - controller.yaml
+  - transport.yaml

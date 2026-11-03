@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cka-controller
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cka-controller
+  template:
+    metadata:
+      labels:
+        app: cka-controller
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: controller
+        image: ghcr.io/bingops-com/cka-controller:development
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 100m
+            memory: 192Mi
+          limits:
+            cpu: '1'
+            memory: 768Mi
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: inputs
+          mountPath: /secrets
+          readOnly: true
+        - name: private
+          mountPath: /run/private
+        - name: private
+          mountPath: /home/cka
+        - name: controller-tmp
+          mountPath: /tmp
+        - name: control-tls
+          mountPath: /run/cka-tls
+          readOnly: true
+        env:
+        - name: CKA_CONTROL_LISTEN
+          value: 0.0.0.0:8443
+        ports:
+        - name: https
+          containerPort: 8443
+        readinessProbe:
+          tcpSocket:
+            port: https
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        livenessProbe:
+          tcpSocket:
+            port: https
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: cka-controller
+      - name: inputs
+        secret:
+          secretName: cka-controller-inputs
+          defaultMode: 288
+      - name: private
+        emptyDir: {}
+      - name: controller-tmp
+        emptyDir: {}
+      - name: control-tls
+        secret:
+          secretName: cka-controller-tls
+          defaultMode: 288
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cka-controller
+spec:
+  selector:
+    app: cka-controller
+  ports:
+  - name: https
+    port: 8443
+    targetPort: https

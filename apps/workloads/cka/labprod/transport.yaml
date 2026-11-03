@@ -1,0 +1,58 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: cka-selfsigned
+  annotations: {argocd.argoproj.io/sync-wave: "-4"}
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cka-internal-ca
+  annotations: {argocd.argoproj.io/sync-wave: "-3"}
+spec:
+  isCA: true
+  commonName: cka-internal-ca
+  secretName: cka-internal-ca
+  usages: [digital signature, cert sign, crl sign]
+  duration: 87600h
+  renewBefore: 2160h
+  privateKey: {algorithm: ECDSA, size: 256}
+  issuerRef: {name: cka-selfsigned, kind: Issuer}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: cka-internal-ca
+  annotations: {argocd.argoproj.io/sync-wave: "-2"}
+spec:
+  ca: {secretName: cka-internal-ca}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cka-controller-tls
+  annotations: {argocd.argoproj.io/sync-wave: "-1"}
+spec:
+  secretName: cka-controller-tls
+  dnsNames: [cka-controller.cka.svc.cluster.local]
+  duration: 2160h
+  renewBefore: 360h
+  privateKey: {algorithm: ECDSA, size: 256}
+  usages: [digital signature, server auth]
+  issuerRef: {name: cka-internal-ca, kind: Issuer}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cka-web-tls
+  annotations: {argocd.argoproj.io/sync-wave: "-1"}
+spec:
+  secretName: cka-web-tls
+  commonName: cka-web
+  duration: 2160h
+  renewBefore: 360h
+  privateKey: {algorithm: ECDSA, size: 256}
+  usages: [digital signature, client auth]
+  issuerRef: {name: cka-internal-ca, kind: Issuer}
