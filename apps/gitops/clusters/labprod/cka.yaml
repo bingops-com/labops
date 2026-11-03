@@ -8,7 +8,7 @@ metadata:
 spec:
   project: labops-labprod
   source:
-    repoURL: git@github.com:bingops-com/cka.git
+    repoURL: https://github.com/bingops-com/cka.git
     targetRevision: fcf6e85d9b11a65224f13f45e824e0d99730b602
     path: deploy
     kustomize:

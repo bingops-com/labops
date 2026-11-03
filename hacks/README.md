@@ -78,11 +78,3 @@ retained-home backup scope, checks hashes internally and refuses a concurrent
 lifecycle change. Snapshot files are sensitive and must never be printed or
 committed. No VM disk or operator credential is included. Recovery must fence
 the active writer and reconcile live VM identities before restoring state.
-
-### Private CKA GitOps source
-
-Run python3 hacks/bootstrap-cka-repository.py --apply before reconciling a
-private CKA source. It creates/adopts a repository-only read-only deploy key
-and one Argo repository Secret, refuses differing material and prints no
-credential. Recovery, least privileges and rotation are documented in
-[the CKA runbook](../apps/workloads/cka/README.md#private-source-access-and-reconstruction).

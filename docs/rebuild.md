@@ -238,10 +238,3 @@ the controller. The retained PVC is the sole production writer. Recovery,
 credential rotation and current limitations are documented in the CKA
 [production runbook](https://github.com/bingops-com/cka/blob/main/docs/production.md).
 Public simulations must stay usable without SSO; all real-lab APIs require SSO.
-
-The CKA repository is private: restore its retained read-only deploy key and
-run hacks/bootstrap-cka-repository.py --apply before reconciling the SSH
-Application source. The owning LabOps CKA README documents credential recovery,
-least privileges, conflicting-input refusal and safe verification. Keep the
-sole production controller/PVC; a web release does not activate the separate
-common-account database migration.
