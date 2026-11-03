@@ -128,3 +128,10 @@ and all three web writers frozen by GitOps. The CKA controller stays running.
 SQL capabilities are owned by arcade, not postgres. Source data and PVCs stay
 retained. See the current Arcade runbook for the authorized policy, maintenance,
 SSO claim boundary, backup restoration and reopening order.
+
+`python3 hacks/verify-arcade-unified-restore.py --backup NAME --apply` checks a
+fresh common logical dump in a new randomly named database on the already
+retained common restore clone while web writes are frozen. Only that newly
+created verification database is dropped afterward. Rows, passwords and dump
+contents never appear in output or files. This is not a new Barman physical
+recovery test; disk headroom and the Arcade runbook govern that separate step.

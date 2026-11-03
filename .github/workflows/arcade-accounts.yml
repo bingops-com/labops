@@ -8,6 +8,7 @@ on:
       - hacks/link-game-accounts.py
       - hacks/arcade-pg-services.py
       - hacks/unify-arcade-accounts.py
+      - hacks/verify-arcade-unified-restore.py
       - .github/workflows/arcade-accounts.yml
   push:
     branches: [master]
@@ -16,6 +17,7 @@ on:
       - hacks/link-game-accounts.py
       - hacks/arcade-pg-services.py
       - hacks/unify-arcade-accounts.py
+      - hacks/verify-arcade-unified-restore.py
       - .github/workflows/arcade-accounts.yml
 
 permissions:

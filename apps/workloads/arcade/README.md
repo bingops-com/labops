@@ -121,7 +121,8 @@ integration, session/CSRF boundary and least-privilege role.
    only the CKA web Deployment using a temporary committed Application Kustomize
    replicas patch; leave the private controller running. Wait until all three
    web Pods are gone. This also stops CKA profile/progress writers.
-3. Create a fresh completed common CNPG plugin Backup after the freeze and
+3. Create a fresh completed common CNPG plugin Backup (generated operator state,
+   outside GitOps) after the freeze and
    require healthy WAL archiving. Retain all source data and old backups.
    Execute the committed helper with that backup name:
 
@@ -133,7 +134,10 @@ integration, session/CSRF boundary and least-privilege role.
    executed as the non-superuser schema owner. Each migration marker and its
    transaction make retries safe; original import scripts are historical only.
 4. Require a completed post-upgrade backup. Verify a fresh logical dump/restore
-   inside the isolated existing clone with private internal comparisons. This
+   inside the isolated existing clone with private internal comparisons using
+   `python3 hacks/verify-arcade-unified-restore.py --backup NAME --apply`.
+   It creates and drops only its own randomly named verification database,
+   leaving the clone’s existing data and every PVC intact. This
    proves current SQL/data restoration; the original Barman physical restore
    was separately qualified on November 3. A new full physical recovery needs
    additional disk headroom and must not overwrite an existing cluster.
