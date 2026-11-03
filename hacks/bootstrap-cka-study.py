@@ -7,12 +7,19 @@ import argparse
 import base64
 import json
 import secrets
+import tempfile
 import subprocess
 import urllib.parse
 
 
 def kubectl(args, payload=None):
-    result = subprocess.run(["kubectl", "--context", "labprod", *args], input=None if payload is None else json.dumps(payload).encode(), capture_output=True)
+    if payload is not None and "--patch-file" in args:
+        with tempfile.NamedTemporaryFile(mode="w",prefix="cka-secret-patch-") as patch:
+            json.dump(payload,patch);patch.flush()
+            args=list(args);args[args.index("--patch-file")+1]=patch.name
+            result=subprocess.run(["kubectl","--context","labprod",*args],capture_output=True)
+    else:
+        result = subprocess.run(["kubectl", "--context", "labprod", *args], input=None if payload is None else json.dumps(payload).encode(), capture_output=True)
     if result.returncode:
         raise RuntimeError("Kubernetes operation failed; no credential output")
     return json.loads(result.stdout) if result.stdout.strip() else None
