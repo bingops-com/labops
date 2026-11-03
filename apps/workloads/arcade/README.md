@@ -119,7 +119,7 @@ integration, session/CSRF boundary and least-privilege role.
 2. Prepare and publish compatible CKA images before the maintenance window.
    Gracefully freeze Games/Slots with both production maintenance flags. Freeze
    only the CKA web Deployment using a temporary committed Application Kustomize
-   replicas patch; leave the private controller running. Wait until all three
+   replicas override; leave the private controller running. Wait until all three
    web Pods are gone. This also stops CKA profile/progress writers.
 3. Create a fresh completed common CNPG plugin Backup (generated operator state,
    outside GitOps) after the freeze and
@@ -141,7 +141,7 @@ integration, session/CSRF boundary and least-privilege role.
    proves current SQL/data restoration; the original Barman physical restore
    was separately qualified on November 3. A new full physical recovery needs
    additional disk headroom and must not overwrite an existing cluster.
-5. Deploy the prepared CKA image, remove its temporary freeze patch and both game
+5. Deploy the prepared CKA image, remove its temporary replicas override and both game
    maintenance flags through GitOps. Verify both user views match, public pages
    respond, profile APIs reject anonymous access, and all apps are Healthy/Synced.
 
