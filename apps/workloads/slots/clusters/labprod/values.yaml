@@ -1,3 +1,5 @@
+# Temporary write freeze for the verified common Arcade migration.
+maintenance: true
 # labprod values for the chart pinned by the slots Argo CD Application.
 image:
   repository: ghcr.io/bingops-com/slots
