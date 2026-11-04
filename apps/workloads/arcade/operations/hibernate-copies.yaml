@@ -9,39 +9,39 @@ items:
       name: arcade-common-restore
       namespace: games
       annotations: {cnpg.io/hibernation: "on"}
-    spec: {enablePDB: false}
+    spec: {instances: 1, enablePDB: false}
   - apiVersion: postgresql.cnpg.io/v1
     kind: Cluster
     metadata:
       name: arcade-games-restore
       namespace: games
       annotations: {cnpg.io/hibernation: "on"}
-    spec: {enablePDB: false}
+    spec: {instances: 1, enablePDB: false}
   - apiVersion: postgresql.cnpg.io/v1
     kind: Cluster
     metadata:
       name: arcade-games-restore-rehearsal
       namespace: games
       annotations: {cnpg.io/hibernation: "on"}
-    spec: {enablePDB: false}
+    spec: {instances: 1, enablePDB: false}
   - apiVersion: postgresql.cnpg.io/v1
     kind: Cluster
     metadata:
       name: arcade-postgresql-rehearsal
       namespace: games
       annotations: {cnpg.io/hibernation: "on"}
-    spec: {enablePDB: false}
+    spec: {instances: 1, enablePDB: false}
   - apiVersion: postgresql.cnpg.io/v1
     kind: Cluster
     metadata:
       name: arcade-slots-restore
       namespace: slots
       annotations: {cnpg.io/hibernation: "on"}
-    spec: {enablePDB: false}
+    spec: {instances: 1, enablePDB: false}
   - apiVersion: postgresql.cnpg.io/v1
     kind: Cluster
     metadata:
       name: arcade-slots-restore-rehearsal
       namespace: slots
       annotations: {cnpg.io/hibernation: "on"}
-    spec: {enablePDB: false}
+    spec: {instances: 1, enablePDB: false}
