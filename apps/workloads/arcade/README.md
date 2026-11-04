@@ -367,8 +367,10 @@ hibernation and `enablePDB: false` for the six disposable restore/rehearsal
 copies. It is an operator action outside the GitOps root; production primaries
 are excluded. Keep their PVCs and backup archives. Disabling their PDBs avoids
 asking for a healthy primary while intentionally running zero Pods; production
-PDB alerts and PDBs remain active. Apply the narrow fields with the dedicated
-`labops-hibernation` server-side field manager. Before resuming a copy, set
+PDB alerts and PDBs remain active. Use `python3 hacks/hibernate-arcade-copies.py` after explicit authorization;
+it verifies that every named copy already exists, has one instance and is
+already hibernated, then merge-patches only the declared fields. It does not
+apply a partial Cluster as a full configuration or replace its storage settings. Before resuming a copy, set
 `enablePDB: true` and remove its `cnpg.io/hibernation` annotation, then verify
 Ready and the PDB before testing. No new credentials or database recreation
 is needed, and reapplying the hibernation manifest is idempotent.
