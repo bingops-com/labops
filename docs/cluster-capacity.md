@@ -103,3 +103,9 @@ on existing indices and the index template before enabling that normalization.
 Previously indexed documents are unchanged. Fluent Bit retains a 512 MiB
 memory limit (128 MiB request) and five-second health probe timeouts for queue
 replay; the old 192 MiB limit was reached while the backlog was active.
+
+Fluent Bit allows an 8 MiB Elasticsearch response buffer: the default 512 KiB
+buffer truncated bulk replies and retried already-accepted batches. Generated
+record IDs still deduplicate retries. Elasticsearch keeps its CPU request,
+2 GiB memory limit and fixed heap, but no CPU quota; its former two-core quota
+throttled the backlog replay. Verify node CPU pressure alongside the queue.
