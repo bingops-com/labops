@@ -83,7 +83,8 @@ spec:
           interval: 30s
           scrapeTimeout: 10s
           relabelings:
-            - sourceLabels: [__meta_kubernetes_pod_node_name]
+            - action: replace
+              sourceLabels: [__meta_kubernetes_pod_node_name]
               targetLabel: node
         extraVolumes:
           - name: fluent-bit-state

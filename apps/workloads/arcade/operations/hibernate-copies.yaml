@@ -1,0 +1,47 @@
+# Operator action only, after the copies are no longer serving a restore test.
+# These retained disposable copies keep their PVCs and archives.
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: postgresql.cnpg.io/v1
+    kind: Cluster
+    metadata:
+      name: arcade-common-restore
+      namespace: games
+      annotations: {cnpg.io/hibernation: "on"}
+    spec: {enablePDB: false}
+  - apiVersion: postgresql.cnpg.io/v1
+    kind: Cluster
+    metadata:
+      name: arcade-games-restore
+      namespace: games
+      annotations: {cnpg.io/hibernation: "on"}
+    spec: {enablePDB: false}
+  - apiVersion: postgresql.cnpg.io/v1
+    kind: Cluster
+    metadata:
+      name: arcade-games-restore-rehearsal
+      namespace: games
+      annotations: {cnpg.io/hibernation: "on"}
+    spec: {enablePDB: false}
+  - apiVersion: postgresql.cnpg.io/v1
+    kind: Cluster
+    metadata:
+      name: arcade-postgresql-rehearsal
+      namespace: games
+      annotations: {cnpg.io/hibernation: "on"}
+    spec: {enablePDB: false}
+  - apiVersion: postgresql.cnpg.io/v1
+    kind: Cluster
+    metadata:
+      name: arcade-slots-restore
+      namespace: slots
+      annotations: {cnpg.io/hibernation: "on"}
+    spec: {enablePDB: false}
+  - apiVersion: postgresql.cnpg.io/v1
+    kind: Cluster
+    metadata:
+      name: arcade-slots-restore-rehearsal
+      namespace: slots
+      annotations: {cnpg.io/hibernation: "on"}
+    spec: {enablePDB: false}

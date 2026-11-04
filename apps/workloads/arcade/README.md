@@ -359,3 +359,16 @@ are idempotent; lifecycle ownership/order is explicit; safe verification uses
 counts, health, backup conditions and disposable fixtures. Production PG18,
 Barman restore, live collision coverage and enforced network isolation remain
 acceptance gates, not claims made by the local PostgreSQL 17 rehearsal.
+
+## Retained hibernated restore copies
+
+After restore verification, `operations/hibernate-copies.yaml` declares only
+hibernation and `enablePDB: false` for the six disposable restore/rehearsal
+copies. It is an operator action outside the GitOps root; production primaries
+are excluded. Keep their PVCs and backup archives. Disabling their PDBs avoids
+asking for a healthy primary while intentionally running zero Pods; production
+PDB alerts and PDBs remain active. Apply the narrow fields with the dedicated
+`labops-hibernation` server-side field manager. Before resuming a copy, set
+`enablePDB: true` and remove its `cnpg.io/hibernation` annotation, then verify
+Ready and the PDB before testing. No new credentials or database recreation
+is needed, and reapplying the hibernation manifest is idempotent.

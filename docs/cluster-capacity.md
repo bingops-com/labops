@@ -65,3 +65,16 @@ a second state for that VM. The owner recovers API tokens from the password
 manager and SSH/Talos/Kubernetes clients from retained-home enrollment/backups;
 see the owning Proxmox, CAPI and Coder runbooks. No new credential is needed.
 Verification uses only capacity, readiness and identity, never Secret values.
+
+## CPU quota recovery
+
+Node-exporter, Traefik, Portal and the kubelet certificate approver retain CPU
+requests and memory limits but have no CPU quota. This permits short bursts on
+an otherwise lightly loaded node. Verify `CPUThrottlingHigh` and node CPU load
+after rollout; increasing VM memory does not remove container CPU quotas.
+The certificate approver bootstrap manifest is maintained in
+`capi/manifests/`, attributed to a specific upstream commit and pinned to the
+previously running image digest. Both new bootstrap and the existing node's
+`cluster.externalCloudProvider.manifests` must reference that Git URL after
+publication. Apply the same manifest for an existing deployment; do not rely
+on a runtime-only resource patch that a Talos reboot would overwrite.

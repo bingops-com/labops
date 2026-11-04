@@ -26,6 +26,10 @@ configs are sensitive generated state, not documentation.
 1. Restore operator credentials, Proxmox networking and Tailscale routing.
 2. Recreate Terraform-owned `labmgmt`; verify Talos and Kubernetes APIs.
 3. Initialize pinned CAPI providers and create `labprod`.
+   Capacity targets and non-destructive resizing of existing VMs are documented
+   in [the capacity runbook](cluster-capacity.md). `labmgmt` has 8 GiB and
+   `labprod` has 64 GiB with a 500 GiB `local-lvm` disk. Preserve the workload
+   control plane with its declared `OnDelete` upgrade strategy.
 4. Install local clients, then bootstrap Argo CD and its production root.
 5. Inject the `labprod` Bitwarden machine token into the bootstrap namespaces
    and wait for mappings. Workload token synchronizers, including Project

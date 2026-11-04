@@ -290,3 +290,10 @@ native ROMarr UI or acquire administrator access in RomM; sign in as `bingops`
 and confirm administrator access. Configure and test only lawful Prowlarr
 indexers through controlled port-forwards; those optional runtime choices are
 generated state backed up with the PVC, not Git inputs.
+
+The file backup uses `RCLONE_CONFIG_R2_NO_CHECK_BUCKET=true`: Terraform already
+creates the bucket and the scoped R2 key cannot create buckets. Without this
+setting rclone retries `CreateBucket` with HTTP 403 before copying objects.
+After recovery, create one Job from `rom-files-r2-backup` and verify Complete
+before removing superseded failed Jobs. No additional permission or credential
+is required.
