@@ -1,8 +1,10 @@
 # Slots
 
-The opt-in common account/database migration with Games is owned by
-[Arcade](../arcade/README.md). Existing values remain standalone; keep the source
-CNPG resources declared throughout acceptance to prevent automated pruning.
+Slots uses [Arcade](../arcade/README.md), the production database shared with
+Games and CKA, through the `arcade-database` credential. The legacy
+`slots-postgresql` is hibernated recovery data with a suspended daily backup.
+LabOps owns it in `retained-postgresql.yaml`; chart CNPG resources are disabled.
+See the [backup lifecycle](../../../docs/backup-lifecycle.md).
 
 Slots is the public fictional-credit game at `https://slots.lab.bingo`. Argo CD
 combines the Helm chart and immutable application commit from
@@ -18,8 +20,7 @@ This release improves multiplayer blackjack betting and split hands, adds
 optional Perfect Pairs and 21+3 side bets, adjusts its timers, updates icons and
 supports bounded repeated Plinko drops while Space is held. The previous
 illustration, dialog and shared-account changes are retained. Shared mode
-remains off, with the existing standalone CNPG
-database and backups. Continuous sea ambience stays removed; action effects,
+is enabled by the later Arcade cutover, with common database backups. Continuous sea ambience stays removed; action effects,
 reel/coin sounds and bonus melodies remain available. Argo CD
 replaces the single Slots instance when its image changes, briefly interrupting
 play; PostgreSQL accounts, balances and backups are preserved. After an
@@ -47,12 +48,12 @@ below and verify health, immutable image tags and readiness without exposing dat
 
 ## Acceptance gate
 
-- Database: `slots-postgresql`, a one-instance CloudNativePG cluster on
-  `local-path`. The application consumes CNPG's generated `uri` credential.
-- Backup: continuous WAL archival and a daily backup use the
-  `slots-postgresql` ObjectStore, the shared `bingops-cnpg-labprod` bucket and
-  the dedicated `slots` prefix. The shared R2 key pair remains in Bitwarden;
-  the namespace-local mapping contains only its existing identifiers.
+- Database: `games/arcade-postgresql`, shared with Games and CKA.
+- Backup: production WAL and daily backups use the `arcade` prefix in the shared
+  `bingops-cnpg-labprod` bucket. `slots/` retains pre-cutover archives only.
+  The shared R2 key remains in Bitwarden; mappings contain identifiers only.
+- Legacy source: `slots-postgresql` must be hibernated, without a pod or PDB,
+  with the same 2 GiB PVC and `slots-postgresql-daily.spec.suspend=true`.
 - Authentik and administrators: not applicable. Player accounts are
   pseudonymous game identities with no privileged or administrative role;
   there is no operator UI. Administration is exclusively declarative or via
@@ -77,15 +78,16 @@ curl -fsS https://slots.lab.bingo/healthz
 ```
 
 The `kubectl` and `curl` commands are post-merge, read-only checks. Confirm that
-the CNPG cluster is ready, WAL archival succeeds, a `Backup` completes, account
-creation and ranked play work, and practice still works with the server stopped.
+the common Arcade cluster is ready, its WAL archival succeeds, a common
+`Backup` completes, account creation and ranked play work, and practice still works with the server stopped.
 Do not read or print Secret data.
 
 ## Recovery and rollback
 
 The R2 credential cannot be recovered from Git; rotate the shared
-least-privilege token in Bitwarden if it is lost. Restore uses the Barman
-`slots` prefix and a new CNPG server generation, documented by updating
-`database.cnpg.backup.serverName` before reconciliation. Revert this deployment
-commit to remove the application, and revert the slots image/chart pin to roll
-back without deleting the database or its backups.
+least-privilege token in Bitwarden if it is lost. Restore production using
+[Arcade's common recovery](../arcade/README.md), including current Games and CKA
+data. The frozen `slots` prefix is only for isolated historical inspection,
+with a distinct new archive generation. Never select the stale standalone
+source for a production rollback. Revert compatible image/chart pins together
+without deleting any database or archives.

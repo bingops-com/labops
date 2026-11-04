@@ -18,21 +18,25 @@ restored into arcade-common-restore; all identity fields, ID mappings, both
 statistics tables and CKA schema matched exactly before reopening.
 
 The original clusters, PVCs, archive generations and isolated migration copies
-remain retained. After acceptance, hacks/hibernate-arcade-copies.py --apply
+remain retained. Since the retirement cleanup, the original Games and Slots
+clusters are hibernated with suspended daily backups; their first-party retained
+manifests keep the same resource identities while chart CNPG resources are disabled.
+Production WAL and daily backups continue on `games/arcade-postgresql` only.
+See the current [backup lifecycle](../../../docs/backup-lifecycle.md). After acceptance, hacks/hibernate-arcade-copies.py --apply
 stops only the six named copies, retaining their CRs/PVCs. This generated
 migration state is outside GitOps; re-running is safe. Resume a specific copy
 with kubectl annotate cluster NAME -n NAMESPACE cnpg.io/hibernation=off
---overwrite when needed. Never apply this to the common consumer or either
-source cluster. Their retirement requires a separately scoped approval; they
-are not production consumers. Rebuild production from the common backup,
+--overwrite when needed, after an explicit recovery decision. The helper excludes
+the common production cluster and the original source clusters. Permanent
+removal of any retained Cluster/PVC/archive requires exact-target approval. Rebuild production from the common backup,
 never from the frozen pre-cutover source databases. Existing cookies were
 revoked at cutover and users must sign in again.
 
 ## Data and access
 
 One CNPG cluster, `games/arcade-postgresql`, owns database `arcade` and R2 prefix
-`arcade`. It replaces the two physical database instances only after acceptance
-and a separately approved retirement. It remains one instance on local-path:
+`arcade`. It is the current production database for Games, Slots and CKA;
+the old physical source instances are hibernated. It remains one instance on local-path:
 this saves a database process but does not introduce high availability.
 
 `identity.users` contains the common ID, pseudo, Argon2id password and original
@@ -297,9 +301,12 @@ original databases/backups remain intact.
    schema version there through approved pod-local psql, never output player
    records or passwords. Merge
    the reviewed `cutover/*-values.yaml` settings into the owning production
-   values while retaining `database.cnpg.enabled=true`; this keeps source
-   clusters/backups tracked and avoids Argo pruning them. Switch both apps
-   together, then remove the maintenance flags through the authorized change.
+   values, keeping source resources tracked throughout the historical cutover.
+   Switch both apps together, then remove the maintenance flags through the
+   authorized change. The later retirement cleanup now disables chart CNPG
+   resources and tracks the same source Clusters/ScheduledBackups explicitly
+   in LabOps, hibernated with schedules suspended; do not revert those flags
+   to resume production on the old sources.
    All players must log in again. Check health and real player acceptance.
 
 ## Recovery and rollback

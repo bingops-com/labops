@@ -55,14 +55,15 @@ database:
     name: arcade-postgresql-app
     key: uri
     backupRunbook: apps/workloads/arcade/README.md
+  # The frozen legacy Cluster is retained by the LabOps Kustomize source.
   cnpg:
-    enabled: true
+    enabled: false
     instances: 1
     storage:
       size: 2Gi
       storageClass: local-path
     backup:
-      enabled: true
+      enabled: false
       destinationPath: s3://bingops-cnpg-labprod/games
       endpointURL: https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com
       credentialsSecret: games-r2-credentials
@@ -70,4 +71,4 @@ database:
       schedule: "0 30 3 * * *"
       retentionPolicy: 14d
     podMonitor:
-      enabled: true
+      enabled: false
