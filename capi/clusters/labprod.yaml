@@ -45,7 +45,7 @@ spec:
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: ProxmoxMachineTemplate
 metadata:
-  name: labprod-control-plane
+  name: labprod-control-plane-500g-64g
   namespace: capi-workloads
 spec:
   template:
@@ -56,10 +56,10 @@ spec:
       disks:
         bootVolume:
           disk: scsi0
-          sizeGb: 100
+          sizeGb: 500
       format: raw
       full: true
-      memoryMiB: 32768
+      memoryMiB: 65536
       metadataSettings:
         providerIDInjection: true
       network:
@@ -83,11 +83,14 @@ metadata:
   namespace: capi-workloads
 spec:
   replicas: 1
+  # A single control plane holds local data: upgrades require an explicit plan.
+  rolloutStrategy:
+    type: OnDelete
   version: v1.36.1
   infrastructureTemplate:
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
     kind: ProxmoxMachineTemplate
-    name: labprod-control-plane
+    name: labprod-control-plane-500g-64g
     namespace: capi-workloads
   controlPlaneConfig:
     controlplane:
@@ -128,4 +131,4 @@ spec:
               enabled: true
               manifests:
                 - https://raw.githubusercontent.com/siderolabs/talos-cloud-controller-manager/main/docs/deploy/cloud-controller-manager.yml
-                - https://raw.githubusercontent.com/alex1989hu/kubelet-serving-cert-approver/main/deploy/standalone-install.yaml
+                - https://raw.githubusercontent.com/bingops-com/labops/master/capi/manifests/kubelet-serving-cert-approver.yaml

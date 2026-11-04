@@ -8,7 +8,7 @@ reuses that template and exclusively owns the single workload cluster
 All workloads, ingress, persistence and observability run only on `labprod`.
 
 `labprod` uses VM 151, node address `192.168.10.151`, API VIP
-`192.168.10.160`, 8 cores and 32 GiB. Those addresses and VM ID must be free
+`192.168.10.160`, 8 cores, 64 GiB and a 500 GiB system disk. Those addresses and VM ID must be free
 before creation and excluded from DHCP. CAPMOX full clones use `local-lvm`.
 
 Create the ignored `capi/credentials.env` from its example, provision the
@@ -33,3 +33,8 @@ only with explicit confirmation of cluster `labtest`, VM 152 and data loss,
 while `labmgmt` is available, then wait for its Machines and VM to disappear.
 Never delete `labmgmt` while it owns `labprod`; use `clusterctl move` for a
 management-cluster replacement.
+
+Capacity changes on an existing VM use the [capacity runbook](../docs/cluster-capacity.md).
+The versioned capacity template and `OnDelete` rollout policy prevent an automatic
+replacement of the single control plane. Its existing immutable ProxmoxMachine
+retains its original allocation snapshot; resize its existing Proxmox disk in place.

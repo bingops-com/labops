@@ -83,7 +83,8 @@ spec:
           interval: 30s
           scrapeTimeout: 10s
           relabelings:
-            - sourceLabels: [__meta_kubernetes_pod_node_name]
+            - action: replace
+              sourceLabels: [__meta_kubernetes_pod_node_name]
               targetLabel: node
         extraVolumes:
           - name: fluent-bit-state
@@ -98,7 +99,6 @@ spec:
             cpu: 50m
             memory: 64Mi
           limits:
-            cpu: 250m
             memory: 192Mi
         tolerations:
           - operator: Exists
