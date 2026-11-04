@@ -70,9 +70,23 @@ GitOps owns runtime configuration; CKA owns application code and upstream
 manifest templates. Compare release.json hashes before the image rollout and
 verify health, source/image revisions and anonymous SSO rejection afterward.
 
-Study accounts use the common Arcade database after the preserve-collisions
-migration. CNPG owns cka_app and its generated password;
+Study accounts use the canonical Arcade directory and shared profile contract.
+Recover Arcade through its [owning runbook](../arcade/README.md) before web
+account/profile/progress access. CNPG owns cka_app and its generated password;
 hacks/bootstrap-cka-study.py reconciles the web-only URI and trusted database
-CA. Apply db/001-study.sql from the pinned CKA source with an operator
-connection before restarting the web. Recover Arcade before web account
-login/progress. SSO remains mandatory for VM operations.
+CA. On a fresh initialization, apply db/001-study.sql from the pinned CKA source
+with an operator connection, then the canonical/profile contracts as the arcade
+owner, before activating web account access. Existing common backups restore
+these contracts together; never rerun the historical source import.
+
+Verified SSO always resolves to the same canonical study account before an old
+password cookie is considered. Callback/session/logout retire that old cookie;
+provider or profile outages cannot silently select another account. The SSO
+browser session still needs sign-in again after a web process restart. SSO
+authorization remains mandatory for VM operations. No new database migration or
+secret is introduced by the UI/auth release; source and controller data stay
+retained. Public client/offline artifacts exclude the historical operator guide;
+only legacy progress IDs remain. The source CI verifies those artifacts and the
+SSO UX on the standalone server. The private source README owns the full UX and
+privacy review; publisher/contact and retention/erasure prerequisites must be
+completed before claiming full regulatory compliance.
