@@ -8,7 +8,8 @@ This stack downloads the Talos `nocloud` ISO, builds Proxmox template 1234, and 
   The Proxmox administrator owns this host-level prerequisite; Terraform only
   allocates VM disks in it. Verify capacity with `pvesm status --storage local-lvm`
   and `lvs -o vg_name,lv_name,lv_size,data_percent,metadata_percent` as root.
-  Reserve space for three 100 GiB VM disks and the 32 GiB template, plus other
+  Reserve space for the 100 GiB management disk, 500 GiB workload disk and
+  32 GiB template, plus other
   host workloads and thin-pool headroom. CAPMOX full clones inherit this storage.
 
 - Proxmox VE with an API token.
@@ -296,3 +297,7 @@ talosctl health
 Both configurations and all cluster secrets are stored in Terraform state. Use an encrypted remote backend with locking before treating this as a long-lived cluster. The generated `talosconfig` and `kubeconfig` files are ignored by Git.
 
 Continue with the [CAPI guide](../../capi/README.md) to install the pinned providers on `labmgmt` and create `labprod` from template 1234.
+
+The management VM has 8 GiB RAM. Existing VM capacity changes follow the
+[capacity runbook](../../docs/cluster-capacity.md); do not replace VM 150 while
+it owns `labprod`.
