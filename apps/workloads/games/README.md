@@ -162,9 +162,9 @@ Before acceptance, require both app master image workflows and the Games
 publication check to pass, then follow the existing backup/rollout checks.
 After rollout, verify pointer removal, held Space bombing, drawing fill, the
 three-second clue and green/red results, and reload clients for fresh assets.
-Until repayment is deployed in Slots, the previous standalone application
-images remain rollback candidates; the repayment release has its own wallet
-compatibility condition in the Slots runbook.
+Rollback candidates must support the current shared Arcade schema and the Slots
+wallet compatibility condition documented in the Slots runbook. Historical
+standalone images or database sources are not production rollback candidates.
 
 Reconstruction uses the declared source/image pair and the existing runbooks,
 without chat history. There are no new non-Git inputs; existing R2/Bitwarden
