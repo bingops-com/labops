@@ -76,6 +76,7 @@ spec:
                 Generate_ID         On
                 Suppress_Type_Name  On
                 Buffer_Size         8M
+                Workers             1
                 tls                 On
                 tls.verify          Off
                 Retry_Limit         False

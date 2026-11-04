@@ -14,13 +14,14 @@ spec:
       count: 1
       config:
         node.store.allow_mmap: false
+        node.processors: 2
       podTemplate:
         spec:
           containers:
             - name: elasticsearch
               env:
                 - name: ES_JAVA_OPTS
-                  value: -Xms768m -Xmx768m
+                  value: -Xms768m -Xmx768m -XX:ActiveProcessorCount=2
               resources:
                 requests:
                   cpu: 250m
