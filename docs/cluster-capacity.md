@@ -94,3 +94,12 @@ until replay catches up. The existing seven-day Elasticsearch ILM policy is
 unchanged. A transient Fluent Bit rollout restart resets blocked tasks while
 preserving its host-path queue; its restart annotation is recovery state, not
 an additional desired configuration source.
+
+Kubernetes label keys mix legacy `app` labels with dotted
+`app.kubernetes.io/name` keys. New ingestions preserve that label map in the
+searchable flattened field `kubernetes.labels_flat`, avoiding object/scalar
+collisions in existing date-specific mappings. Install the flattened mapping
+on existing indices and the index template before enabling that normalization.
+Previously indexed documents are unchanged. Fluent Bit retains a 512 MiB
+memory limit (128 MiB request) and five-second health probe timeouts for queue
+replay; the old 192 MiB limit was reached while the backlog was active.

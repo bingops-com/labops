@@ -94,12 +94,17 @@ spec:
         extraVolumeMounts:
           - name: fluent-bit-state
             mountPath: /var/log/flb-storage
+        livenessProbe:
+          timeoutSeconds: 5
+          failureThreshold: 6
+        readinessProbe:
+          timeoutSeconds: 5
         resources:
           requests:
             cpu: 50m
-            memory: 64Mi
+            memory: 128Mi
           limits:
-            memory: 192Mi
+            memory: 512Mi
         tolerations:
           - operator: Exists
   destination:
