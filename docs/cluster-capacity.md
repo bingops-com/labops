@@ -78,3 +78,19 @@ previously running image digest. Both new bootstrap and the existing node's
 `cluster.externalCloudProvider.manifests` must reference that Git URL after
 publication. Apply the same manifest for an existing deployment; do not rely
 on a runtime-only resource patch that a Talos reboot would overwrite.
+
+## Log backlog recovery
+
+The Elasticsearch bootstrap Job installs `labops-log-normalize` and selects it
+as the default ingest pipeline for both new and existing log indices. Plain
+application `host` strings become `host.name`; plain `log` strings become
+`message` (or `labops_original_log` when a message already exists). Existing
+objects remain unchanged. This avoids ECS object/scalar mapping errors and
+also processes retained Fluent Bit chunks, which a new input filter would not
+repair. A retained record rejected with HTTP 400 was accepted with HTTP 201
+after normalization. The backlog is replayed in place; never remove its files
+to clear an alert. Monitor output records, retries and dropped-record counters
+until replay catches up. The existing seven-day Elasticsearch ILM policy is
+unchanged. A transient Fluent Bit rollout restart resets blocked tasks while
+preserving its host-path queue; its restart annotation is recovery state, not
+an additional desired configuration source.
