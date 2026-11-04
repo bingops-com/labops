@@ -109,3 +109,11 @@ buffer truncated bulk replies and retried already-accepted batches. Generated
 record IDs still deduplicate retries. Elasticsearch keeps its CPU request,
 2 GiB memory limit and fixed heap, but no CPU quota; its former two-core quota
 throttled the backlog replay. Verify node CPU pressure alongside the queue.
+
+Replay is background work on the shared eight-core node. Elasticsearch is
+configured with `node.processors: 2` and JVM `ActiveProcessorCount=2`, and
+Fluent Bit has one output worker. These size application thread pools rather
+than imposing a Linux CPU quota. They preserve headroom for other workloads
+while the retained backlog drains; steady-state input remains queued safely
+with generated IDs and unlimited retries. The heap size is unchanged. Verify
+node CPU, accepted records, queue depth and failed/dropped-record counters.
