@@ -117,3 +117,9 @@ than imposing a Linux CPU quota. They preserve headroom for other workloads
 while the retained backlog drains; steady-state input remains queued safely
 with generated IDs and unlimited retries. The heap size is unchanged. Verify
 node CPU, accepted records, queue depth and failed/dropped-record counters.
+
+Retained application events also use plain `event` and `error` strings. The
+ingest pipeline preserves those as `event.original` and `error.message`,
+leaving existing objects unchanged. Validate complete retried chunks with the
+read-only ingest/mapping simulation API; sampling only the first record can
+miss one invalid document that makes an entire bulk batch retry.
