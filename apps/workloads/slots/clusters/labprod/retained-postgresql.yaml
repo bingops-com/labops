@@ -1,0 +1,42 @@
+# Frozen pre-Arcade data only; no application uses this database.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: slots-postgresql
+  namespace: slots
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+    cnpg.io/hibernation: "on"
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie
+  instances: 1
+  enablePDB: false
+  bootstrap:
+    initdb:
+      database: slots
+      owner: slots
+      dataChecksums: true
+  storage:
+    size: 2Gi
+    storageClass: local-path
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: slots-postgresql
+        serverName: slots-postgresql-g1
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: slots-postgresql-daily
+  namespace: slots
+spec:
+  schedule: 0 30 3 * * *
+  suspend: true
+  backupOwnerReference: self
+  cluster:
+    name: slots-postgresql
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io

@@ -16,20 +16,25 @@ or changing its existing visibility.
 ## Retention and ownership
 
 LabOps directly owns `clusters/labprod/postgresql.yaml`: the existing
-`ghost/ghost-postgresql` CloudNativePG Cluster, its daily ScheduledBackup and
-PodMonitor. PostgreSQL stays running for recovery and continuing backups; this
-retirement does not reclaim its CPU, memory or 1 GiB `local-path` volume. The
-namespace and Cluster explicitly disable Argo pruning/deletion. Never delete
-the namespace, Cluster, PVC, credentials or R2 archives as part of retiring the
-game; final data destruction requires separate authorization.
+`ghost/ghost-postgresql` CloudNativePG Cluster and its suspended daily
+ScheduledBackup. The Cluster is intentionally hibernated (`cnpg.io/hibernation:
+on`), with no PostgreSQL pod, WAL writes or new base backups. Its PDB and
+PodMonitor are disabled/removed. The 1 GiB `local-path` PVC and Cluster identity
+are retained; declared PVC capacity is not a disk reservation.
 
-The unchanged database and owner are `ghost`. Existing CNPG-generated
-credentials stay in the namespace; no password is exported or committed. Its
-ObjectStore still targets `s3://bingops-cnpg-labprod/ghost` with archive generation
-`ghost-postgresql-g1`, continuous WAL archival, daily base backups at 03:45 and
-14-day rolling retention. The Bitwarden token synchronizer and existing
-bucket-scoped R2 mapping remain necessary for that backup pipeline. Keeping
-daily backups prevents retirement from aging out the usable recovery window.
+The namespace and Cluster explicitly disable Argo pruning/deletion. Final
+removal of the namespace, Cluster, PVC, credentials or R2 archives requires
+confirmation of those exact targets and irreversible recovery impact.
+
+The database and owner remain `ghost`. Existing CNPG-generated credentials
+stay in the namespace; no password is exported or committed. The retained
+ObjectStore references `s3://bingops-cnpg-labprod/ghost`, archive generation
+`ghost-postgresql-g1`. Its historical objects remain available, but retirement
+no longer refreshes a 14-day recovery window. The current bucket lifecycle
+only aborts incomplete multipart uploads; it does not expire these objects.
+The Bitwarden token synchronizer and R2 mapping remain for credential recovery
+and access to retained archives; they do not schedule backups.
+See the cross-workload [backup lifecycle](../../../docs/backup-lifecycle.md).
 
 Non-Git inputs are the existing bucket-scoped R2 key, Bitwarden machine token,
 CNPG-generated database credential, volume contents and Barman objects.
@@ -81,8 +86,9 @@ curl --silent --output /dev/null --write-out '%{http_code}\n' https://ghost.lab.
 ```
 
 The game Deployment/Service/Ingress must be absent; CNPG services remain. The
-Cluster and PVC retain their identities, WAL archival remains successful and
-one fresh base backup completes. The public URL must not return the game or
+Cluster and PVC retain their identities, condition `cnpg.io/hibernation=True`
+reports `Hibernated`, no database pod remains and the ScheduledBackup has
+`spec.suspend=true`. There must be no new daily backups. The public URL must not return the game or
 its successful health endpoint. Verify authoritative DNS separately; resolver
 caches may outlive DNS deletion. Repository visibility must be `PRIVATE` for an
 authenticated owner and anonymous source access must fail.
@@ -98,6 +104,12 @@ restore `ghost-postgresql-g1` into a replacement Cluster using bootstrap
 recovery and a new archive generation; represent that recovery manifest in Git
 before resuming reconciliation. Never reuse the existing archive generation
 for a fresh `initdb` or overwrite its objects.
+
+For an explicitly approved recovery using the existing PVC, change the Git
+declaration to remove hibernation, restore the PDB and resume the schedule only
+after verifying archive access and the intended recovery point. Reapplying the
+frozen declaration safely returns it to hibernation. A missing PVC is a restore
+gate, never a reason to initialize an empty database.
 
 Restoring the game is a separate deployment decision. Reverting the retirement
 commit restores the previous chart/image pins and public declarations, but

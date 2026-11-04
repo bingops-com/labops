@@ -23,19 +23,20 @@ database:
   existingSecret:
     name: arcade-database
     key: uri
+  # The frozen legacy Cluster is retained by the LabOps Kustomize source.
   cnpg:
-    enabled: true
+    enabled: false
     instances: 1
     storage:
       size: 2Gi
       storageClass: local-path
     backup:
-      enabled: true
+      enabled: false
       objectStore: slots-postgresql
       serverName: slots-postgresql-g1
       schedule: "0 30 3 * * *"
     podMonitor:
-      enabled: true
+      enabled: false
 
 resources:
   requests:

@@ -70,9 +70,9 @@ configs are sensitive generated state, not documentation.
    Slots depends on the public `bingops-com/slots` repository and its public
    GHCR image. Reconcile it only after the image tag pinned in
    `apps/workloads/slots/clusters/labprod/values.yaml` exists. Its PostgreSQL
-   archive reuses the existing bucket-scoped R2 key under the dedicated
-   `slots` prefix; verify WAL archival and one completed backup before opening
-   ranked play. See `apps/workloads/slots/README.md`.
+   data now lives in the common Arcade database. Restore Arcade before Slots
+   and Games, and verify common WAL archival and a completed backup before
+   opening ranked play. `slots/` and `games/` are frozen historical archives. See `apps/workloads/slots/README.md`.
    Games follows the automatic synchronization policy of every active
    Application. Recover its bucket-scoped R2 key from Bitwarden and publish the
    pinned Games commit image before reconciling its production declaration.
@@ -105,8 +105,14 @@ configs are sensitive generated state, not documentation.
    credential recovery and the recovery overlay are in
    `apps/workloads/arcade/README.md`. Never enable shared mode before the common
    database is restored/prepared, or retire source storage during a cutover.
+   Legacy Games/Slots Clusters are now tracked by first-party retained manifests,
+   hibernated with schedules suspended and chart CNPG disabled. Before an empty
+   rebuild, exclude these retained Clusters until an explicit historical restore
+   is approved; do not initialize empty sources over their existing archives.
+   See [backup lifecycle](backup-lifecycle.md) for ownership and verification.
    Ghost is retired. Its `ghost-labprod` Application reconciles only retained
-   PostgreSQL data, backup and credential resources from LabOps; it does not
+   hibernated PostgreSQL data, suspended backup schedule and credentials from
+   LabOps; it does not
    fetch the private `bingops-com/ghost` repository or its image. Do not
    redeploy the game during a rebuild. Restore existing accounts from the
    `ghost-postgresql-g1` R2 archive before reconciling a replacement cluster;

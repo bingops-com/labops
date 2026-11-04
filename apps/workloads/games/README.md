@@ -1,9 +1,11 @@
 # Games
 
-Shared player accounts and PostgreSQL consolidation with Slots are prepared
-separately in [Arcade](../arcade/README.md). These production values keep the
-existing standalone database until the reviewed migration/cutover; do not disable
-its CNPG resources when selecting common credentials.
+Games uses the shared [Arcade](../arcade/README.md) production database with
+Slots and CKA. Its existing credential is `arcade-postgresql-app`. The old
+`games-postgresql` is frozen recovery data, hibernated with its daily backup
+suspended. LabOps owns it through `retained-postgresql.yaml` and `object-store.yaml`;
+the Helm chart's CNPG resources are disabled. See the
+[backup lifecycle](../../../docs/backup-lifecycle.md) before changing retained data.
 
 Public multiplayer service at `https://games.lab.bingo`. Argo CD reads
 the public Games chart at an immutable commit, with the matching commit image.
@@ -28,8 +30,9 @@ keep the publication, recovery, SSO and isolation checks below.
    merge commit after its image CI succeeds. Never synchronize an unpublished
    branch-commit image.
 3. Recover the bucket-scoped R2 key from Bitwarden `labprod`. The mapping exposes
-   identifiers only. CNPG generates the database URI; Games owns R2 prefix
-   `games`, continuous WAL archiving and daily backups retained for 14 days.
+   identifiers only. Recover Arcade and reconcile its credential distribution
+   before Games. Production WAL and daily backups use the common `arcade`
+   prefix; `games/` contains frozen pre-cutover archives only.
 4. After prerequisites and image publication, integrate the reviewed LabOps
    declaration. Argo synchronizes Games automatically. No mail relay, SMTP
    account, SMS or mail DNS is required.
@@ -73,10 +76,10 @@ disabled. The abandoned WAN-IP preparation in other checkouts must not be applie
 - Verify registration without email, code download, count after use, rejection
   of a used code, regeneration, old-code rejection and HTTP/WebSocket revocation.
   Codes must not be collected in screenshots, logs or support tickets.
-- The CNPG cluster `games-postgresql` uses 2 GiB local-path, one instance and
-  generated `games-postgresql-app` credentials. Check `ContinuousArchiving=True`,
-  a completed backup and an isolated restore. See
-  [CNPG recovery](../../../docs/infrastructure/cloudnative-pg.md).
+- The active CNPG cluster is `games/arcade-postgresql`. Check its successful WAL
+  archival, completed common backup and isolated restore, following
+  [Arcade recovery](../arcade/README.md). The old `games-postgresql` must remain
+  hibernated, with its 2 GiB PVC retained and daily schedule suspended.
 - Games has one replica with Recreate. Upgrades interrupt active games, then
   restore occupied lobbies. Empty rooms expire after ten minutes. A PostgreSQL
   outage removes `/healthz` readiness without failing `/livez` liveness.
@@ -143,8 +146,8 @@ active-player pointer, fixes one-card announcements and direction animation,
 restores held bomb placement in Bombermat and drawing fills, and adds the
 Codenoms clue/team announcements and common victory/defeat results. The
 administrator dashboard and four Bombermat arenas remain present. Shared
-accounts stay off; no consolidation, SQL migration or new credential is part
-of this application upgrade.
+accounts are enabled by the later Arcade cutover; this UI upgrade does not
+change that database selection.
 
 Merging application source does not deploy it: both immutable pins above must
 advance together. Games and Slots synchronize automatically after the reviewed
@@ -159,9 +162,9 @@ Before acceptance, require both app master image workflows and the Games
 publication check to pass, then follow the existing backup/rollout checks.
 After rollout, verify pointer removal, held Space bombing, drawing fill, the
 three-second clue and green/red results, and reload clients for fresh assets.
-Until repayment is deployed in Slots, the previous standalone application
-images remain rollback candidates; the repayment release has its own wallet
-compatibility condition in the Slots runbook.
+Rollback candidates must support the current shared Arcade schema and the Slots
+wallet compatibility condition documented in the Slots runbook. Historical
+standalone images or database sources are not production rollback candidates.
 
 Reconstruction uses the declared source/image pair and the existing runbooks,
 without chat history. There are no new non-Git inputs; existing R2/Bitwarden
@@ -203,8 +206,10 @@ both pins to the published `0b9458ac3e48488724fbf5d5d15ee3bfc26aaed2`
 release because both versions use schema 8; database restore is unnecessary for
 this UI/arena change. Earlier pre-administrator binaries remain incompatible.
 
-Before the first migration to schema 8, create the release-specific on-demand
-backup below and require phase `completed`. The manifest is an operator action,
+Historical schema-8 checkpoint: before the first migration, the operator created
+the release-specific on-demand backup below and required phase `completed`.
+Do not reapply this old Games checkpoint to the now-hibernated source.
+Future production upgrades must create a new checkpoint of `arcade-postgresql`. The manifest is an operator action,
 deliberately outside the Argo CD Kustomization; the resulting backup and R2 objects
 are generated recovery state. Reapplying the same manifest is idempotent and does
 not create a second backup. Future upgrades must use a new reviewed checkpoint
@@ -214,7 +219,6 @@ completed successfully on 2026-10-12 before the administrator upgrade, with
 `LastBackupSucceeded=True` and `ContinuousArchiving=True`.
 
 ```sh
-kubectl --context labprod apply -f apps/workloads/games/operations/pre-admin-0b9458ac-backup.yaml
 kubectl --context labprod get backup games-pre-admin-0b9458ac -n games -o jsonpath='{.status.phase}'
 ```
 
@@ -265,10 +269,14 @@ then restore pruning and self-healing through a reviewed change once recovered
 state is ready. Routine application rollback uses a Git revert without this
 maintenance pause.
 
-Follow the pinned Games README to restore CNPG into a new cluster/release, using
-`recovery.serverName=games-postgresql-g1` and a distinct new archive generation.
-Never change the bootstrap of an existing cluster or overwrite earlier archives.
+Production recovery follows [Arcade's common restore procedure](../arcade/README.md)
+for Games, Slots and CKA together. Never switch back to the frozen Games database:
+it lacks all writes since cutover. The legacy `games-postgresql-g1` archives are
+for isolated historical inspection only, using a new archive generation.
+Never change an existing Cluster bootstrap or overwrite earlier archives.
 
+The commands below apply only to an isolated **legacy pre-Arcade** restore;
+they are not the recovery procedure for the current shared schema.
 A database restore can resurrect already-consumed recovery codes and sessions.
 Before reconnecting public traffic, explicitly authorize and run this invalidation
 against the **isolated restored cluster only**, adapting its pod name:
@@ -292,12 +300,12 @@ Roll back image and chart together only to a release compatible with the schema.
 The first administrator release added migration 8; earlier binaries, including the recovery-code
 release, reject the newer schema and are not valid image-only rollbacks.
 Database restoration is a separate
-operation with its own recovery point and acceptance checks. CNPG is protected
-by Helm keep; do not delete namespace, PVC or R2 archives to roll back app code.
+operation with its own recovery point and acceptance checks. Retained CNPG is protected
+by explicit Argo prune/delete guards; do not delete namespace, PVC or R2 archives to roll back app code.
 
 Git/runbooks own reconstruction and dependency order. R2 credentials recover
 from Bitwarden; CNPG regenerates application credentials. Recovery hashes follow
-database backups and the mandatory post-restore invalidation above. Bootstrap
+the common database backups and Arcade post-restore acceptance. Bootstrap
 can retry after partial failure; live cleanup is explicitly separate. Remaining
 production gates are NetworkPolicy enforcement and runtime/isolated-restore
 acceptance. The previous administrator image is published and its pre-upgrade

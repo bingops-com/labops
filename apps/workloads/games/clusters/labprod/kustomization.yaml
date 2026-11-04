@@ -4,6 +4,8 @@ resources:
   - namespace.yaml
   - bitwarden-token-sync.yaml
   - r2-secret.yaml
+  - object-store.yaml
+  - retained-postgresql.yaml
 labels:
   - pairs:
       environment: labprod
