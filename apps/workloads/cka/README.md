@@ -44,6 +44,11 @@ repository. GitHub organization policy disables deploy keys, so Argo reads only
 non-secret deployment manifests from the existing LabOps GitOps source. No new
 Git credential, broad user PAT, policy relaxation or application secret is
 required. CI publishes the two runtime images from the private source.
+The existing `cka-web` and `cka-controller` GHCR packages are public and are
+pulled anonymously. Repository privacy does not restrict access to image
+contents, including controller preparation code. This release keeps those
+packages; confidential image distribution requires new private packages and
+durable registry pull credentials before changing the pinned image names.
 
 For each release, run python3 hacks/package-cka-release.py --source /path/to/cka
 --revision FULL_COMMIT_SHA, then pin both images to that same source commit in

@@ -13,8 +13,8 @@ spec:
     path: apps/workloads/cka/labprod
     kustomize:
       images:
-        - ghcr.io/bingops-com/cka-web=ghcr.io/bingops-com/cka-web:e3514d035fb5e5d49cacd29a1e952e28042c1e1e
-        - ghcr.io/bingops-com/cka-controller=ghcr.io/bingops-com/cka-controller:e3514d035fb5e5d49cacd29a1e952e28042c1e1e
+        - ghcr.io/bingops-com/cka-web=ghcr.io/bingops-com/cka-web:2a3378966ade630bae5f9ba62f5371cf49b2e28e
+        - ghcr.io/bingops-com/cka-controller=ghcr.io/bingops-com/cka-controller:2a3378966ade630bae5f9ba62f5371cf49b2e28e
   destination:
     server: https://kubernetes.default.svc
     namespace: cka
