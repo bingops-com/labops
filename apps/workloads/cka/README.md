@@ -131,8 +131,13 @@ key merely to list domains. Its privacy CronJob starts suspended pending review.
 For SQL activation, create a completed CNPG plugin Backup of arcade-postgresql,
 then run `hacks/migrate-cka-account-services.py --source /path/to/cka --revision SHA
 --backup NAME --target rehearsal --apply`. It restores an actual private logical
-snapshot into a disposable loopback PostgreSQL, applies 002/003/004 twice and
-checks account/progress preservation. A private receipt records this source and
+snapshot with its actual ACLs into a disposable loopback PostgreSQL, restores
+the observed ownership of the three legacy 002 objects, applies 002/003/004 twice
+and checks account/progress preservation. The legacy policy table and its two
+functions may belong to postgres from the historical reset activation. The
+transaction adopts only those exact objects into arcade, rejects any unexpected
+owner, and then executes the application migrations as arcade. It also verifies
+that cka_app can no longer execute either offline recovery capability. A private receipt records this source and
 backup. With the same parameters and `--target production --apply`, it checks
 that backup is completed/recent and atomically applies the same immutable SQL
 as arcade, with short lock/statement timeouts and preservation guards. It never
