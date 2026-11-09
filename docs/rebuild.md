@@ -243,6 +243,20 @@ owns reconstruction order, generated inputs, 14-day retention and recovery.
 
 ## CKA training
 
+For the prepared account-services release, also follow the owning
+[account-services runbook](https://github.com/bingops-com/cka/blob/main/docs/account-privacy.md).
+Recover its reviewed 003/004 privacy/email schema, Resend sending-only key, verified sender
+and the separate SSO key from the backed-up retained-home file using
+`hacks/bootstrap-cka-account-services.py --apply` before activating durable SSO.
+Use the owning migration helper with a completed canonical Backup and restored
+logical-data rehearsal receipt; never run the progress reset as part of recovery.
+004 requires existing KubeQuest accounts to verify an email; restore delivery
+before activating that gate. The runbook owns the common-service recovery limits.
+Reconcile the reviewed privacy configuration, activate maintenance only after a
+safe preview, and reapply completed erasures when restoring old account backups.
+The local preparation is not evidence that this release has been deployed;
+the pinned LabOps image/snapshot remains the deployed source of truth.
+
 The private CKA source and published images live in bingops-com/cka. Argo
 reads the deployment-only snapshot in apps/workloads/cka/labprod from LabOps,
 with image pins and source checksums documented by its README. No private Git

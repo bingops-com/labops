@@ -28,7 +28,8 @@ needs private retained-home snapshots for off-site recovery; no automatic
 controller-volume off-site backup exists yet.
 
 Verification: public /healthz returns 200; unauthenticated/spoofed lab APIs
-return 401; /labs redirects to Authentik; private /healthz responds over the
+return 401; /labs returns an ordinary 404 to unauthorized visitors;
+/admin initiates Authentik SSO and admits only Bingops; private /healthz responds over the
 mutually authenticated TLS endpoint. Positive login uses the learner's browser. Do not inspect secret
 values, tokens or raw Terraform output in verification.
 
@@ -86,12 +87,64 @@ these contracts together; never rerun the historical source import.
 
 Verified SSO always resolves to the same canonical study account before an old
 password cookie is considered. Callback/session/logout retire that old cookie;
-provider or profile outages cannot silently select another account. The SSO
-browser session still needs sign-in again after a web process restart. SSO
-authorization remains mandatory for VM operations. No new database migration or
-secret is introduced by the UI/auth release; source and controller data stay
-retained. Public client/offline artifacts exclude the historical operator guide;
+provider or profile outages cannot silently select another account. The SSO browser session uses encrypted PostgreSQL state after the account-services
+migrations and recovered session key are activated. The first transition from
+legacy memory sessions requires a new sign-in. SSO authorization remains mandatory
+for VM operations; source and controller data stay retained. Public client/offline artifacts exclude the historical operator guide;
 only legacy progress IDs remain. The source CI verifies those artifacts and the
 SSO UX on the standalone server. The private source README owns the full UX and
 privacy review; publisher/contact and retention/erasure prerequisites must be
 completed before claiming full regulatory compliance.
+
+## Account-services release
+
+The account-services release adds verified-email sign-in and recovery, public
+pseudonymous gaming profiles, data-rights requests, bounded retention and encrypted
+persistent SSO. Public profile DTOs exclude personal free-text fields and private labs.
+Its [account-services runbook](https://github.com/bingops-com/cka/blob/main/docs/account-privacy.md)
+owns activation order, additive 003/004 migrations, Resend sender/domain checks,
+secret recovery and rotation, public privacy settings, erasure/restore procedures
+and verification. It supersedes the memory-only/no-new-migration assumptions
+above only when that release is activated.
+
+The new web template consumes `cka/cka-account-services` and `cka/cka-privacy`;
+the private input is bootstrapped by `hacks/bootstrap-cka-account-services.py`.
+Run it with `--apply` after restoring the named Resend vault entry and the private
+`.runtime/cka-account-services/session-key` from the retained-home backup.
+A first activation generates that key with mode 0600. The helper creates only an
+absent Secret, compares repeat runs privately and refuses a differing existing
+Secret; never rotate it to work around a failed restore. Both this recovery file
+and private logical rehearsal dumps belong to the established home backup scope.
+The `bws` CLI must be installed; `--bws /trusted/path/bws` can select the reviewed
+binary without exposing the machine token. The helper reads only the existing
+`argocd-system/bw-auth-token` and the named sending-key entry. The referenced Resend sending key is in the existing Bitwarden
+project; the dedicated SSO encryption key remains a recovery prerequisite.
+The owner verified the `cka.lab.bingo` sender domain; a Resend simulator send
+from `accounts@cka.lab.bingo` was accepted on 2026-11-09. The sending key and separate retained session key were bootstrapped for this
+release; values are never placed in the deployment snapshot. Migrations 003/004 add confirmation and email recovery; 004
+gates existing unverified KubeQuest accounts, so deploy working mail first.
+The owning runbook also records the separate Games offline-code cutover gap. Do not grant the application a broader Resend management
+key merely to list domains. Its privacy CronJob starts suspended pending review.
+For SQL activation, create a completed CNPG plugin Backup of arcade-postgresql,
+then run `hacks/migrate-cka-account-services.py --source /path/to/cka --revision SHA
+--backup NAME --target rehearsal --apply`. It restores an actual private logical
+snapshot into a disposable loopback PostgreSQL, applies 002/003/004 twice and
+checks account/progress preservation. A private receipt records this source and
+backup. With the same parameters and `--target production --apply`, it checks
+that backup is completed/recent and atomically applies the same immutable SQL
+as arcade, with short lock/statement timeouts and preservation guards. It never
+executes reset-progress.sql, deletes a shared account or starts a lab VM.
+Rollback retains additive tables and must not use a stale identity restore.
+The privacy CronJob stays suspended; new registration stays closed while the
+real legal configuration is missing. Existing accounts can verify an email and
+use mail recovery independently. No DNS or backup-retention change is involved. The retained historical account copies
+also belong in the operator's erasure/restore inventory.
+
+Reconstruction checks for this release: Git supplies code, immutable SQL and
+bootstrap helpers; the Resend value comes from the named vault entry and the
+session key from retained-home backup, independently of PostgreSQL. Repeated
+bootstrap compares privately and never silently rotates; repeated migration is
+transactional and preserves accounts/progress. KubeQuest owns application/SQL,
+LabOps owns input recovery, canonical backup and GitOps rollout. Verification
+uses completed-backup status, a restored-data rehearsal receipt, schema flags,
+exact image/source revisions and public health/access rejection, without secrets.

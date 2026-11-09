@@ -136,3 +136,15 @@ retained common restore clone while web writes are frozen. Only that newly
 created verification database is dropped afterward. Rows, passwords and dump
 contents never appear in output or files. This is not a new Barman physical
 recovery test; disk headroom and the Arcade runbook govern that separate step.
+
+### CKA email/session activation
+
+`bootstrap-cka-account-services.py --apply` privately creates the absent named
+account-services Secret from the selected Resend vault entry and a separately
+retained session-key file. Existing differing Secrets are refused. Restore the
+file from the backed-up Coder home before reconstructing a lost Secret.
+`migrate-cka-account-services.py` requires an immutable CKA source revision and
+a fresh completed canonical Backup; rehearse first, then explicitly select
+production. Its SQL transaction preserves users and learning state and never
+runs the progress reset. The [CKA runbook](../apps/workloads/cka/README.md) owns
+full recovery, source paths, authorization and release order.

@@ -29,6 +29,13 @@ spec:
         image: ghcr.io/bingops-com/cka-web:development
         ports:
         - containerPort: 3000
+        envFrom:
+        - secretRef:
+            name: cka-account-services
+            optional: true
+        - configMapRef:
+            name: cka-privacy
+            optional: true
         env:
         - name: CKA_PUBLIC_ORIGIN
           value: https://cka.lab.bingo
@@ -96,3 +103,64 @@ spec:
         secret:
           secretName: cka-web-tls
           defaultMode: 288
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cka-privacy-maintenance
+  namespace: cka
+spec:
+  schedule: '17 3 * * *'
+  timeZone: Etc/UTC
+  # Activate declaratively after the migration, privacy review and first preview.
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 120
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+          - name: maintenance
+            image: ghcr.io/bingops-com/cka-web:development
+            command: [node, scripts/privacy-maintenance.mjs, --apply]
+            env:
+            - name: CKA_MAINTENANCE_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: cka-database
+                  key: uri
+            volumeMounts:
+            - name: database-ca
+              mountPath: /run/cka-db
+              readOnly: true
+            resources:
+              requests:
+                cpu: 25m
+                memory: 64Mi
+              limits:
+                cpu: 250m
+                memory: 128Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: [ALL]
+          volumes:
+          - name: database-ca
+            secret:
+              secretName: cka-database
+              items:
+              - key: ca.crt
+                path: ca.crt
