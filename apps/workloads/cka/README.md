@@ -115,8 +115,11 @@ A first activation generates that key with mode 0600. The helper creates only an
 absent Secret, compares repeat runs privately and refuses a differing existing
 Secret; never rotate it to work around a failed restore. Both this recovery file
 and private logical rehearsal dumps belong to the established home backup scope.
-The `bws` CLI must be installed; `--bws /trusted/path/bws` can select the reviewed
-binary without exposing the machine token. The helper reads only the existing
+The `bws` CLI must be installed; this activation used official CLI 2.1.0 on
+Linux amd64 (binary SHA-256 `e6982cfac1094d9bbcc981101a277739b116da14cba9afb0bf556d1c2bf4153c`).
+Recover the CLI through [Bitwarden’s official distribution](https://bitwarden.com/help/secrets-manager-cli/),
+verify its published artifact checksum, and use `--bws /trusted/path/bws` to
+select the reviewed binary without exposing the machine token. The helper reads only the existing
 `argocd-system/bw-auth-token` and the named sending-key entry. The referenced Resend sending key is in the existing Bitwarden
 project; the dedicated SSO encryption key remains a recovery prerequisite.
 The owner verified the `cka.lab.bingo` sender domain; a Resend simulator send
