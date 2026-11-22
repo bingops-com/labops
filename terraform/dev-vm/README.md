@@ -137,7 +137,7 @@ terraform -chdir=terraform/dev-vm fmt -check
 terraform -chdir=terraform/dev-vm validate
 python3 -m unittest discover -s hacks/tests -p test_dev_vm.py -v
 ansible-playbook -i 'dev,' ansible/dev-vm.yml --syntax-check
-python3 hacks/build-dev-release.py --app /home/coder/projects/dev
+python3 hacks/build-dev-release.py
 ```
 
 A plan/apply contacts live Proxmox and requires authorization. Save plans/logs
@@ -327,7 +327,31 @@ backup clients. Pip-compile refreshes hashed Python requirements and Ansible
 Galaxy tracks collections. The bootstrap Mise release is also versioned.
 `kubectl` and `talosctl` remain within the declared cluster minor until an
 explicit compatibility change. Self-updaters do not bypass reviewed releases.
-Build/copy each new release to `/opt/dev-vm/releases/ID`, then run:
+After reviewing and merging a tool PR, the normal update is one command:
+
+```sh
+sudo dev-refresh
+```
+
+It resolves reviewed LabOps `master` to an exact commit, fetches its source in
+an isolated root-owned build directory, packages the native app commit pinned in
+`environments/dev-vm/app.json`, verifies the immutable release and invokes the
+existing checkpoint-protected updater. It runs in systemd independently of SSH
+and never resets the personal project checkouts or their uncommitted work.
+The existing operator GitHub login supplies source access; no token is included
+in the release. `sudo dev-refresh --revision FULL_MERGE_SHA` selects an older
+reviewed master commit; commits outside master history are refused. Inspect
+`sudo journalctl -u dev-refresh` and `sudo devctl status`.
+`--prepare-only` stages and verifies the package without adopting it.
+
+The default release builder also uses the declared app pin, so an empty rebuild
+does not accidentally package the still-active legacy Dev master branch.
+An explicit `--app /path` is a local preview override, not the reconstruction
+source. Keep that source pin until the native Dev PR is merged after cutover,
+then update it through a reviewed LabOps change.
+
+For an explicitly prepared local release, build/copy it to
+`/opt/dev-vm/releases/ID`, then run:
 
 ```sh
 sudo devctl update ID

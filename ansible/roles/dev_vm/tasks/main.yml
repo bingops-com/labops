@@ -97,6 +97,8 @@
     - dev_install.py
     - health.sh
     - wait-tailnet.sh
+    - dev_refresh.py
+    - dev_sources.py
 
 - name: Publish operator commands
   ansible.builtin.file:
@@ -105,6 +107,7 @@
     state: link
   loop:
     - {name: devctl, source: devctl.py}
+    - {name: dev-refresh, source: dev_refresh.py}
     - {name: dev-backup, source: dev_backup.py}
     - {name: dev-health, source: health.sh}
 
