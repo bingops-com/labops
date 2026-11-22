@@ -82,7 +82,7 @@ class RecoveryTest(unittest.TestCase):
         self.assertIn('address = "100.64.0.160"',network)
         self.assertIn('domain = "lab.bingo"',network)
         _,dns=changes['apps/platform/private-dns/labprod/configmap.yaml']
-        self.assertIn('dev-vm.lab.bingo:53',dns)
+        self.assertIn('code.lab.bingo:53',dns)
         self.assertIn('30 IN A 100.65.212.7',dns)
         self.assertNotIn('coder.lab.bingo:53',dns)
 
