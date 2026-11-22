@@ -1,0 +1,51 @@
+name: gaas-portal-build
+
+"on":
+  push:
+    branches: [feat/gaas-lifecycle]
+    paths:
+      - docker/portal/**
+      - apps/workloads/gaas/acceptance/portal-source.txt
+      - .github/workflows/gaas-portal-build.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read pinned source revision
+        id: source
+        run: |
+          revision=$(cat apps/workloads/gaas/acceptance/portal-source.txt)
+          [[ "$revision" =~ ^[0-9a-f]{40}$ ]]
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Build pinned portal candidate
+        id: image
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/portal
+          platforms: linux/amd64
+          push: true
+          build-args: PORTAL_SOURCE_REF=${{ steps.source.outputs.revision }}
+          tags: ghcr.io/bingops-com/portal:gaas-${{ github.sha }}
+      - name: Record candidate reference
+        env:
+          DIGEST: ${{ steps.image.outputs.digest }}
+          SOURCE: ${{ steps.source.outputs.revision }}
+        run: |
+          printf 'image=ghcr.io/bingops-com/portal@%s\nsource=%s\n' "$DIGEST" "$SOURCE" > portal-image.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gaas-portal-image
+          path: portal-image.txt

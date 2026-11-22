@@ -2,10 +2,13 @@ FROM docker.io/node:22.20.0-alpine3.22 AS web
 LABEL name="portal"
 
 WORKDIR /src
+ARG PORTAL_SOURCE_REF=master
 # hadolint ignore=DL3018
 RUN apk add --no-cache git \
-    && git clone --depth 1 --branch master \
-      https://github.com/bingops-com/portal.git . \
+    && git init . \
+    && git remote add origin https://github.com/bingops-com/portal.git \
+    && git fetch --depth 1 origin "${PORTAL_SOURCE_REF}" \
+    && git checkout --detach FETCH_HEAD \
     && npm --prefix web ci --no-audit --no-fund \
     && npm --prefix web run build
 

@@ -1,0 +1,12 @@
+{
+  "repository": "bingops-com/labops",
+  "branch": "feat/gaas-lifecycle",
+  "directory": "apps/workloads/gaas/acceptance/rooms",
+  "catalogue": "apps/workloads/gaas/acceptance/config.yaml",
+  "namespace": "pz-server",
+  "gateway": "shared-test",
+  "rooms": ["gaas-pz-one", "gaas-pz-two"],
+  "argoNamespace": "argocd-system",
+  "argoApplication": "gaas-acceptance",
+  "endpointHost": "pz-gaas-20261122.bingops.com"
+}

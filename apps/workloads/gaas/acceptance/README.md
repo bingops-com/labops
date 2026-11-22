@@ -33,6 +33,12 @@ delete a test GameRoom. The existing production Application remains separate.
 - `release-export-retry.yaml` retries that export after the observed node
   reboot, reusing existing Restic packs. It removes only stale locks in the
   dedicated binary repository; never run concurrent exports to that repository.
+- `release-export-controlled.yaml` is the resumed attempt after inspection of
+  the second host reboot. It caps CPU at 500m, uses one Go worker and nice 19,
+  and keeps the same read-only source and deduplicated encrypted target. This
+  is a bounded retry, not a fix or proof of host stability. No BIOS or hardware
+  setting was changed. Require its final receipt after full data checking;
+  a 100% file counter alone does not prove snapshot completion.
 - `state-recoverycheck.yaml` reads only the isolated backend while its Lease is
   unlocked, saves a minimal Secret recovery bundle into the separate encrypted
   `gaas-state-backups-20261122` repository, restores it to memory-backed storage
@@ -114,6 +120,21 @@ use this test bundle to restore or adopt the production gateway.
 The UX proposal is in `pz-server/gaas/portal-design.md`: the existing portal
 writes typed changes to Git and reads observed status from Kubernetes/Argo CD.
 No portal write integration or GitHub App is installed by these manifests.
+
+The actual portal integration is now implemented and tested on
+`bingops-com/portal:feat/game-room-portal`, documented in that repository's
+`docs/gaming.md`. `portal-source.txt` pins its source commit for the isolated
+image build; `portal-gaming-config.json` restricts it to these two test rooms.
+`portal-rbac.yaml` prepares get-only access for the existing portal service
+account. These files do not change its production Deployment or install a
+GitHub App. Activation requires the dedicated App's public IDs and private-key
+Bitwarden mapping, a namespace-local Bitwarden token synchronizer following
+the existing PZ pattern, the mounted public config/Secret and the candidate
+image. Preserve the production OIDC issuer/client/group and its session PVC.
+Do not apply an older portal Deployment from this branch over its current
+configuration. The existing layout may be customized on its PVC; do not
+overwrite it to add the widget. Add the widget through its editor, or review
+an intentional YAML layout change separately.
 
 ## First UI using GitHub Actions
 

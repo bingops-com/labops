@@ -10,6 +10,12 @@ distroless base (same pattern as `docker/www`).
 docker build -t ghcr.io/bingops-com/portal docker/portal
 ```
 
+`PORTAL_SOURCE_REF` optionally pins a full source commit instead of `master`.
+The isolated `gaas-portal-build` workflow reads its 40-character revision from
+`apps/workloads/gaas/acceptance/portal-source.txt` and publishes a candidate
+digest. It does not change the production Deployment. This keeps source and
+image reproducible before the gaming UI is reviewed for activation.
+
 The image contains no configuration: it reads `PORTAL_CONFIG`
 (`/etc/portal/portal.yaml`), mounted from the `apps/workloads/portal`
 ConfigMap, and writes the layout saved from the browser to `PORTAL_DATA`
