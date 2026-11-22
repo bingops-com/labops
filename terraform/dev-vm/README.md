@@ -417,6 +417,14 @@ A failed update reactivates the previous release. If native packages changed,
 the state explicitly says `system-restore-required`: package changes are not
 assumed reversible by a symlink swap. Use the full VM restore path below.
 
+Restic uses a private persistent cache at `/var/lib/dev-vm/restic-cache`, outside
+the data-backup paths, even when systemd supplies no HOME/XDG environment.
+This prevents incremental backups repeatedly fetching every parent tree/index.
+The protected backup environment may override `RESTIC_CACHE_DIR` if required.
+Full VM checkpoint uploads have no fixed systemd deadline: a slow first transfer
+must not be killed after three hours. Restic errors still fail the checkpoint
+and prevent the pending update; inspect or stop the supervised unit explicitly.
+
 Data backups run every four hours and include projects/config/account state,
 verified standalone Codex SQLite snapshots, release sources and cached Debian
 archives. Integrity/read sampling and isolated sentinel/SQLite restoration run

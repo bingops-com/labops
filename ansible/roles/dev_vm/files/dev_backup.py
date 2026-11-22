@@ -130,6 +130,10 @@ def main():
     parser.add_argument('command', choices=['init','backup','restore-test','checkpoint','retention'])
     args = parser.parse_args()
     STATE.mkdir(parents=True, exist_ok=True, mode=0o700)
+    # System services do not necessarily receive HOME/XDG_CACHE_HOME. Without
+    # an explicit cache Restic repeatedly downloads the parent tree/indexes.
+    os.environ.setdefault('RESTIC_CACHE_DIR',str(STATE / 'restic-cache'))
+    Path(os.environ['RESTIC_CACHE_DIR']).mkdir(parents=True,exist_ok=True,mode=0o700)
     with (STATE / 'backup.lock').open('w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         if args.command == 'init':
