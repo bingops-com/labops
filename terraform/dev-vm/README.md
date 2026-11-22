@@ -196,7 +196,12 @@ clients, Codex/Claude/Screen system defaults and the SSH tool environment.
 the same initial tooling release. It cannot replace an active release or adopt
 a different tool release without the backup-protected update path.
 `/opt/dev-vm/tooling` records this stage; `/opt/dev-vm/current` is reserved for
-full native service acceptance. Tooling success is not backup acceptance.
+full native service acceptance. Tooling success is not backup acceptance. Full native activation after a
+verified tools-only release requires a full VM checkpoint as well as data
+backup/restore. A failed, unverified initial bootstrap can be retried after
+data recovery passes; it has no previously accepted system to roll back to.
+A full off-host checkpoint and isolated bootable restore remain required for
+final migration acceptance. Subsequent updates keep all checkpoint guards.
 
 Trivy 0.66.0's upstream release assets are no longer available. Its reviewed
 OCI image is pinned by digest in `environments/dev-vm/oci-tools.json`, matching

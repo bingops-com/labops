@@ -64,7 +64,10 @@ def main():
                 command('systemctl','start','dev-backup-init.service')
                 command('systemctl','start','dev-backup.service')
                 command('systemctl','start','dev-restore-test.service')
-                command('systemctl','start','dev-checkpoint.service')
+                # An interrupted, unverified bootstrap has no accepted system to roll back to.
+                # Its copied data is still backed up and restored before retrying.
+                if (STATE / 'tooling.json').exists():
+                    command('systemctl','start','dev-checkpoint.service')
             installer(root).install(root)
         command('/usr/local/sbin/dev-health')
         command('systemctl','start','dev-backup-init.service')
