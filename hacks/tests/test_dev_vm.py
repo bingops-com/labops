@@ -60,6 +60,28 @@ class RecoveryTest(unittest.TestCase):
         self.assertEqual({r['depName'] for r in records},{r['name'] for r in expected})
         self.assertIn('mise',config['enabledManagers']);self.assertIn('pip-compile',config['enabledManagers'])
 
+    def test_pinned_tool_versions_match_their_committed_locks(self):
+        import tomllib
+        environment=ROOT / 'environments/dev-vm'
+        declared=tomllib.loads((environment / 'mise.toml').read_text())['tools']
+        locked=tomllib.loads((environment / 'mise.lock').read_text())['tools']
+        self.assertEqual(set(declared),set(locked))
+        for name,value in declared.items():
+            version=value if isinstance(value,str) else value['version']
+            self.assertIn(version,{record['version'] for record in locked[name]},name)
+        requirements=dict(re.findall(r'^([A-Za-z0-9_.-]+)==(\S+)',(environment / 'requirements.txt').read_text(),re.MULTILINE))
+        for name,version in re.findall(r'^([A-Za-z0-9_.-]+)==(\S+)',(environment / 'requirements.in').read_text(),re.MULTILINE):
+            self.assertEqual(requirements.get(name),version,name)
+
+    def test_renovate_covers_the_native_oci_tool_and_its_own_runner(self):
+        config=json.loads((ROOT / 'renovate.json').read_text())
+        for filename,package in [('oci-tools.json','aquasec/trivy'),('automation.json','ghcr.io/renovatebot/renovate')]:
+            manager=next(m for m in config['customManagers'] if any(filename.removesuffix('.json') in p for p in m['managerFilePatterns']))
+            pattern=manager['matchStrings'][0].replace('(?<','(?P<')
+            records=[m.groupdict() for m in re.finditer(pattern,(ROOT / 'environments/dev-vm' / filename).read_text())]
+            self.assertEqual([m['depName'] for m in records],[package])
+            self.assertRegex(records[0]['currentDigest'],r'^sha256:[a-f0-9]{64}$')
+
     def test_additive_sso_bootstrap_preserves_coder_and_applications(self):
         import yaml
         cutover=load('cutover',ROOT / 'hacks/prepare-dev-cutover.py')

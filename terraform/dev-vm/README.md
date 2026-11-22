@@ -297,6 +297,29 @@ acceptance. No infrastructure operation should depend on this chat history.
 ## Updates, rollback and restoration
 
 Renovate proposes one PR per declared tool, with automatic merge disabled.
+The actual updater runs nightly at 03:41 UTC in
+`.github/workflows/dev-tools-renovate.yml`, or manually with workflow dispatch.
+Its official full container is digest-pinned in `environments/dev-vm/automation.json`
+and Renovate maintains that pin too. `.github/renovate-runner.json` restricts it
+to this repository's VM environment files; it cannot cut over Coder or update
+unrelated workloads. GitHub creates a short-lived token scoped to the repository;
+no personal token or App private key is copied into this automation. Actions must
+be enabled and repository policy must allow Actions to create PRs (already enabled
+on this repository). The workflow declares only contents/PR/issues writes and
+Actions permission for dispatching validation. Restore these settings through the
+repository's Actions settings after a repository transfer/recreation.
+
+Mise lock refreshes are explicitly allowed in the trusted runner and use its safe
+mode, including npm sidecar locks; Python artifacts use Python 3.13. CI rejects
+pinned source versions that disagree with their lock files. Because bot pushes
+with `GITHUB_TOKEN` do not reliably launch ordinary PR CI, the updater dispatches
+the existing read-only validation workflows against its own PR branches. It never
+merges them. The runner does not require the development VM or Kubernetes to be
+up. See [the Renovate Mise manager](https://docs.renovatebot.com/modules/manager/mise/)
+and [GitHub token events](https://docs.github.com/en/actions/concepts/security/github_token).
+Trivy metadata comes from Docker Hub, while actual binaries continue to use the
+reviewed digest through the public pull mirror; the mirror is not a tag catalog.
+
 Mise handles 15 version-pinned tools and the npm sidecar locks;
 the OCI manifest pins Trivy independently; custom Debian
 extraction covers every native package, including SSH, Tailscale, DNS and
@@ -304,10 +327,6 @@ backup clients. Pip-compile refreshes hashed Python requirements and Ansible
 Galaxy tracks collections. The bootstrap Mise release is also versioned.
 `kubectl` and `talosctl` remain within the declared cluster minor until an
 explicit compatibility change. Self-updaters do not bypass reviewed releases.
-If the Renovate runner does not permit safe Mise lock execution, retain CI's
-required lock checks and configure that capability on the runner before calling
-its PRs complete; a version-only PR with a stale lock must not be adopted.
-
 Build/copy each new release to `/opt/dev-vm/releases/ID`, then run:
 
 ```sh
