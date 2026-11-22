@@ -81,17 +81,13 @@ def venv_identity(root):
     return hashlib.sha256((environment / 'requirements.txt').read_bytes() + (environment / 'collections.yml').read_bytes()).hexdigest()
 
 
-def activate(root):
-    identifier = verify_release(root)
-    configure(root)
+def activate_tools(root):
+    verify_release(root)
     for name in ['mise.toml', 'mise.lock']:
         link(root / 'environment' / name, Path('/etc/mise') / ('config.toml' if name == 'mise.toml' else name))
     link(root / 'environment/.mise', '/etc/mise/.mise')
     link(BASE / 'venvs' / venv_identity(root), BASE / 'venv')
-    link(root, BASE / 'current')
     link(Path('/home/dev/projects'), '/opt/homeops')
-    for name in ['dev_backup.py', 'devctl.py', 'dev_install.py', 'health.sh']:
-        shutil.copy2(root / 'runtime' / name, Path('/usr/local/lib/dev-vm') / name)
     version = re.search(r'dev_mise_version: "([0-9.]+)"', (root / 'environment/versions.yml').read_text())[1]
     link(BASE / 'bootstrap' / version / 'mise', '/usr/local/bin/mise')
     for executable in ['ansible', 'ansible-playbook', 'ansible-galaxy', 'ansible-lint', 'yamllint', 'pytest']:
@@ -99,6 +95,8 @@ def activate(root):
     profile = '''export MISE_DATA_DIR=/opt/dev-vm/mise
 export PATH="/opt/dev-vm/mise/shims:/opt/dev-vm/venv/bin:/usr/lib/postgresql/18/bin:$PATH"
 export LANG=C.UTF-8
+export LC_CTYPE=C.UTF-8
+export CHROMIUM=/usr/bin/chromium
 export DISABLE_AUTOUPDATER=1
 export CLUSTERCTL_DISABLE_VERSIONCHECK=true
 export ANSIBLE_COLLECTIONS_PATH=/home/dev/.ansible/collections:/opt/dev-vm/venv/collections
@@ -109,6 +107,29 @@ export ANSIBLE_COLLECTIONS_PATH=/home/dev/.ansible/collections:/opt/dev-vm/venv/
     Path('/etc/environment.d').mkdir(exist_ok=True)
     Path('/etc/environment.d/90-dev-tools.conf').write_text('MISE_DATA_DIR=/opt/dev-vm/mise\nDISABLE_AUTOUPDATER=1\n')
     Path('/etc/environment.d/90-dev-tools.conf').chmod(0o644)
+    link(root, BASE / 'tooling')
+    link(root / 'environment/check-tools.sh', '/usr/local/bin/homeops-dev-check')
+
+    for source,target in [('codex.toml','/etc/codex/config.toml'),('claude.json','/etc/claude-code/managed-settings.json'),('screenrc','/etc/screenrc')]:
+        destination=Path(target);destination.parent.mkdir(parents=True,exist_ok=True)
+        shutil.copy2(root / 'environment' / source,destination);destination.chmod(0o644)
+    # Copied personal profiles may prepend legacy paths; reload the native tools last.
+    hook='\n# Native development tools (managed)\n[ ! -r /etc/profile.d/dev-tools.sh ] || . /etc/profile.d/dev-tools.sh\n'
+    for name in ['.profile','.bashrc']:
+        path=Path('/home/dev') / name
+        if path.is_symlink():raise ValueError('Refusing a symlinked shell profile')
+        previous=path.read_text() if path.exists() else ''
+        if hook not in previous:
+            path.write_text(previous+hook);os.chown(path,1000,1000)
+
+
+def activate(root):
+    verify_release(root)
+    configure(root)
+    activate_tools(root)
+    link(root, BASE / 'current')
+    for name in ['dev_backup.py', 'devctl.py', 'dev_install.py', 'health.sh']:
+        shutil.copy2(root / 'runtime' / name, Path('/usr/local/lib/dev-vm') / name)
     call(['systemctl','daemon-reload'])
     call(['systemctl','enable','--now','dev-agent','dev-gateway'])
     call(['systemctl','restart','dev-agent','dev-gateway'])
@@ -116,7 +137,48 @@ export ANSIBLE_COLLECTIONS_PATH=/home/dev/.ansible/collections:/opt/dev-vm/venv/
     call(['systemctl','reload-or-restart','nginx'])
 
 
-def install(root):
+def install_oci_tools(environment):
+    # Old upstream release assets can disappear. OCI manifest/layer digests
+    # retain the exact reviewed tool from the original workspace image.
+    import io
+    state_path=Path('/var/lib/dev-vm/oci-tools.json')
+    state=json.loads(state_path.read_text()) if state_path.exists() else {}
+    accept='application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json'
+    for tool in json.loads((environment / 'oci-tools.json').read_text()):
+        if not re.fullmatch('[a-z0-9-]+',tool['name']):raise ValueError('Invalid OCI tool name')
+        image=tool['image']
+        match=re.fullmatch(r'(mirror[.]gcr[.]io)/([a-z0-9/_-]+):([^@]+)@(sha256:[a-f0-9]{64})',image)
+        if not match:raise ValueError('Use a pinned public OCI image from the declared mirror')
+        registry,repository,version,digest=match.groups()
+        target=Path('/usr/local/bin') / tool['name']
+        previous=state.get(tool['name'],{})
+        if previous.get('image')==image and target.is_file() and hashlib.sha256(target.read_bytes()).hexdigest()==previous.get('sha256'):
+            continue
+        base=f'https://{registry}/v2/{repository}'
+        def fetch(kind,identifier):
+            request=urllib.request.Request(f'{base}/{kind}/{identifier}',headers={'Accept':accept})
+            data=urllib.request.urlopen(request,timeout=180).read()
+            if 'sha256:'+hashlib.sha256(data).hexdigest()!=identifier:
+                raise ValueError('OCI content digest differs')
+            return data
+        manifest=json.loads(fetch('manifests',digest))
+        if 'manifests' in manifest:
+            selected=next(m for m in manifest['manifests'] if m.get('platform',{}).get('os')=='linux' and m.get('platform',{}).get('architecture')=='amd64')
+            manifest=json.loads(fetch('manifests',selected['digest']))
+        binary=None
+        for layer in manifest['layers']:
+            with tarfile.open(fileobj=io.BytesIO(fetch('blobs',layer['digest'])),mode='r:*') as archive:
+                for member in archive.getmembers():
+                    if member.name.removeprefix('./')==tool['binary'] and member.isfile():
+                        binary=archive.extractfile(member).read()
+        if binary is None:raise ValueError('Declared binary is absent from the verified OCI image')
+        temporary=target.with_name(target.name+'.dev-vm-new')
+        temporary.write_bytes(binary);temporary.chmod(0o755);temporary.replace(target)
+        state[tool['name']]={'image':image,'sha256':hashlib.sha256(binary).hexdigest()}
+        state_path.write_text(json.dumps(state,indent=2)+'\n');state_path.chmod(0o600)
+
+
+def install_tools(root):
     identifier = verify_release(root)
     environment = root / 'environment'
     # APT retains downloaded archives for recovery when upstream versions disappear.
@@ -139,6 +201,7 @@ def install(root):
     if any(actual.get(name) != version for name,version in requested.items()):
         call(['apt-get','update','-q'])
         call(['apt-get','install','-y','--no-install-recommends', *[p['name']+'='+p['version'] for p in packages]])
+    install_oci_tools(environment)
     version = re.search(r'dev_mise_version: "([0-9.]+)"', (environment / 'versions.yml').read_text())[1]
     binary = BASE / 'bootstrap' / version / 'mise'
     if not binary.exists():
@@ -168,9 +231,14 @@ def install(root):
         call([venv / 'bin/pip','install','--require-hashes','-r', environment / 'requirements.txt'])
         call([venv / 'bin/ansible-galaxy','collection','install','-r',environment / 'collections.yml','-p',venv / 'collections'])
         (venv / '.ready').touch()
+    activate_tools(root)
+
+
+def install(root):
+    install_tools(root)
     # Keep previous tool installations and release venvs for rollback.
-    if not Path('/etc/letsencrypt/live/dev.lab.bingo/fullchain.pem').exists():
-        call(['certbot','certonly','--non-interactive','--agree-tos','--register-unsafely-without-email','--dns-cloudflare','--dns-cloudflare-credentials','/etc/dev-vm/cloudflare.ini','--cert-name','dev.lab.bingo','-d','dev.lab.bingo','-d','*.dev.lab.bingo'])
+    if not Path('/etc/letsencrypt/live/code.lab.bingo/fullchain.pem').exists():
+        call(['certbot','certonly','--non-interactive','--agree-tos','--register-unsafely-without-email','--dns-cloudflare','--dns-cloudflare-credentials','/etc/dev-vm/cloudflare.ini','--cert-name','code.lab.bingo','-d','code.lab.bingo','-d','*.code.lab.bingo'])
     hook = Path('/etc/letsencrypt/renewal-hooks/deploy/dev-nginx')
     hook.parent.mkdir(parents=True,exist_ok=True)
     hook.write_text('#!/bin/sh\nnginx -t && systemctl reload nginx\n');hook.chmod(0o755)

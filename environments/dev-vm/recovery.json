@@ -1,0 +1,8 @@
+{
+  "organization_id": "38fd86e7-06ee-4ee3-b013-b48f00d76a9e",
+  "project_id": "113f6039-1da2-4f51-aa24-b48f00d909de",
+  "restic_password_secret_id": "1ad37dcb-f522-417c-93d8-b50a00fa735b",
+  "cloudflare_dns_token_secret_id": "f4d220d9-6e59-4c4c-aef8-b50a00fa740d",
+  "r2_access_secret_id": "a105bb38-865f-4784-8c7b-b48f010040f4",
+  "r2_secret_secret_id": "c0e7e061-ea43-4b17-af32-b48f010057a6"
+}

@@ -16,7 +16,7 @@ def build(app, output):
         if path.is_symlink():
             raise ValueError('Symlinked release inputs are not allowed')
         files[name] = path.read_bytes()
-    for name in ['apt-tools.json','mise.toml','mise.lock','requirements.in','requirements.txt','collections.yml','versions.yml','trust.json','check-tools.sh','authorized_keys']:
+    for name in ['apt-tools.json','mise.toml','mise.lock','requirements.in','requirements.txt','collections.yml','versions.yml','trust.json','check-tools.sh','authorized_keys','codex.toml','claude.json','screenrc','oci-tools.json']:
         add(ROOT / 'environments/dev-vm' / name,'environment/'+name)
     for path in (ROOT / 'environments/dev-vm/.mise/locks').rglob('*'):
         if path.is_file():

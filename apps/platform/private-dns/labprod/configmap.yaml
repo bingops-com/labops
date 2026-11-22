@@ -11,11 +11,11 @@ data:
         reload 10s
         bind 192.168.10.160
         template IN A {
-            match ^code[.]lab[.]bingo[.]$
+            match ^([^.]+[.])?code[.]lab[.]bingo[.]$
             answer "{{ .Name }} 30 IN A 100.65.212.7"
         }
         template IN AAAA {
-            match ^code[.]lab[.]bingo[.]$
+            match ^([^.]+[.])?code[.]lab[.]bingo[.]$
             rcode NOERROR
         }
         cache 30
