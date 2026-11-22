@@ -56,6 +56,11 @@ delete a test GameRoom. The existing production Application remains separate.
   encrypted upload/integrity check and automatic game restart, using only the
   second test world's PVC/repository. Wait for completion and public A2S
   recovery before proceeding; do not run it against the production world.
+- `retained-world-check.yaml` mounts only the second test world's retained PVC,
+  read-only and without credentials. After deleting its original GameRoom, it
+  verifies the exact deletion-operation receipt, saved world name and SQLite
+  integrity. Its pinned request ID belongs to that original UID/generation;
+  another run needs the new expected identity, not a weakened assertion.
 - `world-seed*.yaml` restore a known production snapshot into `emptyDir`,
   verify SQLite integrity and seed two separate test repositories. They never
   mount the production PVC. `rooms/gaas-pz-*.yaml` reference these repositories and
