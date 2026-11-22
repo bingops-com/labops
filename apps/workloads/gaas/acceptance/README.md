@@ -98,6 +98,14 @@ retained cloud-resource replacements remain forbidden. While a game is active,
 changing routes is blocked until hot route updates exist. Both test routes are
 therefore reserved before games start.
 
+The worker image now includes the three public providers selected by the
+module's pinned dependency lock. CI verified provider initialization without
+networking or credentials. Changing only the worker image triggers a guarded
+replan, without changing the gateway's Terraform inputs. Future provider-lock
+changes require rebuilding the image against the matching module revision;
+there is no runtime registry fallback. The initial image pull still requires
+registry access, and Terraform still contacts the cloud APIs.
+
 Suspension retains DNS, IPv4, firewall and SSH-key resources. The retained IP
 still has a cost. Full disposal, if requested, must target only this named test
 stack with a reviewed Terraform plan, preserve any wanted worlds and avoid the

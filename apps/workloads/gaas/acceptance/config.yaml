@@ -9,7 +9,7 @@ data:
       "name": "shared-test",
       "approved": true,
       "productionAdoptionApproved": false,
-      "workerImage": "ghcr.io/bingops-com/pz-server@sha256:7ad733dda6c0de70f0eb505bf1c5d2ddf6b9af036a38c9e447dd7e4733c8aaea",
+      "workerImage": "ghcr.io/bingops-com/pz-server@sha256:b7db20aaf4a3681a486d52bdc48652459a7187626b4812def2446b3f65c7b8ee",
       "credentialsSecretRef": "gaas-terraform-credentials",
       "publicKeyConfigMap": "gaas-test-operator-key",
       "sourceRepository": "https://github.com/bingops-com/labops.git",
