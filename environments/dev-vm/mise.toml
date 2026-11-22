@@ -1,0 +1,22 @@
+[tools]
+node = "24.21.0"
+go = "1.26.9"
+terraform = "1.10.5"
+kubectl = "1.36.1"
+helm = "3.19.4"
+talosctl = "1.13.3"
+clusterctl = "1.12.9"
+yq = "4.45.1"
+actionlint = "1.7.7"
+tflint = "0.52.0"
+task = "3.52.0"
+kubeseal = "0.29.0"
+"github:michaelsauter/crane" = "3.6.0"
+trivy = "0.66.0"
+"npm:@openai/codex" = "0.165.0"
+"npm:@anthropic-ai/claude-code" = "2.1.287"
+
+[settings]
+experimental = true
+locked = true
+lockfile_platforms = ["linux-x64"]

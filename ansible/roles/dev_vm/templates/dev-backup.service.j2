@@ -1,0 +1,10 @@
+[Unit]
+Description=Encrypted off-host development data backup
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/dev-vm/backup.env
+ExecStart=/usr/local/sbin/dev-backup backup
+UMask=0077

@@ -1,0 +1,21 @@
+#!/bin/bash
+set -euo pipefail
+umask 077
+# This is a dedicated table: never flush Tailscale's own netfilter chains.
+nft -c -f /etc/nftables.conf
+systemctl enable --now nftables.service qemu-guest-agent.service
+install -d -m 0755 /usr/share/keyrings
+curl --fail --silent --show-error https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg -o /usr/share/keyrings/tailscale-archive-keyring.gpg
+printf '%s\n' 'deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/debian trixie main' > /etc/apt/sources.list.d/tailscale.list
+chmod 0644 /usr/share/keyrings/tailscale-archive-keyring.gpg /etc/apt/sources.list.d/tailscale.list
+apt-get update -q
+DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends 'tailscale=${tailscale_version}'
+systemctl enable --now tailscaled.service
+systemctl unmask ssh.service ssh.socket
+systemctl disable --now ssh.socket
+sshd -t
+systemctl enable --now ssh.service
+install -d -o dev -g dev -m 0750 /home/dev/projects
+# Preserve absolute project/account paths used by existing personal tools.
+test -e /home/coder || ln -s /home/dev /home/coder
+echo 'First boot complete. Enroll Tailscale through the Proxmox guest agent.'

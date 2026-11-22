@@ -1,0 +1,22 @@
+[Unit]
+Description=Private development portal and preview gateway
+After=network-online.target tailscaled.service dev-agent.service
+Wants=dev-agent.service
+
+[Service]
+User=dev
+Group=dev
+WorkingDirectory=/home/dev
+Environment=MISE_DATA_DIR=/opt/dev-vm/mise
+Environment=DEV_OWNER=bingops
+ExecStart=/usr/local/bin/mise exec -- node /opt/dev-vm/current/app/server.mjs
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
