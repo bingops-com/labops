@@ -50,6 +50,12 @@ delete a test GameRoom. The existing production Application remains separate.
   configured as `shared-test`, so it does not adopt the existing production
   StatefulSet or the existing gateway. It must not run alongside another writer
   of this test gateway outside the controller's Lease.
+- `running-backup-check.yaml` is a bounded, one-shot copy of the second test
+  room's CronJob template. Run only after its game is ready and before changing
+  that room's desired state. It exercises the save/quit FIFO, shutdown marker,
+  encrypted upload/integrity check and automatic game restart, using only the
+  second test world's PVC/repository. Wait for completion and public A2S
+  recovery before proceeding; do not run it against the production world.
 - `world-seed*.yaml` restore a known production snapshot into `emptyDir`,
   verify SQLite integrity and seed two separate test repositories. They never
   mount the production PVC. `rooms/gaas-pz-*.yaml` reference these repositories and
