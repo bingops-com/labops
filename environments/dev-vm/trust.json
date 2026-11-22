@@ -1,0 +1,7 @@
+[
+  {
+    "url": "https://www.postgresql.org/media/keys/ACCC4CF8.asc",
+    "path": "/usr/share/keyrings/dev-pgdg.asc",
+    "sha256": "0144068502a1eddd2a0280ede10ef607d1ec592ce819940991203941564e8e76"
+  }
+]

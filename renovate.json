@@ -6,7 +6,9 @@
     ":semanticCommitTypeAll(bump)"
   ],
   "timezone": "Europe/Paris",
-  "labels": ["dependencies"],
+  "labels": [
+    "dependencies"
+  ],
   "prConcurrentLimit": 5,
   "enabledManagers": [
     "ansible-galaxy",
@@ -17,10 +19,14 @@
     "kubernetes",
     "kustomize",
     "npm",
-    "terraform"
+    "terraform",
+    "mise",
+    "pip-compile"
   ],
   "argocd": {
-    "managerFilePatterns": ["/^apps/gitops/clusters/.+\\.yaml$/"]
+    "managerFilePatterns": [
+      "/^apps/gitops/clusters/.+\\.yaml$/"
+    ]
   },
   "kubernetes": {
     "managerFilePatterns": [
@@ -32,7 +38,9 @@
     {
       "customType": "regex",
       "description": "Follow the published HomeOps workspace image while retaining its digest pin",
-      "managerFilePatterns": ["/^apps/workloads/coder/base/template/main\\.tf$/"],
+      "managerFilePatterns": [
+        "/^apps/workloads/coder/base/template/main\\.tf$/"
+      ],
       "matchStrings": [
         "image\\s*=\\s*\"(?<depName>ghcr\\.io/bingops-com/homeops-dev)@(?<currentDigest>sha256:[a-f0-9]{64})\""
       ],
@@ -43,7 +51,9 @@
     {
       "customType": "regex",
       "description": "Update tool versions declared in Dockerfile environment variables",
-      "managerFilePatterns": ["/(^|/)Dockerfile$/"],
+      "managerFilePatterns": [
+        "/(^|/)Dockerfile$/"
+      ],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[a-z-]+))?\\s+(?:ENV|ARG) [A-Z0-9_]+=(?<currentValue>[^\\s]+)"
       ]
@@ -51,41 +61,182 @@
     {
       "customType": "regex",
       "description": "Update Elastic Stack versions declared in ECK resources",
-      "managerFilePatterns": ["/^apps/platform/observability/.+/elasticsearch\\.yaml$/"],
+      "managerFilePatterns": [
+        "/^apps/platform/observability/.+/elasticsearch\\.yaml$/"
+      ],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\s+version: (?<currentValue>[^\\s]+)"
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Versioned native VM packages from signed APT repositories",
+      "managerFilePatterns": [
+        "/^environments/dev-vm/apt-tools\\.json$/"
+      ],
+      "matchStrings": [
+        "\"name\": \"(?<depName>[^\"\\r\\n]+)\",\\s*\"version\": \"(?<currentValue>[^\"\\r\\n]+)\",\\s*\"registryUrl\": \"(?<registryUrl>[^\"\\r\\n]+)\""
+      ],
+      "datasourceTemplate": "deb"
+    },
+    {
+      "customType": "regex",
+      "description": "Native VM bootstrap tool releases",
+      "managerFilePatterns": [
+        "/^environments/dev-vm/versions\\.yml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\s+dev_mise_version: \"(?<currentValue>[^\"]+)\""
       ]
     }
   ],
   "packageRules": [
     {
       "description": "Limit npm maintenance to the development image tools",
-      "matchManagers": ["npm"],
+      "matchManagers": [
+        "npm"
+      ],
       "enabled": false
     },
     {
       "description": "Maintain Codex and its lockfile in the development image",
-      "matchManagers": ["npm"],
-      "matchFileNames": ["docker/homeops-dev/package.json"],
+      "matchManagers": [
+        "npm"
+      ],
+      "matchFileNames": [
+        "docker/homeops-dev/package.json"
+      ],
       "enabled": true,
       "rangeStrategy": "pin",
       "groupName": "homeops-dev npm tools"
     },
     {
       "description": "Keep container references reproducible",
-      "matchDatasources": ["docker"],
+      "matchDatasources": [
+        "docker"
+      ],
       "pinDigests": true
     },
     {
       "description": "Group GitHub Actions maintenance",
-      "matchManagers": ["github-actions"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "groupName": "github-actions"
     },
     {
       "description": "Require manual review for infrastructure major updates",
-      "matchManagers": ["argocd", "kustomize", "terraform"],
-      "matchUpdateTypes": ["major"],
+      "matchManagers": [
+        "argocd",
+        "kustomize",
+        "terraform"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
       "dependencyDashboardApproval": true
+    },
+    {
+      "description": "One reviewed PR per VM tool, including pinned versions",
+      "matchFileNames": [
+        "environments/dev-vm/**"
+      ],
+      "automerge": false,
+      "groupName": null,
+      "separateMajorMinor": true,
+      "separateMinorPatch": true,
+      "rangeStrategy": "pin",
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Keep kubectl within the current labprod minor",
+      "matchFileNames": [
+        "environments/dev-vm/mise.toml"
+      ],
+      "matchPackageNames": [
+        "kubectl"
+      ],
+      "allowedVersions": ">=1.36.0 <1.37.0"
+    },
+    {
+      "description": "Keep Talos clients compatible with the current cluster minor",
+      "matchFileNames": [
+        "environments/dev-vm/mise.toml"
+      ],
+      "matchPackageNames": [
+        "talosctl"
+      ],
+      "allowedVersions": ">=1.13.0 <1.14.0"
+    },
+    {
+      "description": "Look up base and security updates for native Debian tools",
+      "matchFileNames": [
+        "environments/dev-vm/apt-tools.json"
+      ],
+      "matchDatasources": [
+        "deb"
+      ],
+      "registryUrls": [
+        "https://deb.debian.org/debian?suite=trixie&components=main&binaryArch=amd64",
+        "https://deb.debian.org/debian?suite=trixie-updates&components=main&binaryArch=amd64",
+        "https://security.debian.org/debian-security?suite=trixie-security&components=main&binaryArch=amd64"
+      ]
+    },
+    {
+      "matchFileNames": [
+        "environments/dev-vm/apt-tools.json"
+      ],
+      "matchPackageNames": [
+        "tailscale"
+      ],
+      "registryUrls": [
+        "https://pkgs.tailscale.com/stable/debian?suite=trixie&components=main&binaryArch=amd64"
+      ]
+    },
+    {
+      "matchFileNames": [
+        "environments/dev-vm/apt-tools.json"
+      ],
+      "matchPackageNames": [
+        "postgresql-client-18"
+      ],
+      "registryUrls": [
+        "https://apt.postgresql.org/pub/repos/apt?suite=trixie-pgdg&components=main&binaryArch=amd64"
+      ]
+    },
+    {
+      "matchFileNames": [
+        "environments/dev-vm/**"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Debian repositories publish no release timestamps",
+      "matchFileNames": [
+        "environments/dev-vm/apt-tools.json"
+      ],
+      "matchDatasources": [
+        "deb"
+      ],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
     }
-  ]
+  ],
+  "mise": {
+    "managerFilePatterns": [
+      "/^environments/dev-vm/mise\\.toml$/"
+    ]
+  },
+  "pip-compile": {
+    "managerFilePatterns": [
+      "/^environments/dev-vm/requirements\\.txt$/"
+    ]
+  },
+  "ansible-galaxy": {
+    "managerFilePatterns": [
+      "/(^|/)(requirements|collections)\\.ya?ml$/"
+    ]
+  }
 }

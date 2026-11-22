@@ -7,6 +7,26 @@
 - Argo CD owns all platform services and workloads on `labprod`.
 - Bitwarden owns plaintext application credentials; Git owns their mappings.
 
+## Standalone development VM migration
+
+The replacement for Coder is prepared in
+[`terraform/dev-vm`](../terraform/dev-vm/README.md), with native configuration in
+`ansible/roles/dev_vm` and tool versions in `environments/dev-vm`. VM creation
+has started, but native migration is not yet published or adopted: the Coder recovery procedure below still owns the active
+workspace until cutover acceptance. Proxmox VM 160 and its 80 GiB disk belong
+to this separate Terraform state; CAPI and `terraform/proxmox` never own them.
+The rebuild path is Proxmox/VLAN 10 → Debian VM → guest-agent Tailscale
+enrollment → Ansible/native services → private DNS/SSO → encrypted backup
+restore and acceptance. SSH is restricted to the VM Tailscale interface.
+Restore the existing state before planning an already-created VM.
+
+The runbook owns the external Tailscale enrollment, Cloudflare DNS-01 token,
+bucket-scoped R2 credential and separate Restic password recovery from
+Bitwarden. No new secret or local Terraform state may be committed. Keep old
+Coder data and archives until native backup/restore and final migration pass;
+retirement is an explicit guarded action against only `coder` and
+`coder-workspaces`, after their GitOps declarations are removed.
+
 ## Inputs outside Git
 
 Required recoverable inputs are the Proxmox Terraform and CAPMOX API tokens,

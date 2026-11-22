@@ -1,0 +1,190 @@
+---
+- name: Require the dedicated VM and external recovery inputs
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.distribution == 'Debian'
+      - ansible_facts.distribution_major_version == '13'
+      - ansible_facts.hostname == 'dev'
+      - dev_release_archive is defined
+      - dev_release_id is defined
+      - dev_release_id is match('^[a-f0-9]{64}$')
+      - dev_backup_env_file is defined
+      - dev_restic_password_file is defined
+      - dev_cloudflare_credentials_file is defined
+    fail_msg: Use the dev VM runbook; recovery inputs must exist outside Git before installation.
+
+- name: Inspect an existing active release
+  ansible.builtin.stat:
+    path: /opt/dev-vm/current
+  register: dev_existing_release
+
+- name: Keep subsequent updates behind the checkpointing updater
+  ansible.builtin.assert:
+    that:
+      - not dev_existing_release.stat.exists or dev_existing_release.stat.lnk_source | basename == dev_release_id
+    fail_msg: Use sudo devctl update for a new release; do not reprovision an active VM.
+
+- name: Create the operator SSH directory
+  ansible.builtin.file:
+    path: /home/dev/.ssh
+    state: directory
+    owner: dev
+    group: dev
+    mode: '0700'
+
+- name: Install the declared operator public keys
+  ansible.builtin.copy:
+    src: '{{ playbook_dir }}/../environments/dev-vm/authorized_keys'
+    dest: /home/dev/.ssh/authorized_keys
+    owner: dev
+    group: dev
+    mode: '0600'
+
+- name: Require an enrolled Tailscale interface
+  ansible.builtin.command: tailscale ip -4
+  register: dev_tail_ip
+  changed_when: false
+
+- name: Verify that Tailscale assigned a CGNAT address
+  ansible.builtin.command:
+    argv:
+      - python3
+      - -c
+      - "import ipaddress,sys; assert ipaddress.ip_address(sys.argv[1]) in ipaddress.ip_network('100.64.0.0/10')"
+      - "{{ dev_tail_ip.stdout | trim }}"
+  changed_when: false
+
+- name: Create protected configuration and release directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - /etc/dev-vm
+    - /etc/mise
+    - /opt/dev-vm/releases
+    - /opt/dev-vm/venvs
+    - /opt/dev-vm/mise
+    - /usr/local/lib/dev-vm
+    - /var/lib/dev-vm
+
+- name: Install native runtime helpers
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/usr/local/lib/dev-vm/{{ item }}"
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - dev_backup.py
+    - devctl.py
+    - dev_install.py
+    - health.sh
+
+- name: Publish operator commands
+  ansible.builtin.file:
+    src: "/usr/local/lib/dev-vm/{{ item.source }}"
+    dest: "/usr/local/sbin/{{ item.name }}"
+    state: link
+  loop:
+    - {name: devctl, source: devctl.py}
+    - {name: dev-backup, source: dev_backup.py}
+    - {name: dev-health, source: health.sh}
+
+- name: Install private recovery credentials
+  ansible.builtin.copy:
+    src: "{{ item.source }}"
+    dest: "{{ item.destination }}"
+    owner: root
+    group: root
+    mode: '0600'
+  no_log: true
+  loop:
+    - {source: '{{ dev_backup_env_file }}', destination: /etc/dev-vm/backup.env}
+    - {source: '{{ dev_restic_password_file }}', destination: /etc/dev-vm/restic-password}
+    - {source: '{{ dev_cloudflare_credentials_file }}', destination: /etc/dev-vm/cloudflare.ini}
+
+- name: Copy the content-addressed release
+  ansible.builtin.copy:
+    src: '{{ dev_release_archive }}'
+    dest: '/opt/dev-vm/{{ dev_release_id }}.tar.gz'
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Extract the release into an immutable directory
+  ansible.builtin.unarchive:
+    src: '/opt/dev-vm/{{ dev_release_id }}.tar.gz'
+    dest: /opt/dev-vm/releases
+    remote_src: true
+    mode: 'u=rwX,go=rX'
+    creates: '/opt/dev-vm/releases/{{ dev_release_id }}/manifest.json'
+
+- name: Install TLS and HTTP configuration
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/dev-vm/nginx.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Configure the private development DNS zone
+  ansible.builtin.template:
+    src: dnsmasq.conf.j2
+    dest: /etc/dev-vm/dnsmasq.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Install supervised services and timers
+  ansible.builtin.template:
+    src: '{{ item }}.j2'
+    dest: '/etc/systemd/system/{{ item }}'
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - dev-gateway.service
+    - dev-agent.service
+    - dev-backup.service
+    - dev-backup-init.service
+    - dev-backup.timer
+    - dev-restore-test.service
+    - dev-restore-test.timer
+    - dev-checkpoint.service
+
+- name: Install the reviewed SSH and firewall configuration
+  ansible.builtin.copy:
+    src: '{{ item.source }}'
+    dest: '{{ item.destination }}'
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - {source: nftables.conf, destination: /etc/nftables.conf}
+    - {source: sshd.conf, destination: /etc/ssh/sshd_config.d/00-dev-vm.conf}
+
+- name: Validate SSH configuration before reloading
+  ansible.builtin.command: /usr/sbin/sshd -t
+  changed_when: false
+
+- name: Validate firewall before loading
+  ansible.builtin.command: /usr/sbin/nft -c -f /etc/nftables.conf
+  changed_when: false
+
+- name: Load the dedicated firewall table without changing Tailscale chains
+  ansible.builtin.command: /usr/sbin/nft -f /etc/nftables.conf
+  changed_when: true
+
+- name: Reload systemd and SSH
+  ansible.builtin.systemd_service:
+    name: ssh.service
+    state: reloaded
+    daemon_reload: true
+
+- name: Install the initial release or update an existing installation safely
+  ansible.builtin.command:
+    argv: [/usr/local/sbin/devctl, install, '{{ dev_release_id }}']
+  changed_when: true

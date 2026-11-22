@@ -1,0 +1,10 @@
+[Unit]
+Description=Back up development data every four hours
+
+[Timer]
+OnCalendar=*-*-* 00,04,08,12,16,20:17:00 UTC
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

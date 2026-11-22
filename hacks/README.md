@@ -1,5 +1,12 @@
 # Operator helpers
 
+The standalone development VM uses `build-dev-release.py`,
+`migrate-dev-home.py` and the guarded `retire-coder.py`. Their ownership,
+recovery inputs, exact retirement targets and safe acceptance checks are in
+[the VM runbook](../terraform/dev-vm/README.md). These helpers do not publish
+source or apply Terraform automatically.
+
+
 - `cluster-setup.sh` installs client access for the fixed `labmgmt` management
   cluster and sole `labprod` workload cluster.
 - `capi-init.sh` installs the pinned providers on `labmgmt`.

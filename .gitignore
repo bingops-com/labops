@@ -37,3 +37,10 @@ __pycache__/
 
 # Private operator recovery snapshots (retained-home backup scope).
 /.runtime/
+
+# Private VM migration inputs, release artifacts and recovery reports.
+/.runtime/dev-vm/
+/ansible/inventories/dev-vm.ini
+/environments/dev-vm/*.env
+/environments/dev-vm/*.ini
+/environments/dev-vm/*password*

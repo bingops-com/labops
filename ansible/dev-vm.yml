@@ -1,0 +1,9 @@
+---
+- name: Configure the standalone development VM over Tailscale
+  hosts: dev
+  become: true
+  gather_facts: true
+  vars_files:
+    - ../environments/dev-vm/versions.yml
+  roles:
+    - dev_vm
