@@ -5,12 +5,12 @@ output "public_ipv4" {
 
 output "server_id" {
   description = "Hetzner Cloud server identifier."
-  value       = hcloud_server.edge_gateway.id
+  value       = try(hcloud_server.edge_gateway[0].id, null)
 }
 
 output "server_name" {
   description = "Hetzner and Tailscale hostname."
-  value       = hcloud_server.edge_gateway.name
+  value       = try(hcloud_server.edge_gateway[0].name, null)
 }
 
 output "public_forwards" {

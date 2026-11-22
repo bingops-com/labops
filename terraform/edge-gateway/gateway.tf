@@ -21,6 +21,7 @@ resource "terraform_data" "bootstrap_revision" {
 }
 
 resource "tailscale_tailnet_key" "edge_gateway" {
+  count         = var.enabled ? 1 : 0
   reusable      = false
   ephemeral     = false
   preauthorized = true
@@ -96,6 +97,7 @@ resource "hcloud_firewall" "edge_gateway" {
 }
 
 resource "hcloud_server" "edge_gateway" {
+  count       = var.enabled ? 1 : 0
   name        = var.name
   image       = var.image
   server_type = var.server_type
@@ -106,7 +108,7 @@ resource "hcloud_server" "edge_gateway" {
   ]
 
   user_data = templatefile("${path.module}/cloud-init.yaml.tftpl", {
-    auth_key_b64        = base64encode(tailscale_tailnet_key.edge_gateway.key)
+    auth_key_b64        = base64encode(tailscale_tailnet_key.edge_gateway[0].key)
     hostname            = var.name
     nftables_config_b64 = base64encode(local.nftables_config)
     tailscale_version   = var.tailscale_version

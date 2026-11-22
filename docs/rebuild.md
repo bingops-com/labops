@@ -31,7 +31,10 @@ configs are sensitive generated state, not documentation.
    Zomboid, then create their namespace-local copy automatically.
 6. Review the edge-gateway forwarding table, apply its saved plan, then verify
    its Tailscale route and intended public ports. The gateway is stateless; its
-   retained IPv4 is the stable public endpoint.
+   retained IPv4 is the stable public endpoint. Before enabling the future
+   Gaming as a Service worker, restore/migrate its protected state and verify
+   the non-destructive adoption described in
+   [the gateway runbook](../terraform/edge-gateway/README.md#state-migration-prerequisite).
 7. Apply reviewed Cloudflare DNS, tunnel and the production R2 buckets.
 8. Reconcile storage, CloudNativePG and Barman Cloud; verify backup and restore.
 9. Reconcile Authentik, observability and workloads; verify Synced/Healthy.

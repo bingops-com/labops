@@ -87,7 +87,7 @@ If a manual server replacement is required without changing its bootstrap
 inputs, rotate the already-consumed single-use key in the same reviewed plan:
 
 ```sh
-terraform -chdir=terraform/edge-gateway plan -replace=tailscale_tailnet_key.edge_gateway -replace=hcloud_server.edge_gateway -out=edge-gateway.tfplan
+terraform -chdir=terraform/edge-gateway plan -replace='tailscale_tailnet_key.edge_gateway[0]' -replace='hcloud_server.edge_gateway[0]' -out=edge-gateway.tfplan
 ```
 
 ## Adding services
@@ -131,3 +131,67 @@ The gateway has no data to restore. Recreate it from this stack and the external
 credentials above. The retained primary IPv4 keeps public endpoints stable.
 If the IPv4 itself is lost, apply the stack to allocate a replacement and update
 the owning public DNS or connection documentation before reopening traffic.
+
+
+## Gaming as a Service preparation
+
+The lifecycle refactor is staged on `feat/gaas-lifecycle`; it has not been
+applied to the existing gateway. `enabled` defaults to `true`. Set it to
+`false` only in a reviewed plan to remove the VM and its consumed bootstrap
+key while retaining the IPv4, DNS records, firewall and operator SSH key.
+The retained IPv4 continues to incur its own charge. Resume with `enabled=true`;
+Terraform creates a fresh single-use Tailscale key for the new VM.
+
+`moved.tf` migrates the original singleton VM/key addresses to index `[0]`
+without replacing them. Keep these moved blocks for retained states. A first
+real plan must show these moves with no VM replacement before applying.
+Never use `terraform destroy` for suspension: that would also remove the
+retained address and DNS. Forward-table changes still replace the VM, so the
+automatic worker rejects those plans until a separate route-update mechanism
+has been implemented and tested. Other game adapters are follow-up work.
+
+Run the provider-mocked lifecycle tests with no cloud credentials or real state:
+
+```sh
+terraform -chdir=terraform/edge-gateway init -backend=false -input=false -lockfile=readonly
+terraform -chdir=terraform/edge-gateway test
+```
+
+### State migration prerequisite
+
+The only current execution state remains the protected local file in the
+original `labops/terraform/edge-gateway` directory. No state was copied into
+this worktree. Do not run a real plan/apply from an empty state here: that
+would attempt to create another gateway rather than adopt the current one.
+
+The proposed worker uses a Kubernetes backend in a dedicated `gaas-state`
+namespace and its Lease lock. `backend.tf.example` is an inactive example,
+not an activated backend. Before enabling workers, an operator must:
+
+1. Recover the existing Hetzner, Cloudflare and edge-specific Tailscale OAuth
+   credentials from the password manager, and map only these inputs through
+   Bitwarden Secrets Manager to the worker environment. The network/DNS OAuth
+   client is not interchangeable with the edge auth-key client.
+2. Provide the original SSH public key as a non-secret configuration input;
+   a different key changes bootstrap inputs and may cause replacement.
+3. Create narrowly scoped state Secret/Lease RBAC, a protected encrypted
+   backup for the backend state, and validate that backup's restoration.
+4. Back up the current local state privately, stop other Terraform writers,
+   and perform one explicitly reviewed backend migration using that state.
+   Preserve its lineage and resource IDs. Never print state or commit it.
+5. Verify the remote state retains VM ID `169230729` and IPv4 resource ID
+   `154062800`, and verify a non-destructive plan before enabling jobs.
+6. Mark the old local state as retired in the private operator inventory so
+   it cannot become a second writer. Retain the protected recovery copy.
+
+The namespace, RBAC, backup and migration are not installed by this change.
+Until those prerequisites and credentials are confirmed, production lifecycle
+execution remains disabled. Restore the backend before reconciling gateway
+resources after a complete lab rebuild. The current local state continues to
+use its existing retained-home recovery policy while migration is pending.
+
+The game planner/guarded worker lives in the `pz-server` repository under
+`gaas/`. The Kubernetes runtime adapter, polling controller, reproducible game
+release artefacts and end-to-end cloud acceptance remain unfinished; the
+Terraform tests simulate create/suspend/resume and do not prove Internet
+routing, Tailscale enrollment or Project Zomboid client connectivity.

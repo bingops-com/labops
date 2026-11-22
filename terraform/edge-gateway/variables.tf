@@ -1,3 +1,9 @@
+variable "enabled" {
+  type        = bool
+  description = "Whether the gateway VM exists. False retains its IPv4, DNS, firewall and SSH key, but removes the VM and consumed Tailscale bootstrap key."
+  default     = true
+}
+
 variable "name" {
   type        = string
   description = "Hetzner and Tailscale hostname for the stateless public edge gateway."
