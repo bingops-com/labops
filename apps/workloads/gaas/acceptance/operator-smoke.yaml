@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gaas-operator-smoke-20261122
+  namespace: pz-server
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: smoke
+        image: ghcr.io/bingops-com/pz-server@sha256:ec4055e2550654c0ddfdae6241c08df936922a24e2ba41048c505b799ba29b3f
+        command:
+        - python3
+        - -c
+        - from gaas.runtime import Zomboid; assert hasattr(Zomboid,"active_jobs");
+          print("GAAS_OPERATOR_SMOKE_JSON={\"generationSerialization\":true}")
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi

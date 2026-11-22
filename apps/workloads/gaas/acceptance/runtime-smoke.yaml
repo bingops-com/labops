@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gaas-runtime-smoke-20261122
+  namespace: pz-server
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: smoke
+        image: ghcr.io/bingops-com/pz-server@sha256:4e190125eb41ebc003a0e4f1ee70495301ed03b46d68221358ecffc96dc27853
+        command:
+        - python3
+        - -c
+        - import json,os; from pathlib import Path; tools=["gaas-operation","backup-server","install-server"];
+          ok=all(os.access("/usr/local/bin/"+n,os.X_OK) for n in tools); print("GAAS_RUNTIME_SMOKE_JSON="+json.dumps({"toolsExecutable":ok}));
+          raise SystemExit(0 if ok else 1)
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
