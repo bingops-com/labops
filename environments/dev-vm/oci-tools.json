@@ -1,0 +1,7 @@
+[
+  {
+    "name": "trivy",
+    "image": "mirror.gcr.io/aquasec/trivy:0.66.0@sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e",
+    "binary": "usr/local/bin/trivy"
+  }
+]

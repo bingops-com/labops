@@ -101,36 +101,6 @@ def restore_test():
 
 
 def checkpoint():
-    """A snapshot on the same hypervisor is only a checkpoint, so also ship it off-host."""
-    backup()
-    restore_test()
-    ssh = ['runuser','-u','dev','--','ssh','-i',str(HOME / '.ssh/homeops-proxmox'),'-o','BatchMode=yes','-o','IdentitiesOnly=yes','-o','ConnectTimeout=10','bingo@192.168.1.100']
-    output = run([*ssh, 'sudo vzdump 160 --mode snapshot --compress zstd --storage local --quiet 0'], text=True)
-    text = output.stdout + output.stderr
-    candidates = re.findall(r"(/var/lib/vz/dump/vzdump-qemu-160-[0-9_\-]+\.vma\.zst)", text)
-    if not candidates:
-        raise RuntimeError('No completed VM archive found in vzdump output')
-    archive = candidates[-1]
-    source = subprocess.Popen([*ssh, 'sudo cat -- ' + archive], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-    try:
-        destination = subprocess.run(['restic','backup','--json','--host','dev-vm','--tag','dev-vm-system','--stdin','--stdin-filename','vm-160.vma.zst'], stdin=source.stdout, capture_output=True, text=True)
-        source.stdout.close()
-        source_code = source.wait()
-        destination.check_returncode()
-        if source_code != 0:
-            raise RuntimeError('Incomplete VM archive stream')
-        identifier = completed_snapshot(destination.stdout)
-        # Checking the encrypted repository is required before admitting an update.
-        restic('check')
-        write_json(STATE / 'checkpoint.json', {'snapshot':identifier,'archive':archive,'completed_at':datetime.now(timezone.utc).isoformat()})
-        return identifier
-    finally:
-        if source.poll() is None:
-            source.kill()
-            source.wait()
-
-
-def checkpoint():
     ssh = ['runuser','-u','dev','--','ssh','-i','/home/dev/.ssh/homeops-proxmox','-o','BatchMode=yes','-o','IdentitiesOnly=yes','-o','StrictHostKeyChecking=yes','bingo@192.168.1.100']
     result = run([*ssh,'sudo vzdump 160 --mode snapshot --compress zstd --storage local --prune-backups keep-last=2'],text=True)
     output = result.stdout + '\n' + result.stderr
