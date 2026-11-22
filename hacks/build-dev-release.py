@@ -21,10 +21,12 @@ def build(app, output):
     for path in (ROOT / 'environments/dev-vm/.mise/locks').rglob('*'):
         if path.is_file():
             add(path,'environment/'+str(path.relative_to(ROOT / 'environments/dev-vm')))
-    for name in ['dev_backup.py','devctl.py','dev_install.py','health.sh']:
+    for name in ['dev_backup.py','devctl.py','dev_install.py','health.sh','wait-tailnet.sh']:
         add(ROOT / 'ansible/roles/dev_vm/files' / name,'runtime/'+name)
     role=ROOT / 'ansible/roles/dev_vm'
     for path in (role / 'templates').glob('*.j2'):
+        if path.name.startswith('_'):
+            continue  # The initial supervisor refers to the resulting release ID.
         add(path,'configuration/'+path.name)
     for name in ['nftables.conf','sshd.conf']:
         add(role / 'files' / name,'configuration/'+name)

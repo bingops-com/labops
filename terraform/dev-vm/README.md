@@ -50,6 +50,18 @@ First boot masks SSH once, loads the firewall, installs Tailscale and only then
 starts SSH. Later reboots do not mask SSH again. A firewall update replaces
 only `table inet dev_vm`, preserving Tailscale's own chains.
 
+Initial full acceptance is supervised by `dev-bootstrap.service`, enabled for
+boot and retried after failure. It resumes the same verified release after SSH,
+controller or VM interruption and stops retrying after writing the private
+`initial-acceptance.json` receipt. A failed pre-reboot Restic process leaves a
+stale repository lock; initialization removes only locks Restic identifies as
+stale, never forces active locks away. Nginx and DNSmasq wait for the enrolled
+Tailscale interface and retry failed startup automatically. Their failure does
+not block native SSH. Inspect `sudo systemctl status dev-bootstrap` and
+`sudo journalctl -u dev-bootstrap` while initial acceptance runs. Starting the
+Ansible play schedules this supervised job; a successful Ansible return alone
+is not proof that backup/restore acceptance is complete.
+
 The native portal is published at `https://code.lab.bingo`, with previews at
 `https://PORT.code.lab.bingo`. The existing `dev.lab.bingo` portal remains on
 Coder during parallel acceptance. The native portal/gateway and discovery listen
@@ -305,7 +317,7 @@ sudo devctl status
 
 The updater runs as a transient systemd service, independently of SSH. It
 requires a fresh encrypted data backup and a real isolated sentinel/SQLite restore
-before installation. Native package or configuration changes additionally require
+before installation. Native package, global OCI binary, installer/runtime or configuration changes additionally require
 a full `vzdump` checkpoint streamed to encrypted R2; a CLI-only update keeps the
 existing OS and uses the verified data snapshot plus retained tool versions.
 Any failed prerequisite aborts adoption. Proxmox keeps the last two local VM

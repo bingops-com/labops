@@ -61,8 +61,12 @@ def configure(root):
         name=source.name.removesuffix('.j2')
         if name=='nginx.conf':target=Path('/etc/nginx/sites-enabled/dev')
         elif name=='dnsmasq.conf':target=Path('/etc/dnsmasq.d/dev.conf')
+        elif name in ['nginx.service.conf','dnsmasq.service.conf']:
+            target=Path('/etc/systemd/system') / (name.removesuffix('.conf')+'.d') / '10-dev-vm.conf'
         else:target=Path('/etc/systemd/system') / name
-        target.parent.mkdir(parents=True,exist_ok=True)
+        if not target.parent.exists():
+            target.parent.mkdir(parents=True,exist_ok=True)
+            target.parent.chmod(0o755)
         target.write_text(content);target.chmod(0o644)
     Path('/etc/nginx/sites-enabled/default').unlink(missing_ok=True)
     for name,target in [('nftables.conf','/etc/nftables.conf'),('sshd.conf','/etc/ssh/sshd_config.d/00-dev-vm.conf')]:
@@ -72,6 +76,7 @@ def configure(root):
     os.chown(keys,1000,1000);keys.chmod(0o600)
     call(['sshd','-t']);call(['nft','-c','-f','/etc/nftables.conf'])
     call(['nft','-f','/etc/nftables.conf']);call(['systemctl','reload','ssh'])
+    call(['systemctl','daemon-reload'])
     call(['systemctl','enable','--now','dnsmasq'])
     call(['systemctl','restart','dnsmasq'])
 
@@ -121,7 +126,7 @@ esac
 
     for source,target in [('codex.toml','/etc/codex/config.toml'),('claude.json','/etc/claude-code/managed-settings.json'),('screenrc','/etc/screenrc')]:
         destination=Path(target);destination.parent.mkdir(parents=True,exist_ok=True,mode=0o755)
-        destination.parent.chmod(0o755)
+        if destination.parent != Path('/etc'):destination.parent.chmod(0o755)
         shutil.copy2(root / 'environment' / source,destination);destination.chmod(0o644)
     # Copied personal profiles may prepend legacy paths; reload the native tools last.
     hook='\n# Native development tools (managed)\n[ ! -r /etc/profile.d/dev-tools.sh ] || . /etc/profile.d/dev-tools.sh\n'
@@ -138,7 +143,7 @@ def activate(root):
     configure(root)
     activate_tools(root)
     link(root, BASE / 'current')
-    for name in ['dev_backup.py', 'devctl.py', 'dev_install.py', 'health.sh']:
+    for name in ['dev_backup.py', 'devctl.py', 'dev_install.py', 'health.sh', 'wait-tailnet.sh']:
         shutil.copy2(root / 'runtime' / name, Path('/usr/local/lib/dev-vm') / name)
     call(['systemctl','daemon-reload'])
     call(['systemctl','enable','--now','dev-agent','dev-gateway'])

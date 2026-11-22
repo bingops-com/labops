@@ -69,11 +69,14 @@ def main():
                 if (STATE / 'tooling.json').exists():
                     command('systemctl','start','dev-checkpoint.service')
             installer(root).install(root)
+        else:
+            installer(root).activate(root)
         command('/usr/local/sbin/dev-health')
         command('systemctl','start','dev-backup-init.service')
         command('systemctl','start','dev-backup.service')
         command('systemctl','start','dev-restore-test.service')
         command('systemctl','enable','--now','dev-backup.timer','dev-restore-test.timer')
+        (STATE / 'initial-acceptance.json').write_text(json.dumps({'release':root.name,'backup_restore_verified':True,'completed_at':datetime.now(timezone.utc).isoformat()},indent=2)+'\n')
         return
     if action == 'update':
         if current == root: return
@@ -99,6 +102,11 @@ def main():
         adoption_started=False
         system_changed=(root / 'environment/apt-tools.json').read_bytes() != (current / 'environment/apt-tools.json').read_bytes()
         system_changed=system_changed or sorted((p.name,p.read_bytes()) for p in (root / 'configuration').glob('*')) != sorted((p.name,p.read_bytes()) for p in (current / 'configuration').glob('*'))
+        system_changed=system_changed or sorted((p.name,p.read_bytes()) for p in (root / 'runtime').glob('*') if p.is_file()) != sorted((p.name,p.read_bytes()) for p in (current / 'runtime').glob('*') if p.is_file())
+        def artifact_manifest(release):
+            path=release / 'environment/oci-tools.json'
+            return path.read_bytes() if path.exists() else b''
+        system_changed=system_changed or artifact_manifest(root) != artifact_manifest(current)
         try:
             command('systemctl','start','dev-backup.service')
             command('systemctl','start','dev-restore-test.service')
