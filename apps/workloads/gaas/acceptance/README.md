@@ -114,3 +114,27 @@ use this test bundle to restore or adopt the production gateway.
 The UX proposal is in `pz-server/gaas/portal-design.md`: the existing portal
 writes typed changes to Git and reads observed status from Kubernetes/Argo CD.
 No portal write integration or GitHub App is installed by these manifests.
+
+## First UI using GitHub Actions
+
+`.github/workflows/game-room-state.yml` prepares a small manual form: choose
+one of the two isolated rooms and Running/Suspended. It validates the target,
+changes only `spec.state` and commits to the acceptance branch. No cloud or
+Kubernetes credentials are provided to this workflow. Argo CD and the controller
+execute the declared change; workflow success means Git was updated, not that
+the game is ready. Use the GameRoom status/observed generation for completion.
+
+The workflow is prepared on this feature branch, not enabled in the default
+branch. GitHub requires the dispatch definition on the default branch before
+the Actions UI/manual dispatch can be used. Publishing that definition needs
+a reviewed merge; no main-branch merge was performed. Its targets remain the
+isolated test rooms, even after the workflow definition is published. A future
+production version must explicitly choose the operational branch and allowed
+rooms after ownership handoff. Direct writes also require branch rules that
+permit the workflow token; the workflow never bypasses protection or force
+pushes. A concurrent Git edit can reject the push: reread the current state and
+retry rather than overwrite it. Token-authored pushes do not start ordinary
+push-triggered CI, so the bounded input validation runs before the commit.
+
+References: [manual workflows](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow),
+[token-triggered events](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).

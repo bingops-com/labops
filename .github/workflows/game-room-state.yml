@@ -1,0 +1,75 @@
+name: GameRoom - démarrer ou mettre en veille
+
+"on":
+  workflow_dispatch:
+    inputs:
+      room:
+        description: Serveur de test
+        required: true
+        type: choice
+        options: [gaas-pz-one, gaas-pz-two]
+      state:
+        description: État souhaité
+        required: true
+        type: choice
+        default: Suspended
+        options: [Running, Suspended]
+
+permissions:
+  contents: write
+
+jobs:
+  intent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GAME_ROOM: ${{ inputs.room }}
+      DESIRED_STATE: ${{ inputs.state }}
+      REQUESTED_BY: ${{ github.actor }}
+      GAME_BRANCH: feat/gaas-lifecycle
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/gaas-lifecycle
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 -m pip install --disable-pip-version-check PyYAML==6.0.2
+      - name: Modifier uniquement l'état du GameRoom autorisé
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import yaml
+          room, state = os.environ['GAME_ROOM'], os.environ['DESIRED_STATE']
+          if room not in {'gaas-pz-one', 'gaas-pz-two'} or state not in {'Running', 'Suspended'}:
+              raise SystemExit('Unsupported GameRoom or desired state')
+          root = Path('apps/workloads/gaas/acceptance/rooms').resolve()
+          path = root / (room + '.yaml')
+          if path.is_symlink() or path.resolve().parent != root:
+              raise SystemExit('Unexpected manifest path')
+          obj = yaml.safe_load(path.read_text())
+          if (obj.get('apiVersion') != 'gaming.bingops.com/v1alpha1'
+              or obj.get('kind') != 'GameRoom'
+              or obj.get('metadata', {}).get('name') != room
+              or obj['metadata'].get('namespace') != 'pz-server'
+              or obj.get('spec', {}).get('gatewayRef') != 'shared-test'):
+              raise SystemExit('Manifest is outside isolated acceptance scope')
+          obj['spec']['state'] = state
+          path.write_text(yaml.safe_dump(obj, sort_keys=False))
+          PY
+      - name: Enregistrer l'intention dans Git
+        run: |
+          manifest="apps/workloads/gaas/acceptance/rooms/${GAME_ROOM}.yaml"
+          if git diff --quiet -- "$manifest"; then
+            echo "L'état souhaité est déjà ${DESIRED_STATE}." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$manifest"
+          git commit -m "game(${GAME_ROOM}): request ${DESIRED_STATE} by ${REQUESTED_BY}"
+          git push origin "HEAD:${GAME_BRANCH}"
+          revision=$(git rev-parse HEAD)
+          echo "Intention enregistrée : ${GAME_ROOM} → ${DESIRED_STATE}." >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit : ${revision}. Argo CD et le contrôleur appliquent ensuite le changement." >> "$GITHUB_STEP_SUMMARY"
