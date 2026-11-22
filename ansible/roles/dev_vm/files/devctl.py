@@ -73,14 +73,11 @@ def main():
             if current != root:
                 raise SystemExit('Already installed; use devctl update to create recovery checkpoints')
         if not current:
-            if (BASE / 'tooling').exists():
+            if (BASE / 'tooling').exists() and (STATE / 'tooling.json').exists():
                 command('systemctl','start','dev-backup-init.service')
                 command('systemctl','start','dev-backup.service')
                 command('systemctl','start','dev-restore-test.service')
-                # An interrupted, unverified bootstrap has no accepted system to roll back to.
-                # Its copied data is still backed up and restored before retrying.
-                if (STATE / 'tooling.json').exists():
-                    command('systemctl','start','dev-checkpoint.service')
+                command('systemctl','start','dev-checkpoint.service')
             installer(root).install(root)
         else:
             installer(root).activate(root)
@@ -92,6 +89,8 @@ def main():
         (STATE / 'initial-acceptance.json').write_text(json.dumps({'release':root.name,'backup_restore_verified':True,'completed_at':datetime.now(timezone.utc).isoformat()},indent=2)+'\n')
         return
     if action == 'update':
+        if not (STATE / 'initial-acceptance.json').exists():
+            raise SystemExit('Initial backup/restore acceptance is still running')
         if current == root: return
         command('systemd-run','--unit=dev-update','--collect','--property=Type=exec','/usr/local/sbin/devctl','_update',root.name)
         print('Update runs independently of SSH. Inspect sudo devctl status.')

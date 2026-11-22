@@ -210,8 +210,11 @@ a different tool release without the backup-protected update path.
 `/opt/dev-vm/tooling` records this stage; `/opt/dev-vm/current` is reserved for
 full native service acceptance. Tooling success is not backup acceptance. Full native activation after a
 verified tools-only release requires a full VM checkpoint as well as data
-backup/restore. A failed, unverified initial bootstrap can be retried after
-data recovery passes; it has no previously accepted system to roll back to.
+backup/restore. A failed, unverified first bootstrap has no accepted system to roll back to;
+it can finish installing services while the initial data upload runs. Acceptance
+remains incomplete, and public update commands are refused, until a fresh data
+backup and isolated restoration pass after installation. Personal projects are
+never reset during this first installation.
 A full off-host checkpoint and isolated bootable restore remain required for
 final migration acceptance. Subsequent updates keep all checkpoint guards.
 
