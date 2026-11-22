@@ -16,11 +16,11 @@ The private `coder.lab.bingo` name also uses the existing `lab.bingo` parent
 route. Its answer is owned by `apps/platform/private-dns/labprod`; adding
 Coder does not require a tailnet DNS mutation.
 
-The separate native development VM uses `dev-vm.lab.bingo`, whose private A
+The separate native development VM uses `code.lab.bingo`, whose private A
 record points directly to its Tailscale address `100.65.212.7`. It is declared
 in the same private CoreDNS ConfigMap and uses the existing parent split route;
 there is no public Cloudflare record or application tunnel. Connect with
-`ssh dev@dev-vm.lab.bingo` on Tailscale (standard port 22). The VM firewall
+`ssh dev@code.lab.bingo` on Tailscale (standard port 22). The VM firewall
 accepts SSH only through `tailscale0`. Coder and the current `dev.lab.bingo`
 portal keep their existing names and addresses during parallel preparation.
 If the VM is re-enrolled with a different Tailscale IP, review/update this A
