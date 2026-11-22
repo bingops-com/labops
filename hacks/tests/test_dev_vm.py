@@ -68,7 +68,16 @@ class RecoveryTest(unittest.TestCase):
         self.assertEqual(set(declared),set(locked))
         for name,value in declared.items():
             version=value if isinstance(value,str) else value['version']
-            self.assertIn(version,{record['version'] for record in locked[name]},name)
+            record=next(record for record in locked[name] if record['version']==version)
+            options={} if isinstance(value,str) else {k:v for k,v in value.items() if k!='version'}
+            for key,expected in options.items():
+                actual=record.get('options',{}).get(key)
+                if isinstance(expected,(list,dict)) and isinstance(actual,str):actual=json.loads(actual)
+                self.assertEqual(actual,expected,f'{name}: locked option {key}')
+            if 'aube' in record:
+                sidecar=environment / record['aube']['path']
+                self.assertTrue((sidecar / 'aube-lock.yaml').is_file(),name)
+                self.assertTrue((sidecar / 'package.json').is_file(),name)
         requirements=dict(re.findall(r'^([A-Za-z0-9_.-]+)==(\S+)',(environment / 'requirements.txt').read_text(),re.MULTILINE))
         for name,version in re.findall(r'^([A-Za-z0-9_.-]+)==(\S+)',(environment / 'requirements.in').read_text(),re.MULTILINE):
             self.assertEqual(requirements.get(name),version,name)

@@ -81,9 +81,12 @@ url = "https://nodejs.org/dist/v24.21.0/node-v24.21.0-linux-x64.tar.gz"
 
 [[tools."npm:@anthropic-ai/claude-code"]]
 version = "2.1.287"
-aube = { path = ".mise/locks/npm-anthropic-ai-claude-code/2.1.287", digest = "sha256:725992d9bbd7fbbb8b51d0a954c7eb69c5047129df31860dd401e84bca68f420" }
+aube = { path = ".mise/locks/npm-anthropic-ai-claude-code/2.1.287~c130a719", digest = "sha256:725992d9bbd7fbbb8b51d0a954c7eb69c5047129df31860dd401e84bca68f420" }
 backend = "npm:@anthropic-ai/claude-code"
 specifiers = ["2.1.287"]
+
+[tools."npm:@anthropic-ai/claude-code".options]
+allow_builds = '["@anthropic-ai/claude-code"]'
 
 [[tools."npm:@openai/codex"]]
 version = "0.165.0"

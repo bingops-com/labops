@@ -300,6 +300,11 @@ acceptance. No infrastructure operation should depend on this chat history.
 ## Updates, rollback and restoration
 
 Renovate proposes one PR per declared tool, with automatic merge disabled.
+When changing a Mise tool's options, regenerate its lock with the pinned
+`mise lock TOOL` as well as committing the referenced npm sidecar directory.
+Options such as Claude's narrowly approved postinstall change the lock identity
+even when the tool version stays the same. Acceptance checks verify both the
+version and options; a real locked installation must succeed before deployment.
 The actual updater runs nightly at 03:41 UTC in
 `.github/workflows/dev-tools-renovate.yml`, or manually with workflow dispatch.
 Its official full container is digest-pinned in `environments/dev-vm/automation.json`
