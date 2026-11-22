@@ -26,7 +26,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: controller
-        image: ghcr.io/bingops-com/pz-server@sha256:7ad733dda6c0de70f0eb505bf1c5d2ddf6b9af036a38c9e447dd7e4733c8aaea
+        image: ghcr.io/bingops-com/pz-server@sha256:ec4055e2550654c0ddfdae6241c08df936922a24e2ba41048c505b799ba29b3f
         args:
         - --namespace
         - pz-server

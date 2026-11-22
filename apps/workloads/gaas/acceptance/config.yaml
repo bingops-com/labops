@@ -52,7 +52,7 @@ data:
         },
         "tailscale_ephemeral": true
       },
-      "retryNonce": "verified-controller-image-20261122-1622"
+      "retryNonce": "after-host-reboot-20261122-1924"
     }
 ---
 apiVersion: v1

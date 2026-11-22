@@ -25,4 +25,4 @@ spec:
     publicPorts:
       game: 17261
       direct: 17262
-  retryNonce: gitops-roundtrip-20261122
+  retryNonce: after-host-reboot-20261122-1924
