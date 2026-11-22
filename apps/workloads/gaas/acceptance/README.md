@@ -88,6 +88,18 @@ this test backend is unrelated and cannot serve as a production state migration.
    Resume and verify the retained IP and world. The final desired state in
    the two manifests is Suspended. Do not put the broader acceptance directory
    into an auto-sync root: it contains one-shot Jobs and credential mappings.
+   To test GameRoom deletion, keep the resumed first room running, remove only
+   `gaas-pz-two` from `rooms/` and its Kustomization in Git, and wait until Argo
+   has observed that revision. Pruning is deliberately disabled, so delete
+   only that named test GameRoom as the reviewed deletion action. Its finalizer
+   must obtain a fresh deletion backup before garbage collection. Confirm its
+   generated workloads disappear while the world PVC keeps its original UID,
+   the first endpoint stays online and the gateway VM is unchanged. Restore
+   the second manifest as Suspended in Git; its new GameRoom UID must not
+   replace or delete the retained world PVC. Never remove a finalizer to force
+   this test through. Finish by suspending the first room and confirming the
+   test VM is absent. Re-run the state recovery-file check only after Terraform
+   is idle to retain a current encrypted backend bundle.
 5. Check the active production StatefulSet and gateway independently. Changes
    to these resources require a separate reviewed ownership handoff and the
    production state recovery/migration in the edge-gateway runbook.
