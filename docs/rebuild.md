@@ -11,8 +11,11 @@
 
 The replacement for Coder is prepared in
 [`terraform/dev-vm`](../terraform/dev-vm/README.md), with native configuration in
-`ansible/roles/dev_vm` and tool versions in `environments/dev-vm`. VM creation
-has started, but native migration is not yet published or adopted: the Coder recovery procedure below still owns the active
+`ansible/roles/dev_vm` and tool versions in `environments/dev-vm`. VM 160 is
+created and SSH over Tailscale has been verified; its parallel private SSH
+name is `dev-vm.lab.bingo`, declared in `apps/platform/private-dns/labprod`.
+Native tools, portal and backup services still need installation and acceptance;
+the Coder recovery procedure below still owns the active
 workspace until cutover acceptance. Proxmox VM 160 and its 80 GiB disk belong
 to this separate Terraform state; CAPI and `terraform/proxmox` never own them.
 The rebuild path is Proxmox/VLAN 10 → Debian VM → guest-agent Tailscale

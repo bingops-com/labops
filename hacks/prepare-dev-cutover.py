@@ -59,15 +59,25 @@ def prepare(tail_ip, phase="retire"):
         if '            - !KeyOf dev-proxy-provider\n' not in s:s=s.replace(key,key+'            - !KeyOf dev-proxy-provider\n')
         return s
     edit('apps/platform/authentik/blueprint.yaml',authentik)
-    name='terraform/tailscale-dns/dev.tf'
-    original=(ROOT / name).read_text() if (ROOT / name).exists() else ''
-    updated=f'''# The VM answers its own development zone independently of Kubernetes DNS.
-resource "tailscale_dns_split_nameservers" "dev" {{
-  domain      = "dev.lab.bingo"
-  nameservers = ["{tail_ip}"]
-}}
+    def tailnet_dns(s):
+        # network owns the entire DNS configuration; tailscale-dns is retired.
+        block=f'''  split_dns {{
+    domain = "dev.lab.bingo"
+
+    nameservers {{
+      address = "{tail_ip}"
+    }}
+  }}
+
 '''
-    changes[name]=(original,updated)
+        existing=r'  split_dns \{\n    domain = "dev[.]lab[.]bingo"\n\n    nameservers \{\n      address = "[^"\n]+"\n    \}\n  \}\n\n'
+        if re.search(existing,s):
+            return re.sub(existing,lambda _:block,s,count=1)
+        marker='  magic_dns          = true\n'
+        if s.count(marker)!=1 or 'domain = "dev.lab.bingo"' in s:
+            raise ValueError('Tailnet DNS ownership/layout changed; review terraform/network/dns.tf')
+        return s.replace(marker,block+marker)
+    if phase=='retire':edit('terraform/network/dns.tf',tailnet_dns)
     # Monitoring from Kubernetes cannot bypass the tailnet-only firewall.
     def gatus(s):
         pattern=r'  - name: Coder\n(?:(?!  - name:)[\s\S])*?(?=  - name:|\Z)'

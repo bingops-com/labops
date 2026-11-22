@@ -6,6 +6,15 @@ Cutover is deferred while work continues in the existing environment. The runnin
 workspace remains the source of operator data until migration acceptance. No
 namespace, PVC or old archive may be deleted just because these files exist.
 
+The parallel VM SSH endpoint is **`dev-vm.lab.bingo`** (`100.65.212.7`), using
+account `dev` on port 22 with Tailscale connected. The private A record is owned
+by `apps/platform/private-dns/labprod/configmap.yaml` through the existing
+`lab.bingo` tailnet DNS route. No public record or tunnel is created. See the
+[DNS ownership and recovery](../network/README.md). The existing
+`coder.lab.bingo` and `dev.lab.bingo` endpoints remain on Coder until acceptance.
+This SSH endpoint does not imply that native tools, portal or backup services
+are already installed; those remain separate acceptance steps.
+
 ## Ownership and target
 
 Terraform in this directory owns only Proxmox VM **160**, pool `Development`,

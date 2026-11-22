@@ -73,6 +73,19 @@ class RecoveryTest(unittest.TestCase):
         self.assertIn('            - !KeyOf rom-request-proxy-provider',after)
         self.assertIn('            - !KeyOf dev-proxy-provider',after)
 
+    def test_retirement_keeps_parallel_ssh_dns_and_uses_the_active_dns_owner(self):
+        cutover=load('cutover_retirement',ROOT / 'hacks/prepare-dev-cutover.py')
+        changes=cutover.prepare('100.64.0.160','retire')
+        self.assertNotIn('terraform/tailscale-dns/dev.tf',changes)
+        _,network=changes['terraform/network/dns.tf']
+        self.assertIn('domain = "dev.lab.bingo"',network)
+        self.assertIn('address = "100.64.0.160"',network)
+        self.assertIn('domain = "lab.bingo"',network)
+        _,dns=changes['apps/platform/private-dns/labprod/configmap.yaml']
+        self.assertIn('dev-vm.lab.bingo:53',dns)
+        self.assertIn('30 IN A 100.65.212.7',dns)
+        self.assertNotIn('coder.lab.bingo:53',dns)
+
     def test_failed_backup_prevents_any_adoption_or_rollback(self):
         controller=load('update_controller',FILES / 'devctl.py')
         with tempfile.TemporaryDirectory() as directory:
