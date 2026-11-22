@@ -9,14 +9,19 @@
 
 ## Standalone development VM migration
 
-The replacement for Coder is prepared in
+The replacement for Coder is running in parallel, owned by
 [`terraform/dev-vm`](../terraform/dev-vm/README.md), with native configuration in
 `ansible/roles/dev_vm` and tool versions in `environments/dev-vm`. VM 160 is
-created and SSH over Tailscale has been verified; its parallel private SSH
-name is `code.lab.bingo`, declared in `apps/platform/private-dns/labprod`.
-The runbook supports a parallel tools-only bootstrap and provisional live home
-copy; these do not certify backups, cut over the portal or transfer Terraform
-ownership. Native service and final migration acceptance remain separate;
+created; SSH over Tailscale, native tools, project copies and portal HTTPS
+have been verified at `code.lab.bingo`, declared in
+`apps/platform/private-dns/labprod`. The native portal runs independently of
+the existing Coder/Dev deployments. The encrypted backup/restore acceptance is
+still running. A local full VM archive has passed isolated boot, tool and
+operator-file restoration in disconnected VM 161, now stopped and retained.
+Off-host system checkpoint/restore remains required before Coder retirement.
+Renovate's scheduled runner has opened actual tool PRs and dispatched validation.
+The provisional home copy does not transfer Terraform ownership or certify
+final data synchronization. Native service and final migration acceptance remain separate;
 the Coder recovery procedure below still owns the active
 workspace until cutover acceptance. Proxmox VM 160 and its 80 GiB disk belong
 to this separate Terraform state; CAPI and `terraform/proxmox` never own them.
