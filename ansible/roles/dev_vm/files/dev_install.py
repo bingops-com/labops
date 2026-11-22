@@ -100,6 +100,15 @@ export CHROMIUM=/usr/bin/chromium
 export DISABLE_AUTOUPDATER=1
 export CLUSTERCTL_DISABLE_VERSIONCHECK=true
 export ANSIBLE_COLLECTIONS_PATH=/home/dev/.ansible/collections:/opt/dev-vm/venv/collections
+case $- in
+  *i*)
+    if [ -r "$HOME/.config/homeops/aliases-init.bash" ]; then
+      . "$HOME/.config/homeops/aliases-init.bash"
+    elif [ -r "$HOME/.bash_aliases" ]; then
+      . "$HOME/.bash_aliases"
+    fi
+    ;;
+esac
 '''
     Path('/etc/profile.d/dev-tools.sh').write_text(profile)
     Path('/etc/profile.d/dev-tools.sh').chmod(0o644)

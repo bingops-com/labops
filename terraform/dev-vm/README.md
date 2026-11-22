@@ -62,8 +62,9 @@ filters and image gallery keep their existing appearance. SSH is the editor/
 terminal entry point; a web editor is not required for this migration.
 
 DNSmasq answers only the `code.lab.bingo` zone on the tailnet interface. A
-specific Tailscale split-DNS rule points that zone to the VM; it need not use
-Kubernetes DNS. The VM uses external resolvers with Tailscale DNS acceptance
+specific Tailscale split-DNS rule can point that zone to the VM during final
+cutover; parallel acceptance uses the existing parent route and CoreDNS wildcard.
+After the dedicated route is applied, it need not use Kubernetes DNS. The VM uses external resolvers with Tailscale DNS acceptance
 disabled, avoiding a self-resolution/bootstrap loop. Authentik remains an
 external dependency for browser login; SSH and terminal processes do not depend
 on it. The existing ROM proxy and Dev share one declaratively owned embedded
@@ -161,8 +162,9 @@ underlay port 22. Verify policy permits that exact route.
 Prepare and review `hacks/prepare-dev-cutover.py --phase bootstrap --tailscale-ip ACTUAL_IP`.
 It writes an ignored patch without applying it. This bootstrap phase adds only
 the new Authentik provider and preserves the old Coder login. Use `--phase retire`
-after native acceptance to prepare the separate DNS/GitOps/Coder removal patch. Until DNS is switched, use local DNS overrides
-for acceptance rather than publishing a premature production record.
+after native acceptance to prepare the separate DNS/GitOps/Coder removal patch.
+Parallel acceptance uses `code.lab.bingo`; the legacy `dev.lab.bingo` and
+`coder.lab.bingo` routes remain active until retirement.
 
 Build a release and supply these non-secret Ansible variables plus the paths
 to protected input files:
@@ -251,7 +253,7 @@ Do not proceed on an unavailable or unverified recovery input.
 
 Apply the reviewed cutover source patch and publish it only after VM acceptance.
 It removes `coder-labprod`/`dev-labprod` from the GitOps root, deletes the old
-OIDC identities declaratively, transfers the Dev DNS route and updates Portal/
+OIDC identities declaratively, removes the legacy Dev DNS route and installs the native Code split route and updates Portal/
 Gatus. The old Applications currently have no deletion finalizers, so removing
 them does not itself clean up workloads: do not mistake that for retirement.
 Complete the retirement receipt with actual data/system snapshot IDs, release
