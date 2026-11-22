@@ -1,19 +1,26 @@
 # Standalone development VM
 
-Status: VM 160 is created and native SSH works over Tailscale. The native
-application/services, data migration and Coder retirement are not yet adopted.
-Cutover is deferred while work continues in the existing environment. The running Coder
-workspace remains the source of operator data until migration acceptance. No
+Status (2026-11-22): VM 160 serves the native portal at `code.lab.bingo`,
+with valid wildcard HTTPS, private SSH, active gateway/discovery/DNS services,
+the 15 pinned Mise tools, Trivy, native packages and Python tools installed.
+Thirty-seven project directories and personal settings have been provisionally
+copied. Native health checks and anonymous/spoofed-identity SSO rejection pass.
+The actual encrypted data backup and isolated restore acceptance are still
+running; no full off-host system checkpoint or isolated boot restore is certified.
+Coder retirement is deferred while work continues in the existing environment.
+The running Coder workspace remains the source of operator data until final
+migration acceptance. No
 namespace, PVC or old archive may be deleted just because these files exist.
 
 The parallel VM SSH endpoint is **`code.lab.bingo`** (`100.65.212.7`), using
 account `dev` on port 22 with Tailscale connected. The private A record is owned
-by `apps/platform/private-dns/labprod/configmap.yaml` through the existing
-`lab.bingo` tailnet DNS route. No public record or tunnel is created. See the
+by native DNSmasq through the specific `code.lab.bingo` tailnet DNS route in
+`terraform/network`; CoreDNS retains a matching answer. No public record or tunnel is created. See the
 [DNS ownership and recovery](../network/README.md). The existing
 `coder.lab.bingo` and `dev.lab.bingo` endpoints remain on Coder until acceptance.
-This SSH endpoint does not imply that native tools, portal or backup services
-are already installed; those remain separate acceptance steps.
+GitHub/Codex/cluster access checks pass; Claude's source session was already
+logged out and needs a new provider login if used. Tools and projects are present,
+but a provisional copy does not certify final data synchronization or backups.
 
 ## Ownership and target
 
@@ -82,10 +89,20 @@ to discovered project ports, and supports WebSockets. Static UI, favorites,
 filters and image gallery keep their existing appearance. SSH is the editor/
 terminal entry point; a web editor is not required for this migration.
 
-DNSmasq answers only the `code.lab.bingo` zone on the tailnet interface. A
-specific Tailscale split-DNS rule can point that zone to the VM during final
-cutover; parallel acceptance uses the existing parent route and CoreDNS wildcard.
-After the dedicated route is applied, it need not use Kubernetes DNS. The VM uses external resolvers with Tailscale DNS acceptance
+Tailscale node-key expiry is a provider setting distinct from SSH keys.
+The native `dev` device (`100.65.212.7`) still reports expiry on
+2027-05-21 unless the owner has since disabled it. Disable key expiry for this
+server in the tailnet Machines console, or use a narrowly scoped OAuth client
+with `devices:core` write access, stored in Bitwarden. The two existing clients
+return 403 for that write scope; their read access does not authorize changing
+the setting. Verify `keyExpiryDisabled: true` through the provider's device API
+after changing it. Reapply this provider setting after enrolling a replacement;
+never assume it is inherited from a VM backup or from operator permissions.
+
+DNSmasq answers only the `code.lab.bingo` zone on the tailnet interface. The
+specific Tailscale split-DNS rule points that zone to the VM independently of
+Coder retirement; legacy names retain their existing route. Native DNS does
+not require Kubernetes. The VM uses external resolvers with Tailscale DNS acceptance
 disabled, avoiding a self-resolution/bootstrap loop. Authentik remains an
 external dependency for browser login; SSH and terminal processes do not depend
 on it. The existing ROM proxy and Dev share one declaratively owned embedded
@@ -322,8 +339,9 @@ to this repository's VM environment files; it cannot cut over Coder or update
 unrelated workloads. GitHub creates a short-lived token scoped to the repository;
 no personal token or App private key is copied into this automation. Actions must
 be enabled and repository policy must allow Actions to create PRs (already enabled
-on this repository). The workflow declares only contents/PR/issues writes and
-Actions permission for dispatching validation. Restore these settings through the
+on this repository). The workflow declares contents/PR/issues writes, check reads
+and commit-status writes for readiness, plus Actions permission for validation.
+Restore these settings through the
 repository's Actions settings after a repository transfer/recreation.
 
 Mise lock refreshes are explicitly allowed in the trusted runner and use its safe
@@ -412,6 +430,24 @@ states. Stop the original before restoring it to VM 160. `qmrestore --force`
 replaces its disks and requires exact target/impact approval. Restore newer
 project files separately from the latest data snapshot if needed, then verify
 SSH only over Tailscale, TLS, tools and backups before resuming work.
+
+To rehearse a completed **local** archive without replacing the original, run
+`python3 hacks/test-dev-vm-restore.py --archive /var/lib/vz/dump/VM160_ARCHIVE.vma.zst`
+with the exact real VM160 archive path. The helper checks compressed integrity,
+refuses an occupied rehearsal ID (default 161; permitted range 161–169), restores
+without `--force`, deletes all NICs before boot, rejects passthrough devices,
+and masks cloud-init/network-wait/tailnet/backup units only in the stopped copy
+before boot. Debian's cloud-init network stage otherwise holds sysinit and the
+guest agent when no NIC exists. It verifies tools/projects and selected private files without printing hashes
+or contents. It stops the copy and writes a private `.runtime/dev-vm/system-restore.json`
+receipt. The generated rehearsal VM/disk belongs to this helper, outside Terraform;
+keep it stopped with on-boot disabled. Deletion requires approval for that exact
+rehearsal VM and disk, after preserving the receipt. A partial failure leaves it
+stopped or isolated for inspection. `--resume` requires a matching private
+`.owned.json` receipt and verifies the existing copy is stopped, named
+`dev-restore-test` and disconnected; it never implicitly adopts another VM.
+A successful local rehearsal proves boot/data recovery from that archive; it does
+not certify that a later encrypted R2 system snapshot has been restored.
 
 If both disks and archives are lost, recreate the VM from the pinned Debian
 image and Git, re-enroll Tailscale, recover keys from Bitwarden, restore data,

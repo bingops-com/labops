@@ -31,6 +31,14 @@ resource "tailscale_dns_configuration" "tailnet" {
     }
   }
 
+  split_dns {
+    domain = "code.lab.bingo"
+
+    nameservers {
+      address = "100.65.212.7"
+    }
+  }
+
   magic_dns          = true
   override_local_dns = true
 }
