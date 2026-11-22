@@ -27,8 +27,14 @@
 - name: Keep subsequent updates behind the checkpointing updater
   ansible.builtin.assert:
     that:
-      - not dev_existing_release.stat.exists or dev_existing_release.stat.lnk_source | basename == dev_release_id
+      - not dev_existing_release.stat.exists or dev_existing_release.stat.lnk_source | basename == dev_release_id or dev_repair_initial | default(false) | bool
     fail_msg: Use sudo devctl update for a new release; do not reprovision an active VM.
+
+- name: Refuse initial repair after any accepted installation
+  when: dev_repair_initial | default(false) | bool
+  ansible.builtin.command:
+    argv: [python3, -c, "from pathlib import Path; assert not any((Path('/var/lib/dev-vm') / name).exists() for name in ['initial-acceptance.json','tooling.json']), 'Use the checkpointing updater for accepted environments'"]
+  changed_when: false
 
 - name: Keep the native home compatible with OpenSSH strict modes
   ansible.builtin.file:

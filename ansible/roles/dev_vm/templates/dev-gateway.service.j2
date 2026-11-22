@@ -7,9 +7,8 @@ Wants=dev-agent.service
 User=dev
 Group=dev
 WorkingDirectory=/home/dev
-Environment=MISE_DATA_DIR=/opt/dev-vm/mise
 Environment=DEV_OWNER=bingops
-ExecStart=/usr/local/bin/mise exec -- node /opt/dev-vm/current/app/server.mjs
+ExecStart=/opt/dev-vm/node/bin/node /opt/dev-vm/current/app/server.mjs
 Restart=on-failure
 RestartSec=2
 NoNewPrivileges=true
