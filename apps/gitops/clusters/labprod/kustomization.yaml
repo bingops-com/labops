@@ -37,3 +37,4 @@ resources:
   - coder.yaml
   - dev.yaml
   - affine.yaml
+  - gaas.yaml

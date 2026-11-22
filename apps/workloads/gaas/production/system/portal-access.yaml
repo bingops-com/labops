@@ -1,0 +1,29 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: portal-games
+  namespace: gaming
+rules:
+  - apiGroups:
+      - gaming.bingops.com
+    resources:
+      - gamerooms
+    resourceNames:
+      - pz-bingops
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: portal-games
+  namespace: gaming
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: portal-games
+subjects:
+  - kind: ServiceAccount
+    name: portal
+    namespace: portal

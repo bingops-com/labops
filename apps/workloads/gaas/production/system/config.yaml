@@ -1,0 +1,74 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gaas-gateway
+  namespace: gaming
+data:
+  config.json: |
+    {
+      "name": "shared",
+      "approved": false,
+      "productionAdoptionApproved": false,
+      "workerImage": "ghcr.io/bingops-com/pz-server@sha256:66ad7ec80875c462cba3b69e883000ddb6fc11b0993c4f0a6b84e98e529d5a4f",
+      "credentialsSecretRef": "gaas-terraform-credentials",
+      "publicKeyConfigMap": "gaas-operator-key",
+      "sourceRepository": "https://github.com/bingops-com/labops.git",
+      "sourceRevision": "f03dc668b3f092e570b8168af07e0b234b8015fc",
+      "modulePath": "terraform/edge-gateway",
+      "stateNamespace": "gaming-state",
+      "stateSuffix": "edge-gateway",
+      "expectedName": "labops-edge-01",
+      "allowNewState": false,
+      "variables": {
+        "name": "labops-edge-01",
+        "public_dns_records": [
+          "pz"
+        ],
+        "tailscale_ephemeral": false,
+        "forwards": {
+          "project-zomboid-game": {
+            "protocol": "udp",
+            "listen_port": 16261,
+            "target_ip": "192.168.10.151",
+            "target_port": 30261
+          },
+          "project-zomboid-direct": {
+            "protocol": "udp",
+            "listen_port": 16262,
+            "target_ip": "192.168.10.151",
+            "target_port": 30262
+          }
+        }
+      },
+      "retryNonce": "production-adoption-20261122"
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gaas-release-catalog
+  namespace: gaming
+data:
+  releases.json: |
+    {
+      "pz-steam-26486687-r1": {
+        "steamBuildId": "26486687",
+        "binaryRepository": "s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/gaas-releases-20261122",
+        "binarySnapshot": "d238fa72ae31f746704fb049a7a959a3eecd8d15e3b366acd5a33e8ca6d58ba7",
+        "runtimeImage": "ghcr.io/bingops-com/pz-server@sha256:6a8385569f6e6871acae17a4a472b7abdcad3432869da5c09eef0320268d368c",
+        "operationProtocol": 1,
+        "chartValues": {
+          "resources": {
+            "requests": {
+              "cpu": "1",
+              "memory": "8Gi"
+            },
+            "limits": {
+              "cpu": "4",
+              "memory": "16Gi"
+            }
+          }
+        }
+      }
+    }

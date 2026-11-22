@@ -1,0 +1,74 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: gaming-rooms
+  namespace: argocd-system
+spec:
+  description: Desired GameRooms only; generated workloads belong to the game operator
+  sourceRepos:
+    - https://github.com/bingops-com/labops.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: gaming
+  clusterResourceBlacklist:
+    - group: '*'
+      kind: '*'
+  namespaceResourceWhitelist:
+    - group: gaming.bingops.com
+      kind: GameRoom
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gaas-system
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  project: labops-labprod
+  sources:
+    - repoURL: https://github.com/bingops-com/pz-server.git
+      targetRevision: 2f7313640eccf72d4680712d341e614f1457465c
+      path: gaas/config
+    - repoURL: https://github.com/bingops-com/labops.git
+      targetRevision: master
+      path: apps/workloads/gaas/production/system
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gaming
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gaming-rooms
+  namespace: argocd-system
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'
+spec:
+  project: gaming-rooms
+  source:
+    repoURL: https://github.com/bingops-com/labops.git
+    targetRevision: master
+    path: apps/workloads/gaas/production/rooms
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gaming
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - FailOnSharedResource=true
+      - RespectIgnoreDifferences=true
+  ignoreDifferences:
+    - group: gaming.bingops.com
+      kind: GameRoom
+      jsonPointers:
+        - /status

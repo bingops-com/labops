@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: gaas-acceptance
+  namespace: argocd-system
+spec:
+  description: Isolated GameRoom acceptance; no generated workloads or production adoption
+  sourceRepos:
+    - https://github.com/bingops-com/labops.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: pz-server
+  clusterResourceBlacklist:
+    - group: '*'
+      kind: '*'
+  namespaceResourceWhitelist:
+    - group: gaming.bingops.com
+      kind: GameRoom
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gaas-acceptance
+  namespace: argocd-system
+spec:
+  project: gaas-acceptance
+  source:
+    repoURL: https://github.com/bingops-com/labops.git
+    targetRevision: feat/gaas-lifecycle
+    path: apps/workloads/gaas/acceptance/rooms
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: pz-server
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - FailOnSharedResource=true
+      - RespectIgnoreDifferences=true
+  ignoreDifferences:
+    - group: gaming.bingops.com
+      kind: GameRoom
+      jsonPointers:
+        - /status

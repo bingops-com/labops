@@ -1,0 +1,9 @@
+# Activate only during the reviewed state migration. Copying this file does
+# not migrate the existing local state or create the namespace/RBAC/backup.
+terraform {
+  backend "kubernetes" {
+    namespace         = "gaas-state"
+    secret_suffix     = "edge-gateway"
+    in_cluster_config = true
+  }
+}

@@ -1,0 +1,71 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gaas-retained-world-check-v2-20261122
+  namespace: pz-server
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 120
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: verify
+        image: ghcr.io/bingops-com/pz-server@sha256:4e190125eb41ebc003a0e4f1ee70495301ed03b46d68221358ecffc96dc27853
+        command:
+        - python3
+        - -c
+        - |
+          import json, sqlite3
+          from pathlib import Path
+          root = Path('/data')
+          assert not (root / '.server-running').exists()
+          world = json.loads((root / 'Zomboid/.gaas-world.json').read_text())
+          backup = json.loads((root / '.gaas-backup.json').read_text())
+          assert world['worldId'] == backup['worldId'] == 'gaas-pz-two-20261122'
+          assert world['serverName'] == 'bingops'
+          assert backup['action'] == 'BackupStoppedWorld' and backup['verified'] is True
+          # Kubernetes marked deletion with generation 4 (the Git spec was 3).
+          assert backup['requestId'] == 'f2cfca10f5a1085b2d38fee6'
+          assert len(backup['snapshot']) == 64
+          assert (root / 'Zomboid/Saves/Multiplayer/bingops').is_dir()
+          databases = list((root / 'Zomboid').rglob('*.db'))
+          assert databases
+          for database in databases:
+              connection = sqlite3.connect(database.as_uri() + '?mode=ro', uri=True)
+              try:
+                  assert connection.execute('PRAGMA integrity_check').fetchall() == [('ok',)]
+              finally:
+                  connection.close()
+          print('GAAS_RETAINED_WORLD_JSON=' + json.dumps({
+              'worldId': world['worldId'], 'backup': backup,
+              'sqliteDatabasesChecked': len(databases), 'readOnlyMount': True}))
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 192Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: world
+          mountPath: /data
+          readOnly: true
+      volumes:
+      - name: world
+        persistentVolumeClaim:
+          claimName: gaas-world-gaas-pz-two-20261122-aedd39b8
+          readOnly: true

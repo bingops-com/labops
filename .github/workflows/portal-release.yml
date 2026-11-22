@@ -1,0 +1,92 @@
+---
+name: portal-release
+'on':
+  push:
+    branches:
+      - master
+      - feat/gaas-production
+    paths:
+      - docker/portal/**
+      - .github/workflows/portal-release.yml
+  workflow_dispatch: {}
+permissions:
+  contents: write
+  packages: write
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Read pinned source revision
+        id: source
+        run: |
+          revision=$(cat docker/portal/source.txt)
+          [[ "$revision" =~ ^[0-9a-f]{40}$ ]]
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Build pinned portal candidate
+        id: image
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/portal
+          platforms: linux/amd64
+          push: true
+          build-args: PORTAL_SOURCE_REF=${{ steps.source.outputs.revision }}
+          tags: ghcr.io/bingops-com/portal:gitops-${{ github.sha }}
+      - name: Smoke test published binary
+        env:
+          IMAGE: ghcr.io/bingops-com/portal@${{ steps.image.outputs.digest }}
+        run: |
+          fixture=$(mktemp -d)
+          printf 'title: Portal smoke\npages:\n  - name: Test\n    columns: []\n' > "$fixture/portal.yaml"
+          chmod 755 "$fixture"
+          chmod 644 "$fixture/portal.yaml"
+          docker run -d --name portal-release-smoke --tmpfs /data:uid=65532,gid=65532 -v "$fixture:/etc/portal:ro" -p 127.0.0.1:18080:3000 "$IMAGE"
+          trap 'docker rm -f portal-release-smoke >/dev/null; rm -rf "$fixture"' EXIT
+          for portal_attempt in $(seq 1 20); do
+            if curl --fail --silent --output /dev/null http://127.0.0.1:18080/healthz; then exit 0; fi
+            printf "Waiting for portal health (%s/20)\n" "$portal_attempt"
+            sleep 1
+          done
+          exit 1
+      - name: Record candidate reference
+        env:
+          DIGEST: ${{ steps.image.outputs.digest }}
+          SOURCE: ${{ steps.source.outputs.revision }}
+        run: |
+          printf 'image=ghcr.io/bingops-com/portal@%s\nsource=%s\n' "$DIGEST" "$SOURCE" > portal-image.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portal-image
+          path: portal-image.txt
+      - name: Promote immutable digest in Git
+        if: github.ref == 'refs/heads/master'
+        env:
+          IMAGE: ghcr.io/bingops-com/portal@${{ steps.image.outputs.digest }}
+          SOURCE: ${{ steps.source.outputs.revision }}
+        run: |
+          python3 - <<'PYCODE'
+          import os,re
+          from pathlib import Path
+          image=os.environ['IMAGE']
+          assert re.fullmatch(r'ghcr.io/bingops-com/portal@sha256:[0-9a-f]{64}',image)
+          p=Path('apps/workloads/portal/base/deployment.yaml')
+          assert not p.is_symlink()
+          s,n=re.subn(r'(?m)^(\s+image:) ghcr\.io/bingops-com/portal\S*$',lambda m:m[1]+' '+image,p.read_text())
+          assert n==1
+          p.write_text(s)
+          PYCODE
+          manifest=apps/workloads/portal/base/deployment.yaml
+          if git diff --quiet -- "$manifest"; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$manifest"
+          git commit -m "release(portal): deploy immutable source ${SOURCE}"
+          git push origin HEAD:master

@@ -1,13 +1,12 @@
+---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 resources:
   - ../../base
-
+  - gaming-layout.yaml
 labels:
   - pairs:
       environment: labprod
-
 patches:
   - target:
       kind: Ingress
@@ -49,3 +48,36 @@ patches:
                   # addresses stay open.
                   - name: PORTAL_INTERNAL_HOSTS
                     value: .svc.cluster.local
+  - target:
+      kind: Deployment
+      name: portal
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: portal
+        namespace: portal
+      spec:
+        template:
+          spec:
+            containers:
+            - name: portal
+              env:
+              - name: PORTAL_GAMES_CONFIG
+                value: /etc/gaming/gaming-config.json
+              volumeMounts:
+              - name: gaming
+                mountPath: /etc/gaming
+                readOnly: true
+            volumes:
+            - name: gaming
+              configMap:
+                name: portal-gaming
+configMapGenerator:
+  - name: portal-gaming
+    namespace: portal
+    files:
+      - gaming-config.json
+      - gaming-page.json
+    options:
+      disableNameSuffixHash: true

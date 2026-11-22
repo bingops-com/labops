@@ -313,4 +313,13 @@ pages:
           - type: gameserver
             title: Project Zomboid
             options:
-              address: pz-server-pz-server.pz-server.svc.cluster.local:16261
+              address: pz.bingops.com:16261
+
+  - name: Serveurs de jeu
+    slug: serveurs
+    columns:
+      - size: full
+        widgets:
+          - id: gaming-rooms
+            type: gamerooms
+            title: Serveurs de jeu

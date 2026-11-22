@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gaas-final-guard-smoke-20261122
+  namespace: pz-server
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: smoke
+        image: ghcr.io/bingops-com/pz-server@sha256:21f974998fff6ee1e3cae3ad912aef50bd000415f2f639c76e18ed80c08326fa
+        command:
+        - python3
+        - -c
+        - |
+          import json
+          from gaas.runtime import Zomboid
+          from gaas.lifecycle import decide
+          assert hasattr(Zomboid, 'active_jobs')
+          release = {'runtimeImage': 'example.invalid/pz@sha256:' + 'a' * 64,
+              'steamBuildId': '1', 'binarySnapshot': 'a' * 64,
+              'binaryRepository': 's3:https://example.invalid/releases', 'operationProtocol': 1}
+          room = {'metadata': {'uid': 'recreated-room', 'generation': 1},
+              'spec': {'game': 'project-zomboid', 'state': 'Running', 'version': 'r'}}
+          observed = {'worldReady': True, 'scheduledBackupSuspended': True}
+          assert decide(room, observed, {'r': release}).operation == 'BackupStoppedWorld'
+          print('GAAS_OPERATOR_SMOKE_JSON=' + json.dumps({
+              'generationSerialization': True, 'restoredWorldPreInstallBackup': True}))
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi

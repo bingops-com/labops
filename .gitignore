@@ -44,3 +44,6 @@ __pycache__/
 /environments/dev-vm/*.env
 /environments/dev-vm/*.ini
 /environments/dev-vm/*password*
+
+# Generated local access to the GitOps-owned gateway backend.
+/terraform/edge-gateway/backend.tf.json
