@@ -23,7 +23,7 @@ resource "terraform_data" "bootstrap_revision" {
 resource "tailscale_tailnet_key" "edge_gateway" {
   count         = var.enabled ? 1 : 0
   reusable      = false
-  ephemeral     = false
+  ephemeral     = var.tailscale_ephemeral
   preauthorized = true
   expiry        = 3600
   tags          = [var.tailscale_tag]

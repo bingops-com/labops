@@ -77,7 +77,8 @@ run "resume_recreates_compute_with_same_address" {
   command = apply
 
   variables {
-    enabled = true
+    enabled             = true
+    tailscale_ephemeral = true
   }
 
   assert {
@@ -88,5 +89,10 @@ run "resume_recreates_compute_with_same_address" {
   assert {
     condition     = one(hcloud_server.edge_gateway[0].public_net).ipv4 == tonumber(hcloud_primary_ip.edge_gateway.id)
     error_message = "The resumed VM must use the retained address."
+  }
+
+  assert {
+    condition     = tailscale_tailnet_key.edge_gateway[0].ephemeral
+    error_message = "New session gateways should enroll as ephemeral Tailscale nodes."
   }
 }

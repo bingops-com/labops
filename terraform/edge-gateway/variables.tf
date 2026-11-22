@@ -84,6 +84,12 @@ variable "tailscale_tag" {
   }
 }
 
+variable "tailscale_ephemeral" {
+  type        = bool
+  description = "Automatically retire offline Tailscale nodes for disposable gateways. Keep false for non-destructive adoption of the current gateway; enable for new session gateways."
+  default     = false
+}
+
 variable "tailscale_version" {
   type        = string
   description = "Pinned Tailscale Debian package version installed by cloud-init."
