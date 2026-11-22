@@ -35,6 +35,8 @@ configs are sensitive generated state, not documentation.
    Gaming as a Service worker, restore/migrate its protected state and verify
    the non-destructive adoption described in
    [the gateway runbook](../terraform/edge-gateway/README.md#state-migration-prerequisite).
+   The separate [Gaming as a Service acceptance inputs](../apps/workloads/gaas/acceptance/README.md)
+   are outside the production Argo root and do not migrate production state.
 7. Apply reviewed Cloudflare DNS, tunnel and the production R2 buckets.
 8. Reconcile storage, CloudNativePG and Barman Cloud; verify backup and restore.
 9. Reconcile Authentik, observability and workloads; verify Synced/Healthy.

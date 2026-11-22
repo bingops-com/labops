@@ -1,0 +1,83 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gaas-world-seed-20261122
+  namespace: pz-server
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 900
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: seed
+        image: ghcr.io/bingops-com/pz-server@sha256:e00438367209e4812472a90c2e18616567e83fd8cc5f0ad62d4ff5596a8e1e6d
+        command:
+        - /bin/bash
+        - -ec
+        args:
+        - |
+          set -euo pipefail
+          mkdir -p /tmp/restic-cache
+          restic -r "$GAAS_SOURCE_REPOSITORY" restore 2a2c94a8 --target / --include /data/Zomboid --quiet
+          python3 - <<'PYCHECK'
+          import sqlite3
+          from pathlib import Path
+          root=Path('/data/Zomboid')
+          if not (root/'Saves/Multiplayer/bingops').is_dir():raise SystemExit('Source world name mismatch')
+          for database in root.rglob('*.db'):
+              c=sqlite3.connect(database.as_uri()+'?mode=ro',uri=True)
+              try:
+                  if c.execute('PRAGMA integrity_check').fetchall()!=[('ok',)]:raise SystemExit('Source database integrity failed')
+              finally:c.close()
+          PYCHECK
+          if ! restic cat config >/dev/null 2>&1; then restic init >/dev/null; fi
+          restic backup /data/Zomboid --tag gaas-acceptance-seed --host gaas-acceptance-seed --json > /tmp/seed.jsonl
+          restic check --read-data >/dev/null
+          python3 - <<'PYRESULT'
+          import json, subprocess
+          from pathlib import Path
+          values=[json.loads(s) for s in Path('/tmp/seed.jsonl').read_text().splitlines()]
+          summary=next(v for v in values if v.get('message_type')=='summary')
+          snapshots=json.loads(subprocess.check_output(['restic','snapshots','--json',summary['snapshot_id']],text=True))
+          if len(snapshots)!=1: raise SystemExit('Ambiguous world snapshot')
+          print('GAAS_WORLD_SEED_JSON='+json.dumps({'snapshot':snapshots[0]['id'],'sourceSnapshot':'2a2c94a8','serverName':'bingops'}))
+          PYRESULT
+        env:
+        - name: GAAS_SOURCE_REPOSITORY
+          value: s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/server
+        - name: RESTIC_REPOSITORY
+          value: s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/gaas-world-20261122
+        - name: RESTIC_CACHE_DIR
+          value: /tmp/restic-cache
+        - name: AWS_DEFAULT_REGION
+          value: auto
+        envFrom:
+        - secretRef:
+            name: pz-r2-credentials
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        emptyDir:
+          sizeLimit: 2Gi

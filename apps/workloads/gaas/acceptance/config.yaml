@@ -4,20 +4,55 @@ metadata:
   name: gaas-gateway
   namespace: pz-server
 data:
-  config.json: "{\n  \"name\": \"shared-test\",\n  \"approved\": true,\n  \"productionAdoptionApproved\"\
-    : false,\n  \"workerImage\": \"ghcr.io/bingops-com/pz-server@sha256:9c55627a7ba69550086c33809bab6e96dcb640e7231a9850b6d868d3a622e6e7\"\
-    ,\n  \"credentialsSecretRef\": \"gaas-terraform-credentials\",\n  \"publicKeyConfigMap\"\
-    : \"gaas-test-operator-key\",\n  \"sourceRepository\": \"https://github.com/bingops-com/labops.git\"\
-    ,\n  \"sourceRevision\": \"756504704a06fcf965f4659f05138a6b0670cd56\",\n  \"modulePath\"\
-    : \"terraform/edge-gateway\",\n  \"stateNamespace\": \"gaas-state\",\n  \"stateSuffix\"\
-    : \"gaas-test-20261122\",\n  \"expectedName\": \"gaas-test-edge-20261122\",\n\
-    \  \"allowNewState\": true,\n  \"variables\": {\n    \"name\": \"gaas-test-edge-20261122\"\
-    ,\n    \"public_dns_records\": [\n      \"pz-gaas-20261122\"\n    ],\n    \"forwards\"\
-    : {\n      \"gaas-pz-game\": {\n        \"protocol\": \"udp\",\n        \"listen_port\"\
-    : 17261,\n        \"target_ip\": \"192.168.10.151\",\n        \"target_port\"\
-    : 30761\n      },\n      \"gaas-pz-direct\": {\n        \"protocol\": \"udp\"\
-    ,\n        \"listen_port\": 17262,\n        \"target_ip\": \"192.168.10.151\"\
-    ,\n        \"target_port\": 30762\n      }\n    }\n  }\n}"
+  config.json: |
+    {
+      "name": "shared-test",
+      "approved": true,
+      "productionAdoptionApproved": false,
+      "workerImage": "ghcr.io/bingops-com/pz-server@sha256:8fd0c5e780a67360d3d2a034d57108f3460cbfeefdf3faaf292b6608eb710d28",
+      "credentialsSecretRef": "gaas-terraform-credentials",
+      "publicKeyConfigMap": "gaas-test-operator-key",
+      "sourceRepository": "https://github.com/bingops-com/labops.git",
+      "sourceRevision": "f03dc668b3f092e570b8168af07e0b234b8015fc",
+      "modulePath": "terraform/edge-gateway",
+      "stateNamespace": "gaas-state",
+      "stateSuffix": "gaas-test-20261122-edge",
+      "expectedName": "gaas-test-edge-20261122",
+      "allowNewState": true,
+      "variables": {
+        "name": "gaas-test-edge-20261122",
+        "public_dns_records": [
+          "pz-gaas-20261122"
+        ],
+        "forwards": {
+          "gaas-pz-game": {
+            "protocol": "udp",
+            "listen_port": 17261,
+            "target_ip": "192.168.10.151",
+            "target_port": 30761
+          },
+          "gaas-pz-direct": {
+            "protocol": "udp",
+            "listen_port": 17262,
+            "target_ip": "192.168.10.151",
+            "target_port": 30762
+          },
+          "gaas-pz-two-game": {
+            "protocol": "udp",
+            "listen_port": 17271,
+            "target_ip": "192.168.10.151",
+            "target_port": 30771
+          },
+          "gaas-pz-two-direct": {
+            "protocol": "udp",
+            "listen_port": 17272,
+            "target_ip": "192.168.10.151",
+            "target_port": 30772
+          }
+        },
+        "tailscale_ephemeral": true
+      }
+    }
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -33,7 +68,5 @@ metadata:
   name: gaas-test-operator-key
   namespace: pz-server
 data:
-  operator.pub: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIED4gn/7V572GxEnItCyahCXdXo31MOnqpU6jn2uJHbu
-    gaas-test-only
-
-    '
+  operator.pub: |
+    ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIED4gn/7V572GxEnItCyahCXdXo31MOnqpU6jn2uJHbu gaas-test-only
