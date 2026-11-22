@@ -8,7 +8,7 @@ metadata:
 spec:
   game: project-zomboid
   version: steam-26486687-acceptance
-  state: Running
+  state: Suspended
   gatewayRef: shared-test
   world:
     id: gaas-pz-two-20261122
