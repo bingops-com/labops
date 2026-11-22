@@ -106,6 +106,27 @@ class RecoveryTest(unittest.TestCase):
             implementation.install.assert_not_called();implementation.activate.assert_not_called()
             self.assertEqual(json.loads((state / 'update.json').read_text())['status'],'aborted')
 
+    def test_global_binary_or_runtime_update_requires_a_successful_vm_checkpoint(self):
+        for changed in ['oci','runtime']:
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory() as directory:
+                controller=load('checkpoint_controller_'+changed,FILES / 'devctl.py')
+                base=Path(directory);current=base / 'releases' / ('a'*64);target=base / 'releases' / ('b'*64)
+                for path in [current,target]:
+                    (path / 'environment').mkdir(parents=True);(path / 'configuration').mkdir();(path / 'runtime').mkdir()
+                    (path / 'environment/apt-tools.json').write_text('[]')
+                    (path / 'environment/oci-tools.json').write_text('[]')
+                if changed=='oci':(target / 'environment/oci-tools.json').write_text('["new-global-binary"]')
+                else:(target / 'runtime/dev_install.py').write_text('new privileged installation behavior')
+                (base / 'current').symlink_to(current)
+                controller.BASE=base;controller.STATE=base / 'state';trusted=mock.Mock();implementation=mock.Mock()
+                def command(*args):
+                    if args==('systemctl','start','dev-checkpoint.service'):raise subprocess.CalledProcessError(1,list(args))
+                import sys
+                with mock.patch.dict(sys.modules,{'dev_install':trusted}),mock.patch.object(sys,'argv',['devctl','_update',target.name]),mock.patch.object(controller.os,'geteuid',return_value=0),mock.patch.object(controller,'installer',return_value=implementation),mock.patch.object(controller,'command',side_effect=command):
+                    with self.assertRaisesRegex(SystemExit,'active environment was not changed'):controller.main()
+                implementation.install.assert_not_called();implementation.activate.assert_not_called()
+                self.assertEqual((base / 'current').resolve(),current)
+
     def test_tool_bootstrap_cannot_replace_an_initialized_tool_release(self):
         controller=load('guarded_tool_bootstrap',FILES / 'devctl.py')
         with tempfile.TemporaryDirectory() as directory:

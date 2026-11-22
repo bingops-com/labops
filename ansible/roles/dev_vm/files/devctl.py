@@ -27,6 +27,19 @@ def installer(root):
     return module
 
 
+def system_change(before, after):
+    for name in ['apt-tools.json','oci-tools.json']:
+        def content(release):
+            path=release / 'environment' / name
+            return path.read_bytes() if path.exists() else b''
+        if content(before)!=content(after):return True
+    for name in ['configuration','runtime']:
+        def files(release):
+            return sorted((p.name,p.read_bytes()) for p in (release / name).glob('*') if p.is_file())
+        if files(before)!=files(after):return True
+    return False
+
+
 def main():
     if os.geteuid() != 0:
         raise SystemExit('Use sudo devctl')
@@ -69,11 +82,14 @@ def main():
                 if (STATE / 'tooling.json').exists():
                     command('systemctl','start','dev-checkpoint.service')
             installer(root).install(root)
+        else:
+            installer(root).activate(root)
         command('/usr/local/sbin/dev-health')
         command('systemctl','start','dev-backup-init.service')
         command('systemctl','start','dev-backup.service')
         command('systemctl','start','dev-restore-test.service')
         command('systemctl','enable','--now','dev-backup.timer','dev-restore-test.timer')
+        (STATE / 'initial-acceptance.json').write_text(json.dumps({'release':root.name,'backup_restore_verified':True,'completed_at':datetime.now(timezone.utc).isoformat()},indent=2)+'\n')
         return
     if action == 'update':
         if current == root: return
@@ -84,8 +100,8 @@ def main():
         fcntl.flock(lock,fcntl.LOCK_EX | fcntl.LOCK_NB)
         if action == 'rollback':
             if not current: raise SystemExit('No active release')
-            if (root / 'environment/apt-tools.json').read_bytes() != (current / 'environment/apt-tools.json').read_bytes():
-                raise SystemExit('System packages differ; use the full VM recovery procedure')
+            if system_change(current,root):
+                raise SystemExit('System inputs differ; use the full VM recovery procedure')
             installer(root).activate(root)
             command('/usr/local/sbin/dev-health')
             return
@@ -97,8 +113,7 @@ def main():
             temp=STATE / 'update.new';temp.write_text(json.dumps(status,indent=2)+'\n');temp.replace(STATE / 'update.json')
         report('backing-up')
         adoption_started=False
-        system_changed=(root / 'environment/apt-tools.json').read_bytes() != (current / 'environment/apt-tools.json').read_bytes()
-        system_changed=system_changed or sorted((p.name,p.read_bytes()) for p in (root / 'configuration').glob('*')) != sorted((p.name,p.read_bytes()) for p in (current / 'configuration').glob('*'))
+        system_changed=system_change(current,root)
         try:
             command('systemctl','start','dev-backup.service')
             command('systemctl','start','dev-restore-test.service')

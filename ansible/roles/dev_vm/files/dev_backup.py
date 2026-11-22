@@ -138,6 +138,8 @@ def main():
                 restic('cat','config')
             except subprocess.CalledProcessError:
                 restic('init')
+            # Only stale repository locks are removed, including a dead pre-reboot PID.
+            restic('unlock')
         elif args.command == 'retention':
             restic('forget','--host','dev-vm','--keep-within','7d','--keep-daily','30','--keep-weekly','8','--keep-monthly','6','--group-by','host,paths,tags','--prune')
         else:

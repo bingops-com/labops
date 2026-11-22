@@ -1,0 +1,19 @@
+[Unit]
+Description=Resume initial native development environment acceptance
+After=network-online.target tailscaled.service
+Wants=network-online.target tailscaled.service
+ConditionPathExists=!/var/lib/dev-vm/initial-acceptance.json
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/local/lib/dev-vm/wait-tailnet.sh
+ExecStart=/usr/local/sbin/devctl install {{ dev_release_id }}
+TimeoutStartSec=infinity
+Restart=on-failure
+RestartSec=60
+RemainAfterExit=yes
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

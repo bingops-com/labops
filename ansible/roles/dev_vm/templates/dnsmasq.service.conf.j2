@@ -1,0 +1,9 @@
+[Unit]
+After=network-online.target tailscaled.service
+Wants=network-online.target tailscaled.service
+StartLimitIntervalSec=0
+
+[Service]
+ExecStartPre=/usr/local/lib/dev-vm/wait-tailnet.sh
+Restart=on-failure
+RestartSec=5
