@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: gaas-retained-world-check-20261122
+  name: gaas-retained-world-check-v2-20261122
   namespace: pz-server
 spec:
   backoffLimit: 0
@@ -32,7 +32,8 @@ spec:
           assert world['worldId'] == backup['worldId'] == 'gaas-pz-two-20261122'
           assert world['serverName'] == 'bingops'
           assert backup['action'] == 'BackupStoppedWorld' and backup['verified'] is True
-          assert backup['requestId'] == '51d405294dc59d43d47811e6'
+          # Kubernetes marked deletion with generation 4 (the Git spec was 3).
+          assert backup['requestId'] == 'f2cfca10f5a1085b2d38fee6'
           assert len(backup['snapshot']) == 64
           assert (root / 'Zomboid/Saves/Multiplayer/bingops').is_dir()
           databases = list((root / 'Zomboid').rglob('*.db'))

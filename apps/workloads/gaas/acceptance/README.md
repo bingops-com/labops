@@ -61,6 +61,10 @@ delete a test GameRoom. The existing production Application remains separate.
   verifies the exact deletion-operation receipt, saved world name and SQLite
   integrity. Its pinned request ID belongs to that original UID/generation;
   another run needs the new expected identity, not a weakened assertion.
+  The deletion-marked object used generation 4; the pre-delete Git object was
+  generation 3. The first check correctly rejected that wrong expected identity.
+  The corrected expectation is corroborated by the completed deletion backup
+  Job `gaas-c95c8abb-backupstoppe-f2cfca10f5a1085b` in cluster events.
 - `world-seed*.yaml` restore a known production snapshot into `emptyDir`,
   verify SQLite integrity and seed two separate test repositories. They never
   mount the production PVC. `rooms/gaas-pz-*.yaml` reference these repositories and
