@@ -16,7 +16,9 @@ created; SSH over Tailscale, native tools, project copies and portal HTTPS
 have been verified at `code.lab.bingo`, declared in
 `apps/platform/private-dns/labprod`. The native portal runs independently of
 the existing Coder/Dev deployments. The encrypted backup/restore acceptance is
-still running; full system checkpoint and isolated boot restore remain required.
+still running. A local full VM archive has passed isolated boot, tool and
+operator-file restoration in disconnected VM 161, now stopped and retained.
+Off-host system checkpoint/restore remains required before Coder retirement.
 Renovate's scheduled runner has opened actual tool PRs and dispatched validation.
 The provisional home copy does not transfer Terraform ownership or certify
 final data synchronization. Native service and final migration acceptance remain separate;

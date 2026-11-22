@@ -28,6 +28,10 @@ try:
   try:
    root=pathlib.Path(directory)
    (root/'etc/cloud/cloud-init.disabled').touch()
+   # Compatibility for archives made before the explicit root HOME fix.
+   # Never remove a populated config directory or change its permissions.
+   try:(root/'.config').rmdir()
+   except OSError:pass
    for name in ['cloud-init-network.service','systemd-networkd-wait-online.service','tailscaled.service','dev-bootstrap.service','dev-backup.service','dev-backup-init.service','dev-backup.timer','dev-restore-test.service','dev-restore-test.timer','dev-checkpoint.service']:
     unit=root/'etc/systemd/system'/name
     unit.unlink(missing_ok=True);unit.symlink_to('/dev/null')
@@ -111,7 +115,7 @@ def main():
                 time.sleep(5)
         if len(expected)!=len(files) or actual!=expected:raise RuntimeError('Restored operator files differ; no recovery acceptance')
         script="""import json,subprocess,pathlib,sys
-result=subprocess.run(['runuser','-u','dev','--','bash','-lc','homeops-dev-check'],capture_output=True,text=True,timeout=120)
+result=subprocess.run(['runuser','-u','dev','--','bash','-lc','homeops-dev-check'],cwd='/home/dev',capture_output=True,text=True,timeout=120)
 if result.returncode:
  print(result.stdout+'\\n'+result.stderr,file=sys.stderr)
  raise SystemExit('Native tool checks failed')

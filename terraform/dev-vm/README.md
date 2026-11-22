@@ -5,8 +5,11 @@ with valid wildcard HTTPS, private SSH, active gateway/discovery/DNS services,
 the 15 pinned Mise tools, Trivy, native packages and Python tools installed.
 Thirty-seven project directories and personal settings have been provisionally
 copied. Native health checks and anonymous/spoofed-identity SSO rejection pass.
-The actual encrypted data backup and isolated restore acceptance are still
-running; no full off-host system checkpoint or isolated boot restore is certified.
+The actual encrypted data backup and isolated data-restore acceptance are still
+running. A full **local** VM archive has passed an isolated boot rehearsal:
+VM 161, no NIC, all native tools, six operator files and 37 project directories.
+That rehearsal copy is stopped with on-boot disabled and retained for review.
+A full off-host system checkpoint and restoration from R2 are not yet certified.
 Coder retirement is deferred while work continues in the existing environment.
 The running Coder workspace remains the source of operator data until final
 migration acceptance. No
@@ -437,7 +440,11 @@ with the exact real VM160 archive path. The helper checks compressed integrity,
 refuses an occupied rehearsal ID (default 161; permitted range 161–169), restores
 without `--force`, deletes all NICs before boot, rejects passthrough devices,
 and masks cloud-init/network-wait/tailnet/backup units only in the stopped copy
-before boot. Debian's cloud-init network stage otherwise holds sysinit and the
+before boot. It also removes an empty root `/.config` artifact in older initial
+archives; populated configurations are preserved. Root installation/health now
+set HOME/XDG directories explicitly, preventing private root config paths from
+breaking a normal user's Ansible Lint parent-directory lookup.
+Debian's cloud-init network stage otherwise holds sysinit and the
 guest agent when no NIC exists. It verifies tools/projects and selected private files without printing hashes
 or contents. It stops the copy and writes a private `.runtime/dev-vm/system-restore.json`
 receipt. The generated rehearsal VM/disk belongs to this helper, outside Terraform;
@@ -466,5 +473,8 @@ substitute an unreviewed version. Rebuilding an empty VM is not data recovery.
 - Safe checks: Terraform fmt/validate, Ansible syntax/lint, local HTTP/WebSocket
   and browser fixtures, real temporary encrypted Restic backup/restore, SQLite
   WAL acceptance, file checksum tampering and Renovate extraction/validation.
-- Runtime checks still required: actual VM boot, tailnet grants and SSH refusal,
-  owner SSO, full off-host system checkpoint and isolated bootable VM restore.
+- Runtime verified: native SSH, refusal outside the tailnet, HTTPS and anonymous/
+  spoofed-identity SSO rejection, tools/project copies, plus isolated boot/tools/
+  operator-file restoration from a local VM archive. The owner must still verify
+  their real browser SSO login. Actual encrypted data recovery and off-host
+  system checkpoint/restore acceptance remain separate from local proof.

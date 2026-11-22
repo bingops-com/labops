@@ -12,7 +12,7 @@ import tarfile
 import urllib.request
 
 BASE = Path('/opt/dev-vm')
-ENV = {**os.environ, 'MISE_DATA_DIR':str(BASE / 'mise'), 'DEBIAN_FRONTEND':'noninteractive', 'DISABLE_AUTOUPDATER':'1'}
+ENV = {**os.environ, 'HOME':'/root', 'XDG_CONFIG_HOME':'/root/.config', 'XDG_CACHE_HOME':'/root/.cache', 'MISE_DATA_DIR':str(BASE / 'mise'), 'DEBIAN_FRONTEND':'noninteractive', 'DISABLE_AUTOUPDATER':'1'}
 
 
 def call(args, **kwargs):
@@ -88,6 +88,11 @@ def venv_identity(root):
 
 def activate_tools(root):
     verify_release(root)
+    # A root bootstrap without HOME can leave an empty, private /.config.
+    # Ansible Lint walks parent configs even for --version. Remove only the
+    # empty artifact, preserving every nonempty config and its permissions.
+    try:Path('/.config').rmdir()
+    except OSError:pass
     import tomllib
     node=tomllib.loads((root / 'environment/mise.toml').read_text())['tools']['node']
     if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+',node):raise ValueError('Expected an exact Node version')

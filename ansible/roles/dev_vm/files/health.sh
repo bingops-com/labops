@@ -1,5 +1,8 @@
 #!/bin/bash
 set -euo pipefail
+export HOME=/root
+export XDG_CONFIG_HOME=/root/.config
+export XDG_CACHE_HOME=/root/.cache
 systemctl is-active --quiet tailscaled ssh dev-agent dev-gateway nginx dnsmasq
 tailscale ip -4 >/dev/null
 sshd -t
