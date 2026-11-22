@@ -120,7 +120,8 @@ esac
     link(root / 'environment/check-tools.sh', '/usr/local/bin/homeops-dev-check')
 
     for source,target in [('codex.toml','/etc/codex/config.toml'),('claude.json','/etc/claude-code/managed-settings.json'),('screenrc','/etc/screenrc')]:
-        destination=Path(target);destination.parent.mkdir(parents=True,exist_ok=True)
+        destination=Path(target);destination.parent.mkdir(parents=True,exist_ok=True,mode=0o755)
+        destination.parent.chmod(0o755)
         shutil.copy2(root / 'environment' / source,destination);destination.chmod(0o644)
     # Copied personal profiles may prepend legacy paths; reload the native tools last.
     hook='\n# Native development tools (managed)\n[ ! -r /etc/profile.d/dev-tools.sh ] || . /etc/profile.d/dev-tools.sh\n'
