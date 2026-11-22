@@ -61,7 +61,28 @@ metadata:
   name: gaas-release-catalog
   namespace: pz-server
 data:
-  releases.json: '{}'
+  releases.json: |
+    {
+      "steam-26486687-acceptance": {
+        "steamBuildId": "26486687",
+        "binaryRepository": "s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/gaas-releases-20261122",
+        "binarySnapshot": "d238fa72ae31f746704fb049a7a959a3eecd8d15e3b366acd5a33e8ca6d58ba7",
+        "runtimeImage": "ghcr.io/bingops-com/pz-server@sha256:4e190125eb41ebc003a0e4f1ee70495301ed03b46d68221358ecffc96dc27853",
+        "operationProtocol": 1,
+        "chartValues": {
+          "resources": {
+            "requests": {
+              "cpu": "250m",
+              "memory": "8Gi"
+            },
+            "limits": {
+              "cpu": "1",
+              "memory": "16Gi"
+            }
+          }
+        }
+      }
+    }
 ---
 apiVersion: v1
 kind: ConfigMap
