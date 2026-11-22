@@ -1,0 +1,71 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gaas-release-export-20261122
+  namespace: pz-server
+  labels:
+    app.kubernetes.io/name: gaas-release-export
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: export
+        image: ghcr.io/bingops-com/pz-server@sha256:e00438367209e4812472a90c2e18616567e83fd8cc5f0ad62d4ff5596a8e1e6d
+        command:
+        - /bin/bash
+        - -ec
+        args:
+        - "set -euo pipefail\nmkdir -p /tmp/restic-cache\npython3 - <<'PYBUILD' >\
+          \ /tmp/build-before\nimport re\nfrom pathlib import Path\ns=Path('/data/server/steamapps/appmanifest_380870.acf').read_text()\n\
+          print(re.search(r'\"buildid\"\\s+\"([0-9]+)\"',s).group(1))\nPYBUILD\nif\
+          \ ! restic cat config >/dev/null 2>&1; then\n  restic init >/dev/null\n\
+          fi\nrestic backup /data/server --tag gaas-release --host gaas-release-export\
+          \ --json > /tmp/export.jsonl\nrestic check --read-data >/dev/null\npython3\
+          \ - <<'PYRESULT'\nimport json, os, re\nfrom pathlib import Path\nbefore=Path('/tmp/build-before').read_text().strip()\n\
+          after=re.search(r'\"buildid\"\\s+\"([0-9]+)\"',Path('/data/server/steamapps/appmanifest_380870.acf').read_text()).group(1)\n\
+          if before != after:\n    raise SystemExit('Steam installation changed during\
+          \ export')\nsummaries=[json.loads(line) for line in Path('/tmp/export.jsonl').read_text().splitlines()\
+          \ if json.loads(line).get('message_type')=='summary']\nif len(summaries)!=1\
+          \ or not summaries[0].get('snapshot_id'):\n    raise SystemExit('Release\
+          \ export receipt missing')\nprint('GAAS_RELEASE_JSON='+json.dumps({'steamBuildId':before,'binaryRepository':os.environ['RESTIC_REPOSITORY'],'binarySnapshot':summaries[0]['snapshot_id']}))\n\
+          PYRESULT\n"
+        env:
+        - name: RESTIC_REPOSITORY
+          value: s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/gaas-releases-20261122
+        - name: RESTIC_CACHE_DIR
+          value: /tmp/restic-cache
+        - name: AWS_DEFAULT_REGION
+          value: auto
+        envFrom:
+        - secretRef:
+            name: pz-r2-credentials
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: '2'
+            memory: 2Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: data
+          mountPath: /data
+          readOnly: true
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: pz-server-pz-server-data
