@@ -18,7 +18,7 @@ data:
       "stateNamespace": "gaas-state",
       "stateSuffix": "gaas-test-20261122-edge",
       "expectedName": "gaas-test-edge-20261122",
-      "allowNewState": true,
+      "allowNewState": false,
       "variables": {
         "name": "gaas-test-edge-20261122",
         "public_dns_records": [
