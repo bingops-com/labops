@@ -5,6 +5,11 @@ the declared inputs for the user-authorized isolated acceptance run, not an
 adoption of the active Project Zomboid StatefulSet or existing edge gateway.
 The controller/CRD/runtime source is on the `pz-server` repository's
 `feat/gaming-as-a-service` branch; its `gaas/README.md` owns the lifecycle design.
+`gitops.yaml` bootstraps a separate acceptance AppProject/Application in
+`argocd-system`. It follows only `rooms/` on `feat/gaas-lifecycle`, permits only
+GameRooms in `pz-server` and cannot apply generated workloads or cluster
+resources. Automatic pruning is disabled; accidental manifest removal cannot
+delete a test GameRoom. The existing production Application remains separate.
 
 ## Inputs and ownership
 
@@ -41,7 +46,7 @@ The controller/CRD/runtime source is on the `pz-server` repository's
   of this test gateway outside the controller's Lease.
 - `world-seed*.yaml` restore a known production snapshot into `emptyDir`,
   verify SQLite integrity and seed two separate test repositories. They never
-  mount the production PVC. `gaas-pz-*.yaml` reference these repositories and
+  mount the production PVC. `rooms/gaas-pz-*.yaml` reference these repositories and
   existing credential Secret names; each room has its own retained PVC.
 
 Never point test backup retention at the production `/server` repository.
@@ -61,11 +66,16 @@ this test backend is unrelated and cannot serve as a production state migration.
    runtime-image digest. Keep catalogue keys immutable. The initial acceptance
    snapshot uses Steam build `26486687`; this is not a second game release.
 4. Use the controller with `--apply` only for the `shared-test` gateway and
-   these two GameRooms. Start one room, test its public UDP endpoint, start a
+   these two GameRooms. Render `rooms/`, push its reviewed desired state to the
+   feature branch, then bootstrap `gitops.yaml`. Subsequently change only the
+   GameRoom manifests in Git; let the acceptance Argo Application apply them.
+   Confirm both the Argo revision and the GameRoom's observed generation.
+   Start one room, test its public UDP endpoint, start a
    second, suspend the first and confirm the gateway remains, then suspend
    the second. Require a current verified backup receipt for each world.
    Resume and verify the retained IP and world. The final desired state in
-   the two manifests is Suspended. Do not put this test into an auto-sync root.
+   the two manifests is Suspended. Do not put the broader acceptance directory
+   into an auto-sync root: it contains one-shot Jobs and credential mappings.
 5. Check the active production StatefulSet and gateway independently. Changes
    to these resources require a separate reviewed ownership handoff and the
    production state recovery/migration in the edge-gateway runbook.
