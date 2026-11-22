@@ -15,10 +15,13 @@ The replacement for Coder is running in parallel, owned by
 created; SSH over Tailscale, native tools, project copies and portal HTTPS
 have been verified at `code.lab.bingo`, declared in
 `apps/platform/private-dns/labprod`. The native portal runs independently of
-the existing Coder/Dev deployments. The encrypted backup/restore acceptance is
-still running. A local full VM archive has passed isolated boot, tool and
+the existing Coder/Dev deployments. Actual encrypted R2 data backup and isolated
+sentinel/SQLite restoration have passed; initial acceptance and timers are active.
+A local full VM archive has passed isolated boot, tool and
 operator-file restoration in disconnected VM 161, now stopped and retained.
-Off-host system checkpoint/restore remains required before Coder retirement.
+The full off-host VM archive is uploading, and its R2 restore remains required
+before Coder retirement. The user explicitly requested keeping Coder active
+while existing work continues; do not retire it automatically after backup completion.
 Renovate's scheduled runner has opened actual tool PRs and dispatched validation.
 The provisional home copy does not transfer Terraform ownership or certify
 final data synchronization. Native service and final migration acceptance remain separate;

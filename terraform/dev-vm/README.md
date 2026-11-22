@@ -5,12 +5,13 @@ with valid wildcard HTTPS, private SSH, active gateway/discovery/DNS services,
 the 15 pinned Mise tools, Trivy, native packages and Python tools installed.
 Thirty-seven project directories and personal settings have been provisionally
 copied. Native health checks and anonymous/spoofed-identity SSO rejection pass.
-The actual encrypted data backup and isolated data-restore acceptance are still
-running. A full **local** VM archive has passed an isolated boot rehearsal:
+The actual encrypted R2 data backup and isolated sentinel/SQLite restoration
+passed on 2026-11-22; native initial acceptance is complete and timers are enabled.
+A full **local** VM archive has passed an isolated boot rehearsal:
 VM 161, no NIC, all native tools, six operator files and 37 project directories.
 That rehearsal copy is stopped with on-boot disabled and retained for review.
-A full off-host system checkpoint and restoration from R2 are not yet certified.
-The first encrypted system checkpoint is queued as the transient
+A full off-host system checkpoint is uploading; restoration of that VM archive
+from R2 is not yet certified. The first encrypted system checkpoint runs as the transient
 `dev-first-system-checkpoint.service`, ordered after `dev-bootstrap` and guarded
 by the data-acceptance receipt. Inspect its pending job with
 `sudo systemctl list-jobs` and the actual upload with
@@ -19,7 +20,8 @@ if the VM reboots before it completes, finish initial data acceptance and rerun
 `sudo systemctl start dev-checkpoint.service`. A completed local restore does
 not substitute for this off-host copy. Normal later updates continue to enforce
 their own required checkpoint before adoption.
-Coder retirement is deferred while work continues in the existing environment.
+Coder retirement remains explicitly on hold at the user's request while work
+continues in the existing environment.
 The running Coder workspace remains the source of operator data until final
 migration acceptance. No
 namespace, PVC or old archive may be deleted just because these files exist.
@@ -493,5 +495,7 @@ substitute an unreviewed version. Rebuilding an empty VM is not data recovery.
 - Runtime verified: native SSH, refusal outside the tailnet, HTTPS and anonymous/
   spoofed-identity SSO rejection, tools/project copies, plus isolated boot/tools/
   operator-file restoration from a local VM archive. The owner must still verify
-  their real browser SSO login. Actual encrypted data recovery and off-host
-  system checkpoint/restore acceptance remain separate from local proof.
+  their real browser SSO login. Actual encrypted R2 data backup/isolated SQLite
+  recovery passed, and normal backup/restore timers are enabled. The off-host
+  full-system checkpoint is uploading; its R2 archive restore/boot proof remains
+  required before Coder retirement and is distinct from the local VM rehearsal.
