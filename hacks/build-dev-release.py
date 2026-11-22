@@ -4,6 +4,8 @@ import argparse
 import hashlib
 import io
 import json
+import importlib.util
+import tempfile
 from pathlib import Path
 import tarfile
 
@@ -16,12 +18,12 @@ def build(app, output):
         if path.is_symlink():
             raise ValueError('Symlinked release inputs are not allowed')
         files[name] = path.read_bytes()
-    for name in ['apt-tools.json','mise.toml','mise.lock','requirements.in','requirements.txt','collections.yml','versions.yml','trust.json','check-tools.sh','authorized_keys','codex.toml','claude.json','screenrc','oci-tools.json']:
+    for name in ['apt-tools.json','mise.toml','mise.lock','requirements.in','requirements.txt','collections.yml','versions.yml','trust.json','check-tools.sh','authorized_keys','codex.toml','claude.json','screenrc','oci-tools.json','app.json']:
         add(ROOT / 'environments/dev-vm' / name,'environment/'+name)
     for path in (ROOT / 'environments/dev-vm/.mise/locks').rglob('*'):
         if path.is_file():
             add(path,'environment/'+str(path.relative_to(ROOT / 'environments/dev-vm')))
-    for name in ['dev_backup.py','devctl.py','dev_install.py','health.sh','wait-tailnet.sh']:
+    for name in ['dev_backup.py','devctl.py','dev_install.py','health.sh','wait-tailnet.sh','dev_refresh.py','dev_sources.py']:
         add(ROOT / 'ansible/roles/dev_vm/files' / name,'runtime/'+name)
     role=ROOT / 'ansible/roles/dev_vm'
     for path in (role / 'templates').glob('*.j2'):
@@ -49,8 +51,16 @@ def build(app, output):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--app',type=Path,required=True)
+    parser.add_argument('--app',type=Path,help='Explicit local preview override; default fetches the declared native app commit')
     parser.add_argument('--output',type=Path,default=ROOT / '.runtime/dev-vm')
     args=parser.parse_args()
-    identifier,archive=build(args.app.resolve(),args.output.resolve())
+    if args.app:
+        identifier,archive=build(args.app.resolve(),args.output.resolve())
+    else:
+        spec=importlib.util.spec_from_file_location('dev_sources',ROOT / 'ansible/roles/dev_vm/files/dev_sources.py')
+        sources=importlib.util.module_from_spec(spec);spec.loader.exec_module(sources)
+        pin=json.loads((ROOT / 'environments/dev-vm/app.json').read_text())
+        with tempfile.TemporaryDirectory(prefix='dev-app-source-') as directory:
+            app=sources.fetch(pin['repository'],pin['commit'],Path(directory))
+            identifier,archive=build(app,args.output.resolve())
     print(json.dumps({'release_id':identifier,'archive':str(archive)}))

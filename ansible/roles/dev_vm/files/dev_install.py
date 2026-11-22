@@ -123,6 +123,7 @@ esac
     Path('/etc/environment.d/90-dev-tools.conf').chmod(0o644)
     link(root, BASE / 'tooling')
     link(root / 'environment/check-tools.sh', '/usr/local/bin/homeops-dev-check')
+    link('/usr/local/lib/dev-vm/dev_refresh.py','/usr/local/sbin/dev-refresh')
 
     for source,target in [('codex.toml','/etc/codex/config.toml'),('claude.json','/etc/claude-code/managed-settings.json'),('screenrc','/etc/screenrc')]:
         destination=Path(target);destination.parent.mkdir(parents=True,exist_ok=True,mode=0o755)
@@ -143,7 +144,7 @@ def activate(root):
     configure(root)
     activate_tools(root)
     link(root, BASE / 'current')
-    for name in ['dev_backup.py', 'devctl.py', 'dev_install.py', 'health.sh', 'wait-tailnet.sh']:
+    for name in ['dev_backup.py', 'devctl.py', 'dev_install.py', 'health.sh', 'wait-tailnet.sh', 'dev_refresh.py', 'dev_sources.py']:
         shutil.copy2(root / 'runtime' / name, Path('/usr/local/lib/dev-vm') / name)
     call(['systemctl','daemon-reload'])
     call(['systemctl','enable','--now','dev-agent','dev-gateway'])
