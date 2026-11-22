@@ -163,7 +163,7 @@ def main():
     with (STATE / 'backup.lock').open('w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         if args.command == 'init':
-            
+
             try:
                 restic('cat','config')
             except subprocess.CalledProcessError:

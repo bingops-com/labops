@@ -1,7 +1,8 @@
 # Standalone development VM
 
-Status: sources prepared locally; VM creation is in progress. Native services,
-data migration and Coder retirement are not yet adopted. The running Coder
+Status: VM 160 is created and native SSH works over Tailscale. The native
+application/services, data migration and Coder retirement are not yet adopted.
+Cutover is deferred while work continues in the existing environment. The running Coder
 workspace remains the source of operator data until migration acceptance. No
 namespace, PVC or old archive may be deleted just because these files exist.
 
