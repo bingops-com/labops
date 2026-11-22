@@ -1,0 +1,86 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gaas-release-export-retry-20261122
+  namespace: pz-server
+  labels:
+    app.kubernetes.io/name: gaas-release-export
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 7200
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: export
+        image: ghcr.io/bingops-com/pz-server@sha256:e00438367209e4812472a90c2e18616567e83fd8cc5f0ad62d4ff5596a8e1e6d
+        command:
+        - /bin/bash
+        - -ec
+        args:
+        - |
+          set -euo pipefail
+          mkdir -p /tmp/restic-cache
+          python3 - <<'PYBUILD' > /tmp/build-before
+          import re
+          from pathlib import Path
+          s=Path('/data/server/steamapps/appmanifest_380870.acf').read_text()
+          print(re.search(r'"buildid"\s+"([0-9]+)"',s).group(1))
+          PYBUILD
+          if ! restic cat config >/dev/null 2>&1; then
+            restic init >/dev/null
+          fi
+          restic unlock >/dev/null
+          restic backup /data/server --tag gaas-release --host gaas-release-export --json > /tmp/export.jsonl
+          restic check --read-data >/dev/null
+          python3 - <<'PYRESULT'
+          import json, os, re, subprocess
+          from pathlib import Path
+          before=Path('/tmp/build-before').read_text().strip()
+          after=re.search(r'"buildid"\s+"([0-9]+)"',Path('/data/server/steamapps/appmanifest_380870.acf').read_text()).group(1)
+          if before != after:
+              raise SystemExit('Steam installation changed during export')
+          summaries=[json.loads(line) for line in Path('/tmp/export.jsonl').read_text().splitlines() if json.loads(line).get('message_type')=='summary']
+          if len(summaries)!=1 or not summaries[0].get('snapshot_id'):
+              raise SystemExit('Release export receipt missing')
+          snapshots=json.loads(subprocess.check_output(['restic','snapshots','--json',summaries[0]['snapshot_id']],text=True))
+          if len(snapshots)!=1: raise SystemExit('Ambiguous release snapshot')
+          print('GAAS_RELEASE_JSON='+json.dumps({'steamBuildId':before,'binaryRepository':os.environ['RESTIC_REPOSITORY'],'binarySnapshot':snapshots[0]['id']}))
+          PYRESULT
+        env:
+        - name: RESTIC_REPOSITORY
+          value: s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/gaas-releases-20261122
+        - name: RESTIC_CACHE_DIR
+          value: /tmp/restic-cache
+        - name: AWS_DEFAULT_REGION
+          value: auto
+        envFrom:
+        - secretRef:
+            name: pz-r2-credentials
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: '2'
+            memory: 2Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: data
+          mountPath: /data
+          readOnly: true
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: pz-server-pz-server-data

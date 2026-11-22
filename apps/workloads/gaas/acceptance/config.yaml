@@ -9,7 +9,7 @@ data:
       "name": "shared-test",
       "approved": true,
       "productionAdoptionApproved": false,
-      "workerImage": "ghcr.io/bingops-com/pz-server@sha256:8fd0c5e780a67360d3d2a034d57108f3460cbfeefdf3faaf292b6608eb710d28",
+      "workerImage": "ghcr.io/bingops-com/pz-server@sha256:7ad733dda6c0de70f0eb505bf1c5d2ddf6b9af036a38c9e447dd7e4733c8aaea",
       "credentialsSecretRef": "gaas-terraform-credentials",
       "publicKeyConfigMap": "gaas-test-operator-key",
       "sourceRepository": "https://github.com/bingops-com/labops.git",
@@ -51,7 +51,8 @@ data:
           }
         },
         "tailscale_ephemeral": true
-      }
+      },
+      "retryNonce": "verified-controller-image-20261122-1622"
     }
 ---
 apiVersion: v1
