@@ -23,10 +23,11 @@ the hostname is not published through Cloudflare Tunnel.
 
 ## Access and data
 
-- No login. The Traefik allowlist is the only access control, including for
-  the layout editor: anyone on the LAN or tailnet can rearrange the pages and
-  therefore make the pod request HTTP addresses of their choice. Set
-  `PORTAL_READONLY=true` on the Deployment to serve `base/portal.yaml` only.
+- The current portal has OIDC configured for editing, in addition to the
+  Traefik LAN/tailnet allowlist. Source versions without OIDC enabled allow
+  anyone reaching the portal to edit its layout; keep that distinction when
+  rebuilding. Preserve its issuer/client/group/public URL and session PVC.
+  `PORTAL_READONLY=true` disables editing.
 - Kubernetes: the `portal` ServiceAccount is bound to the `portal-read`
   ClusterRole (get/list on nodes, namespaces, pods, events, apps workloads and
   Argo CD Applications). It cannot read Secrets or ConfigMaps. Argo CD status
@@ -34,11 +35,27 @@ the hostname is not published through Cloudflare Tunnel.
 - In-cluster HTTP: Prometheus and Gatus, through the `PORTAL_VAR_*` variables
   of the Deployment. Public APIs: Open-Meteo, CoinGecko, RSS/Atom, YouTube
   feeds, Hacker News (Algolia), Reddit feeds.
-- The portal holds no credentials. A private value such as an iCal address
+- The default portal needs no provider credentials. A private value such as an iCal address
   must come from a Bitwarden `labprod` mapping exposed as a `PORTAL_VAR_*`
   environment variable and referenced as `${PORTAL_VAR_NAME}` in
   `base/portal.yaml`; such values are resolved in the pod and never sent to
   the browser.
+
+## Gaming candidate
+
+The separate source branch `feat/game-room-portal` implements the `gamerooms`
+widget and typed Git operations. It requires OIDC with an explicit owner group,
+reads only configured GameRooms and creates commits for state changes or PRs
+for versions. Its GitHub App key must come from a Bitwarden-backed Secret,
+not the browser or the portal-data PVC. A dedicated App installation is still
+an external prerequisite; no such App or production rollout was created.
+
+The candidate image source and test-only configuration/RBAC are owned by
+[`the GaaS acceptance runbook`](../gaas/acceptance/README.md). Do not replace
+the deployed portal with the older base Deployment from that worktree: retain
+the current authentication, image pinning and browser layout. The source
+repository's `docs/gaming.md` documents key permissions, rotation, recovery,
+conflict handling and the current scope (existing GameRooms; creation by Git).
 
 ## State
 

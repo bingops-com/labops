@@ -48,6 +48,11 @@ configs are sensitive generated state, not documentation.
    prerequisites listed in `docker/portal/README.md`. The layout saved from
    the browser lives only on the `portal-data` PVC and is not restored: the
    portal starts from `apps/workloads/portal/base/portal.yaml`.
+   The optional gaming UI additionally requires the public Git target config,
+   get-only GameRoom RBAC, the existing OIDC owner group and a dedicated GitHub
+   App installation/private key recovered through Bitwarden. Its preparation
+   is described in [the portal runbook](../apps/workloads/portal/README.md#gaming-candidate);
+   no gaming App or production rollout has been activated by the acceptance run.
 11. Create the bucket-scoped Project Zomboid R2 token in Bitwarden, reconcile
     its mappings and the workload, then verify a Restic snapshot and a
     disposable restore before retiring the Build 41 VM.
