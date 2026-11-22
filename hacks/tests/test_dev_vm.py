@@ -60,6 +60,19 @@ class RecoveryTest(unittest.TestCase):
         self.assertEqual({r['depName'] for r in records},{r['name'] for r in expected})
         self.assertIn('mise',config['enabledManagers']);self.assertIn('pip-compile',config['enabledManagers'])
 
+    def test_additive_sso_bootstrap_preserves_coder_and_applications(self):
+        import yaml
+        cutover=load('cutover',ROOT / 'hacks/prepare-dev-cutover.py')
+        changes=cutover.prepare('100.64.0.160','bootstrap')
+        self.assertTrue(set(changes).issubset({'apps/platform/authentik/blueprint.yaml'}))
+        if not changes:
+            return
+        before,after=changes['apps/platform/authentik/blueprint.yaml']
+        self.assertEqual(yaml.safe_load(before)['data']['coder.yaml'],yaml.safe_load(after)['data']['coder.yaml'])
+        self.assertIn('id: dev-proxy-provider',after)
+        self.assertIn('            - !KeyOf rom-request-proxy-provider',after)
+        self.assertIn('            - !KeyOf dev-proxy-provider',after)
+
     def test_failed_backup_prevents_any_adoption_or_rollback(self):
         controller=load('update_controller',FILES / 'devctl.py')
         with tempfile.TemporaryDirectory() as directory:

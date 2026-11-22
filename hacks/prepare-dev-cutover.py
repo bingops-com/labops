@@ -53,7 +53,7 @@ def prepare(tail_ip, phase="retire"):
         marker='      - model: authentik_outposts.outpost\n'
         if s.count(marker)!=1:raise ValueError('Shared outpost ownership changed; review the blueprint')
         if 'id: dev-proxy-provider' not in s:
-            entries=(ROOT / 'environments/dev-vm/dev-proxy-entries.yaml').read_text()
+            entries=(ROOT / 'environments/dev-vm/dev-proxy-entries.yaml.tmpl').read_text()
             s=s.replace(marker,textwrap.indent(entries,'      ')+marker)
         key='            - !KeyOf rom-request-proxy-provider\n'
         if '            - !KeyOf dev-proxy-provider\n' not in s:s=s.replace(key,key+'            - !KeyOf dev-proxy-provider\n')
