@@ -88,6 +88,10 @@ def venv_identity(root):
 
 def activate_tools(root):
     verify_release(root)
+    import tomllib
+    node=tomllib.loads((root / 'environment/mise.toml').read_text())['tools']['node']
+    if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+',node):raise ValueError('Expected an exact Node version')
+    link(BASE / 'mise/installs/node' / node, BASE / 'node')
     for name in ['mise.toml', 'mise.lock']:
         link(root / 'environment' / name, Path('/etc/mise') / ('config.toml' if name == 'mise.toml' else name))
     link(root / 'environment/.mise', '/etc/mise/.mise')
@@ -147,6 +151,7 @@ def activate(root):
     for name in ['dev_backup.py', 'devctl.py', 'dev_install.py', 'health.sh', 'wait-tailnet.sh', 'dev_refresh.py', 'dev_sources.py']:
         shutil.copy2(root / 'runtime' / name, Path('/usr/local/lib/dev-vm') / name)
     call(['systemctl','daemon-reload'])
+    call(['systemctl','reset-failed','dev-agent','dev-gateway'])
     call(['systemctl','enable','--now','dev-agent','dev-gateway'])
     call(['systemctl','restart','dev-agent','dev-gateway'])
     call(['nginx','-t'])

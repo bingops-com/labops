@@ -173,6 +173,18 @@ class RecoveryTest(unittest.TestCase):
             implementation.install_tools.assert_not_called()
             self.assertEqual((base / 'tooling').resolve(),previous)
 
+    def test_initial_repair_refuses_any_accepted_environment(self):
+        import sys
+        for marker in ['initial-acceptance.json','tooling.json']:
+            with self.subTest(marker=marker), tempfile.TemporaryDirectory() as directory:
+                controller=load('initial_repair_guard',FILES / 'devctl.py')
+                base=Path(directory);state=base / 'state';state.mkdir();(state / marker).write_text('{}')
+                controller.BASE=base;controller.STATE=state
+                implementation=mock.Mock()
+                with mock.patch.dict(sys.modules,{'dev_install':mock.Mock()}),mock.patch.object(sys,'argv',['devctl','repair-initial','a'*64]),mock.patch.object(controller.os,'geteuid',return_value=0),mock.patch.object(controller,'installer',return_value=implementation):
+                    with self.assertRaisesRegex(SystemExit,'cannot replace an accepted environment'):controller.main()
+                implementation.install.assert_not_called()
+
     def test_live_copy_never_certifies_migration_or_transfers_terraform_ownership(self):
         migration=load('live_migration',ROOT / 'hacks/migrate-dev-home.py')
         with tempfile.TemporaryDirectory() as directory:

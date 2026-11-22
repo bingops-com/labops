@@ -62,6 +62,15 @@ not block native SSH. Inspect `sudo systemctl status dev-bootstrap` and
 Ansible play schedules this supervised job; a successful Ansible return alone
 is not proof that backup/restore acceptance is complete.
 
+If a first installation activated services but failed before acceptance,
+stop only `dev-bootstrap` and rerun the play with the corrected release and
+`-e dev_repair_initial=true`. Both Ansible and the native controller refuse
+this repair when either `initial-acceptance.json` or the separate verified
+`tooling.json` receipt exists. It keeps previous release trees and repeats full
+initial acceptance; accepted environments must use the checkpointing updater.
+The gateway executes the release-selected Node binary directly, so its
+read-only service sandbox does not need Mise to write personal trust/cache state.
+
 The native portal is published at `https://code.lab.bingo`, with previews at
 `https://PORT.code.lab.bingo`. The existing `dev.lab.bingo` portal remains on
 Coder during parallel acceptance. The native portal/gateway and discovery listen

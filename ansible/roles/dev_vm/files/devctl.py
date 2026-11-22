@@ -60,6 +60,12 @@ def main():
     from dev_install import verify_release
     verify_release(root)
     current=(BASE / 'current').resolve() if (BASE / 'current').exists() else None
+    if action == 'repair-initial':
+        if (STATE / 'initial-acceptance.json').exists() or (STATE / 'tooling.json').exists():
+            raise SystemExit('Initial repair cannot replace an accepted environment; use devctl update')
+        # Explicit recovery of a failed first installation, before acceptance.
+        # Preserve the previous tree and require all initial acceptance again.
+        action='install';current=None
     if action == 'install-tools':
         tooling=BASE / 'tooling'
         if current or (tooling.exists() and tooling.resolve() != root):

@@ -8,7 +8,7 @@ StartLimitIntervalSec=0
 [Service]
 Type=oneshot
 ExecStartPre=/usr/local/lib/dev-vm/wait-tailnet.sh
-ExecStart=/usr/local/sbin/devctl install {{ dev_release_id }}
+ExecStart=/usr/local/sbin/devctl {{ 'repair-initial' if dev_repair_initial | default(false) | bool else 'install' }} {{ dev_release_id }}
 TimeoutStartSec=infinity
 Restart=on-failure
 RestartSec=60
