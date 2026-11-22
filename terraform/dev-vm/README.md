@@ -10,6 +10,15 @@ running. A full **local** VM archive has passed an isolated boot rehearsal:
 VM 161, no NIC, all native tools, six operator files and 37 project directories.
 That rehearsal copy is stopped with on-boot disabled and retained for review.
 A full off-host system checkpoint and restoration from R2 are not yet certified.
+The first encrypted system checkpoint is queued as the transient
+`dev-first-system-checkpoint.service`, ordered after `dev-bootstrap` and guarded
+by the data-acceptance receipt. Inspect its pending job with
+`sudo systemctl list-jobs` and the actual upload with
+`sudo journalctl -u dev-checkpoint`. This deployment job is not enabled at boot:
+if the VM reboots before it completes, finish initial data acceptance and rerun
+`sudo systemctl start dev-checkpoint.service`. A completed local restore does
+not substitute for this off-host copy. Normal later updates continue to enforce
+their own required checkpoint before adoption.
 Coder retirement is deferred while work continues in the existing environment.
 The running Coder workspace remains the source of operator data until final
 migration acceptance. No
