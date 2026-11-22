@@ -45,7 +45,7 @@ jobs:
           IMAGE: ghcr.io/bingops-com/portal@${{ steps.image.outputs.digest }}
         run: |
           fixture=$(mktemp -d)
-          printf 'title: Portal smoke\npages:\n  - name: Test\n    columns: []\n' > "$fixture/portal.yaml"
+          printf 'title: Portal smoke\npages:\n  - name: Test\n    columns:\n      - size: full\n        widgets:\n          - type: search\n' > "$fixture/portal.yaml"
           chmod 755 "$fixture"
           chmod 644 "$fixture/portal.yaml"
           docker run -d --name portal-release-smoke --tmpfs /data:uid=65532,gid=65532 -v "$fixture:/etc/portal:ro" -p 127.0.0.1:18080:3000 "$IMAGE"
@@ -55,6 +55,7 @@ jobs:
             printf "Waiting for portal health (%s/20)\n" "$portal_attempt"
             sleep 1
           done
+          docker logs portal-release-smoke
           exit 1
       - name: Record candidate reference
         env:
