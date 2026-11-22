@@ -1,0 +1,23 @@
+{
+  "platform": "github",
+  "autodiscover": false,
+  "repositories": [
+    "bingops-com/labops"
+  ],
+  "onboarding": false,
+  "requireConfig": "required",
+  "includePaths": [
+    "environments/dev-vm/**"
+  ],
+  "allowedUnsafeExecutions": [
+    "mise"
+  ],
+  "binarySource": "install",
+  "constraints": {
+    "python": "3.13",
+    "mise": "2026.11.12"
+  },
+  "automerge": false,
+  "prHourlyLimit": 0,
+  "gitAuthor": "LabOps Updates <41898282+github-actions[bot]@users.noreply.github.com>"
+}

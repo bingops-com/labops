@@ -1,0 +1,5 @@
+{
+  "renovate": {
+    "image": "ghcr.io/renovatebot/renovate:43.272.8-full@sha256:f34168fef32bcba9da1cee937967dc3465c6faf02f495a5bfb9d1ff88c99be40"
+  }
+}

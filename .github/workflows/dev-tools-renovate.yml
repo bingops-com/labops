@@ -1,0 +1,44 @@
+---
+name: Update development tools
+'on':
+  schedule:
+    - cron: '41 3 * * *'
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: development-tools-renovate
+  cancel-in-progress: false
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Propose reviewed tool updates and refresh their locks
+        env:
+          RENOVATE_TOKEN: ${{ github.token }}
+          LOG_LEVEL: info
+        run: |
+          image=$(jq -er '.renovate.image' environments/dev-vm/automation.json)
+          if [[ ! "$image" =~ ^ghcr\.io/renovatebot/renovate:[0-9]+\.[0-9]+\.[0-9]+-full@sha256:[0-9a-f]{64}$ ]]; then
+            echo 'Expected the digest-pinned official Renovate full image' >&2
+            exit 1
+          fi
+          docker run --rm \
+            --env RENOVATE_TOKEN \
+            --env LOG_LEVEL \
+            --env RENOVATE_CONFIG_FILE=/opt/renovate/runner.json \
+            --volume "$GITHUB_WORKSPACE/.github/renovate-runner.json:/opt/renovate/runner.json:ro" \
+            "$image"
+      - name: Validate the bot-created branches
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/dispatch-renovate-checks.py

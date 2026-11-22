@@ -95,7 +95,18 @@
         "/^environments/dev-vm/oci-tools\\.json$/"
       ],
       "matchStrings": [
-        "\"image\": \"(?<depName>mirror\\.gcr\\.io/[^\"\\s:]+):(?<currentValue>[^\"@]+)@(?<currentDigest>sha256:[a-f0-9]{64})\""
+        "\"image\": \"mirror\\.gcr\\.io/(?<depName>[^\"\\s:]+):(?<currentValue>[^\"@]+)@(?<currentDigest>sha256:[a-f0-9]{64})\""
+      ],
+      "datasourceTemplate": "docker",
+      "description": "Look up native OCI tool versions on Docker Hub while retaining the public pull mirror"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^environments/dev-vm/automation\\.json$/"
+      ],
+      "matchStrings": [
+        "\"image\": \"(?<depName>ghcr\\.io/renovatebot/renovate):(?<currentValue>[^\"@]+)@(?<currentDigest>sha256:[a-f0-9]{64})\""
       ],
       "datasourceTemplate": "docker"
     }
@@ -213,15 +224,6 @@
       "registryUrls": [
         "https://apt.postgresql.org/pub/repos/apt?suite=trixie-pgdg&components=main&binaryArch=amd64"
       ]
-    },
-    {
-      "matchFileNames": [
-        "environments/dev-vm/**"
-      ],
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "dependencyDashboardApproval": true
     },
     {
       "description": "Debian repositories publish no release timestamps",

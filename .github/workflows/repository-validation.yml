@@ -1,6 +1,7 @@
 name: Repository validation
 
 on:
+  workflow_dispatch:
   push:
     branches: [master]
   pull_request:
@@ -106,4 +107,4 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-      - run: npx --yes --package renovate@43.272.8 renovate-config-validator renovate.json
+      - run: npx --yes --package renovate@43.272.8 renovate-config-validator renovate.json .github/renovate-runner.json
