@@ -19,5 +19,6 @@
   },
   "automerge": false,
   "prHourlyLimit": 0,
-  "gitAuthor": "LabOps Updates <41898282+github-actions[bot]@users.noreply.github.com>"
+  "gitAuthor": "LabOps Updates <41898282+github-actions[bot]@users.noreply.github.com>",
+  "username": "github-actions[bot]"
 }
