@@ -136,6 +136,14 @@ configuration. The existing layout may be customized on its PVC; do not
 overwrite it to add the widget. Add the widget through its editor, or review
 an intentional YAML layout change separately.
 
+`portal-smoke.yaml` pins the candidate built from `portal-source.txt`, including
+the Git-read cache. Its disposable Pod has no Kubernetes token or GitHub App
+key, uses an explicitly invalid OIDC issuer, and expires after ten minutes.
+Check `/healthz`, the public login requirement and the anonymous `/api/games`
+401 response through a local port-forward. This checks image startup and
+authentication enforcement; it does not test a real OIDC login or Git write.
+Remove only this named Pod and its public ConfigMap after recording the result.
+
 ## First UI using GitHub Actions
 
 `.github/workflows/game-room-state.yml` prepares a small manual form: choose
