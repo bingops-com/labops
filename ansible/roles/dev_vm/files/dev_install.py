@@ -233,6 +233,14 @@ def install_tools(root):
         binary.write_bytes(content);binary.chmod(0o755)
     call([binary,'trust', environment / 'mise.toml'])
     call([binary,'install','--yes','--cd',environment])
+    # Claude's pinned npm package needs its own native-binary postinstall.
+    # allow_builds approves that package alone; retry an older skipped build.
+    probe=subprocess.run([binary,'exec','--cd',environment,'--','claude','--version'],env=ENV,capture_output=True,text=True,timeout=30)
+    if probe.returncode:
+        import tomllib
+        declaration=tomllib.loads((environment / 'mise.toml').read_text())['tools']['npm:@anthropic-ai/claude-code']
+        version=declaration['version']
+        call([binary,'install','--force','--yes','--cd',environment,'npm:@anthropic-ai/claude-code@'+version])
     call([binary,'reshim','--cd',environment])
     venv = BASE / 'venvs' / venv_identity(root)
     if not (venv / '.ready').exists():

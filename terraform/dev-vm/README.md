@@ -204,7 +204,9 @@ the original workspace image. Installation verifies the multiarchitecture
 manifest, Linux/amd64 manifest and every downloaded layer digest, then reads
 only the declared binary. Renovate tracks its image tag/digest separately from
 the Mise tools. Rebuilds require the public registry mirror, not a private copy
-of an old executable. Keep the existing exact-version contract for all tools.
+of an old executable. Keep the existing exact-version contract for all tools. Claude explicitly
+approves only its own pinned npm postinstall through Mise `allow_builds`; this
+materializes its native executable without enabling arbitrary dependency scripts.
 
 While Coder is running, a provisional home copy is supported:
 
