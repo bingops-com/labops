@@ -1,6 +1,6 @@
 [tools]
 node = "24.21.0"
-go = "1.26.9"
+go = "1.26.11"
 terraform = "1.10.5"
 kubectl = "1.36.1"
 helm = "3.19.4"
