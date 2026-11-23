@@ -32,7 +32,10 @@ data:
         changed=True
     for w in widgets:
         if w.get('type')=='gameserver' and w.get('options',{}).get('address')=='pz-server-pz-server.pz-server.svc.cluster.local:16261':
-            w['options']['address']='pz.bingops.com:16261';changed=True
+            w['type']='bookmarks'
+            w['options'].pop('address',None)
+            w['options']['groups']=[{'links':[{'title':'Piloter le serveur','url':'/serveurs'}]}]
+            changed=True
     if changed:
         backup=Path('/data/layout.before-gaming-v1.json')
         if not backup.exists():

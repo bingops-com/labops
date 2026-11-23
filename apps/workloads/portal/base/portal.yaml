@@ -310,10 +310,13 @@ pages:
                 - { title: Perso, url: "${PORTAL_VAR_ICAL_URL}" }
       - size: small
         widgets:
-          - type: gameserver
+          - type: bookmarks
             title: Project Zomboid
             options:
-              address: pz.bingops.com:16261
+              groups:
+                - links:
+                    - title: Piloter le serveur
+                      url: /serveurs
 
   - name: Serveurs de jeu
     slug: serveurs
