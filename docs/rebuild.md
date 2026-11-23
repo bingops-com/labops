@@ -304,3 +304,9 @@ account login/progress, then reconcile the generated cka_app credential with
 hacks/bootstrap-cka-study.py. cert-manager owns the dedicated controller TLS
 CA and certificates; deploy web wave 0 before singleton controller wave 1.
 Public simulations must stay usable without SSO; all real-lab APIs require SSO.
+
+## Temporary homelab stability setting
+
+Reapply the reviewed [homelab CPU stability role](host-stability.md) on this
+Ryzen 5950X host before starting guests. It is a reversible boost limitation
+for the ongoing Machine Check investigation, not a confirmed hardware repair.
