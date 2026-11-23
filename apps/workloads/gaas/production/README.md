@@ -97,7 +97,8 @@ That stage does not stop the active legacy server. Before activation:
    original gateway VM identity. Only then exercise production suspension or
    resume. Each last-consumer stop requires a fresh verified backup before VM
    removal; IPv4/DNS and both wanted world volumes remain retained.
-   After the first successful handoff, return `world.restoreSnapshot` to `latest`
+   While the room is Running after the successful handoff, return
+   `world.restoreSnapshot` to `latest`
    so a later storage recovery selects a current verified save instead of the
    historical handoff. The retained world marker prevents overwriting an
    already loaded world. Preserve the dated handoff snapshot for rollback.
