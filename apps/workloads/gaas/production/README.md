@@ -77,12 +77,20 @@ That stage does not stop the active legacy server. Before activation:
    Create it only after confirming no game or backup writer remains. Its bounded
    receipt provides the full snapshot to select for the handoff; a failed Job
    cannot authorize starting the new game.
-5. Take a verified, restorable final snapshot of the original world. Enable
-   production adoption only with the migrated backend present, select that full
-   world snapshot in the GameRoom, and commit Running. The operator restores
+   Its additional `gaas-cutover-20261123` tag keeps this handoff snapshot in a
+   separate retention group from ordinary daily backups.
+5. Take a verified, restorable final snapshot of the original world. Keep cloud
+   execution disabled, select that full world snapshot in the GameRoom, and
+   commit Running. The operator restores
    into the new PVC, requires a fresh backup before installation, verifies the
-   exact build and starts the game on the original NodePorts/public endpoint.
-6. Verify public UDP, current Argo revision/generation, retained IP and the
+   exact build and waits for the gateway. Confirm that the current generation
+   requires the gateway before enabling either cloud approval flag. The system
+   and rooms Applications reconcile independently; enabling cloud execution
+   while the room is still Suspended could remove the original idle gateway.
+6. Enable production adoption only with the migrated backend present and that
+   Running consumer observed. The worker must accept a no-op gateway plan;
+   the game then starts on the original NodePorts/public endpoint.
+   Verify public UDP, current Argo revision/generation, retained IP and the
    original gateway VM identity. Only then exercise production suspension or
    resume. Each last-consumer stop requires a fresh verified backup before VM
    removal; IPv4/DNS and both wanted world volumes remain retained.

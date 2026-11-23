@@ -1,0 +1,54 @@
+{
+  "date": "2026-11-23",
+  "status": "final-world-backup-verified-awaiting-running-intent",
+  "stateAdoptionReceipt": "adoption-20261122.json",
+  "preload": {
+    "requestId": "production-preload-retry-20261123",
+    "action": "InstallRelease",
+    "worldId": "pz-bingops",
+    "version": "pz-steam-26486687-r1",
+    "steamBuildId": "26486687",
+    "binaryRepository": "s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/gaas-releases-20261122",
+    "binarySnapshot": "d238fa72ae31f746704fb049a7a959a3eecd8d15e3b366acd5a33e8ca6d58ba7",
+    "artifactReused": false,
+    "resumedInterruptedDownload": true,
+    "fullResticRestoreVerify": true
+  },
+  "portal": {
+    "healthHTTP": 200,
+    "gameAPIUnauthenticatedHTTP": 401,
+    "gamingWidgetPresent": true,
+    "oidcOwnerSessionTested": false,
+    "authorizedLANIngressHTTP": 200
+  },
+  "ownerStateWorkflow": {
+    "runId": 45226675267,
+    "conclusion": "success",
+    "state": "Suspended",
+    "gitCommit": "f7c808cde32adc7986241a9d5f3fcd0f3bc31b84"
+  },
+  "host": {
+    "cpuBoostDisabled": true,
+    "rootCauseResolved": false,
+    "longTermStabilityProven": false
+  },
+  "legacy": {
+    "replicas": 0,
+    "serviceType": "ClusterIP",
+    "nodePortsReleased": true,
+    "originalPVCRetained": true
+  },
+  "finalBackup": {
+    "action": "BackupStoppedWorld",
+    "existingHandoffSnapshotReused": true,
+    "fullRestoreVerify": true,
+    "legacyPVCReadOnly": true,
+    "requestId": "production-final-backup-retry-20261123",
+    "resticFullIntegrity": true,
+    "retentionPruned": false,
+    "snapshot": "ccaa6884c8bc7aa50abca34ed428c246af4bb748fbc047e3988e49c329cf20e6",
+    "sqliteDatabasesChecked": 3,
+    "verified": true,
+    "worldId": "pz-bingops"
+  }
+}

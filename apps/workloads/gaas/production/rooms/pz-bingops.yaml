@@ -15,7 +15,7 @@ spec:
     repository: s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/server
     credentialsSecretRef: pz-r2-credentials
     serverName: bingops
-    restoreSnapshot: latest
+    restoreSnapshot: ccaa6884c8bc7aa50abca34ed428c246af4bb748fbc047e3988e49c329cf20e6
   serverCredentialsSecretRef: pz-server-secrets
   network:
     targetIP: 192.168.10.151

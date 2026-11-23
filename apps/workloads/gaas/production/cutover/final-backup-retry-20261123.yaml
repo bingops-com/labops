@@ -1,0 +1,101 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pz-production-final-backup-retry-20261123
+  namespace: pz-server
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 1200
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backup
+          image: ghcr.io/bingops-com/pz-server@sha256:6a8385569f6e6871acae17a4a472b7abdcad3432869da5c09eef0320268d368c
+          command:
+            - python3
+            - -c
+            - |
+              import json,os,runpy,tempfile
+              from pathlib import Path
+              stage='offline-world-preflight'
+              try:
+                  api=runpy.run_path('/usr/local/bin/gaas-operation',run_name='backup_helpers')
+                  root=Path('/data')
+                  assert not (root/'.server-running').exists() and not (root/'.backup-lock').exists()
+                  api['check_world'](root/'Zomboid')
+                  stage='resolve-handoff-snapshot'
+                  snapshots=json.loads(api['run'](['restic','snapshots','--tag','gaas-cutover-20261123','--json']))
+                  assert len(snapshots)<=1
+                  reused=bool(snapshots)
+                  if not snapshots:
+                      stage='backup-world'
+                      api['run'](['restic','backup','/data/Zomboid','--tag','project-zomboid','--tag','gaas-cutover-20261123','--host','project-zomboid','--json'])
+                      snapshots=json.loads(api['run'](['restic','snapshots','--tag','gaas-cutover-20261123','--json']))
+                  assert len(snapshots)==1
+                  snapshot=snapshots[0]['id']
+                  assert len(snapshot)==64
+                  stage='full-repository-check'
+                  api['run'](['restic','check','--read-data'])
+                  stage='verified-disposable-restore'
+                  with tempfile.TemporaryDirectory(dir='/restore') as staging:
+                      api['run'](['restic','restore',snapshot,'--target',staging,'--include','/data/Zomboid','--verify','--quiet'])
+                      world=Path(staging)/'data/Zomboid'
+                      stage='restored-world-integrity'
+                      api['check_world'](world)
+                      databases=len(list(world.rglob('*.db')))
+                  value={'requestId':os.environ['GAAS_REQUEST_ID'],'action':'BackupStoppedWorld','worldId':'pz-bingops','snapshot':snapshot,'verified':True,'resticFullIntegrity':True,'fullRestoreVerify':True,'sqliteDatabasesChecked':databases,'legacyPVCReadOnly':True,'retentionPruned':False,'existingHandoffSnapshotReused':reused}
+                  print('GAAS_RESULT_JSON='+json.dumps(value,sort_keys=True))
+              except (AssertionError,ValueError,RuntimeError,OSError,KeyError):
+                  raise SystemExit('Final production backup failed at '+stage+'; legacy world retained; private diagnostics withheld')
+          env:
+            - name: GAAS_SERVER_NAME
+              value: bingops
+            - name: RESTIC_REPOSITORY
+              value: s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/server
+            - name: RESTIC_CACHE_DIR
+              value: /tmp/restic-cache
+            - name: AWS_DEFAULT_REGION
+              value: auto
+            - name: GOMAXPROCS
+              value: '1'
+            - name: GAAS_REQUEST_ID
+              value: production-final-backup-retry-20261123
+          envFrom:
+            - secretRef:
+                name: pz-r2-credentials
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: world
+              mountPath: /data
+              readOnly: true
+            - name: restore
+              mountPath: /restore
+      volumes:
+        - name: world
+          persistentVolumeClaim:
+            claimName: pz-server-pz-server-data
+            readOnly: true
+        - name: restore
+          emptyDir:
+            sizeLimit: 2Gi
