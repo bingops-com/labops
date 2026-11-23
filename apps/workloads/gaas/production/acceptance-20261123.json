@@ -1,6 +1,6 @@
 {
   "date": "2026-11-23",
-  "status": "final-world-backup-verified-awaiting-running-intent",
+  "status": "production-cron-verified-first-suspension-requested",
   "stateAdoptionReceipt": "adoption-20261122.json",
   "preload": {
     "requestId": "production-preload-retry-20261123",
@@ -50,5 +50,110 @@
     "sqliteDatabasesChecked": 3,
     "verified": true,
     "worldId": "pz-bingops"
+  },
+  "gatewayAdoption": {
+    "applied": true,
+    "enabled": true,
+    "changes": [
+      {
+        "address": "cloudflare_record.public_services[\"pz\"]",
+        "actions": [
+          "no-op"
+        ]
+      },
+      {
+        "address": "hcloud_firewall.edge_gateway",
+        "actions": [
+          "no-op"
+        ]
+      },
+      {
+        "address": "hcloud_primary_ip.edge_gateway",
+        "actions": [
+          "no-op"
+        ]
+      },
+      {
+        "address": "hcloud_server.edge_gateway[0]",
+        "actions": [
+          "no-op"
+        ]
+      },
+      {
+        "address": "hcloud_ssh_key.operator",
+        "actions": [
+          "no-op"
+        ]
+      },
+      {
+        "address": "tailscale_tailnet_key.edge_gateway[0]",
+        "actions": [
+          "no-op"
+        ]
+      },
+      {
+        "address": "terraform_data.bootstrap_revision",
+        "actions": [
+          "no-op"
+        ]
+      }
+    ]
+  },
+  "preInstallBackup": {
+    "action": "BackupStoppedWorld",
+    "requestId": "1cccde4253b5e7a3a011acc8",
+    "snapshot": "e2cf8b81b9d618e3975f71b371ca56388eb084d54a94ccd6119b6e9216f1e407",
+    "verified": true,
+    "worldId": "pz-bingops"
+  },
+  "install": {
+    "action": "InstallRelease",
+    "artifactReused": true,
+    "binaryRepository": "s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/gaas-releases-20261122",
+    "binarySnapshot": "d238fa72ae31f746704fb049a7a959a3eecd8d15e3b366acd5a33e8ca6d58ba7",
+    "requestId": "1cccde4253b5e7a3a011acc8",
+    "steamBuildId": "26486687",
+    "version": "pz-steam-26486687-r1",
+    "worldId": "pz-bingops"
+  },
+  "runningWorkflow": {
+    "runId": 45228103313,
+    "conclusion": "success",
+    "gitCommit": "04944b4fdccd12a0b13740c65fad375f4308d67b"
+  },
+  "initialRunning": {
+    "generation": 3,
+    "observedGeneration": 3,
+    "phase": "Running",
+    "publicA2S": {
+      "online": true,
+      "players": 0,
+      "maxPlayers": 16,
+      "endpoint": "pz.bingops.com:16261"
+    },
+    "rconPlayers": 0,
+    "realGameClientJoinTested": false,
+    "originalGatewayVMId": 169230729
+  },
+  "productionCronCheck": {
+    "job": "pz-production-croncheck-20261123",
+    "succeeded": true,
+    "scriptCompleted": true,
+    "snapshotPrefixes": [
+      "4a9e6629"
+    ],
+    "gameRecoveredPublicA2S": {
+      "online": true,
+      "players": 0,
+      "maxPlayers": 16,
+      "queryVersion": "1.0.0.0",
+      "latencyMs": 282,
+      "endpoint": "pz.bingops.com:16261"
+    },
+    "rconPlayersAfter": 0
+  },
+  "firstSuspendWorkflow": {
+    "runId": 45229223301,
+    "state": "Suspended"
   }
 }

@@ -6,6 +6,9 @@ GitOps intent in `rooms/pz-bingops.yaml`. It preserves the original public
 `pz.bingops.com` endpoint, IPv4 `188.245.252.46` (Hetzner primary IP `154062800`)
 and the existing gateway `labops-edge-01` during ownership adoption. Its initial
 VM ID is `169230729`; later suspend/resume cycles intentionally change that ID.
+The dated [production acceptance receipt](acceptance-20261123.json) records
+observed results and remaining limits; it is not a source of credentials or
+Terraform state.
 
 The system Application owns the CRD, controller, public catalogue, mappings,
 RBAC and retained preload PVC. The rooms Application owns GameRoom intent only.
@@ -94,6 +97,14 @@ That stage does not stop the active legacy server. Before activation:
    original gateway VM identity. Only then exercise production suspension or
    resume. Each last-consumer stop requires a fresh verified backup before VM
    removal; IPv4/DNS and both wanted world volumes remain retained.
+   While the room is Running after the successful handoff, return
+   `world.restoreSnapshot` to `latest`
+   so a later storage recovery selects a current verified save instead of the
+   historical handoff. The retained world marker prevents overwriting an
+   already loaded world. Preserve the dated handoff snapshot for rollback.
+   Change `tailscale_ephemeral` to true only while the gateway is absent and
+   no cloud worker is active; future VM registrations then use ephemeral nodes.
+   Never apply that boot-input change over the running original VM.
 
 Rollback before acceptance: suspend the new room and wait for its writers to
 finish, then restore the legacy Helm overrides and NodePorts in Git. Use the
@@ -112,6 +123,14 @@ GitHub App it links to the `game-room-state.yml` GitHub form; the owner chooses
 Running or Suspended and the workflow writes only that typed state, without
 AI, a cloud credential or Kubernetes access. The branch must permit its normal,
 non-force commit. Workflow success records intent; room status proves completion.
+Open `https://portal.lab.bingo/serveurs` from the LAN or tailnet, sign in with
+the existing OIDC account and follow the GitHub action link. Select `pz-bingops`
+and Running or Suspended, then run the workflow. The form is also available
+[directly on GitHub](https://github.com/bingops-com/labops/actions/workflows/game-room-state.yml).
+Without an App, the Portal caches anonymous Git reads for up to five minutes;
+the controller's observed generation and Argo revision establish actual progress.
+Suspension removes only the last consumer's VM after its verified backup.
+The retained IPv4 and backup storage continue to exist and can still have a cost.
 
 A dedicated App remains optional for integrated Portal command buttons and
 version PRs. It needs Contents/PR write on LabOps only, explicit OIDC owner-group
@@ -120,6 +139,15 @@ The Portal has get-only access to the configured room and Argo Application.
 Adding another server still requires its reviewed GameRoom, route allocation
 and immutable release; other game adapters and hot gateway-route changes are
 not implemented. Existing route changes require the shared gateway suspended.
+This first adapter restores an existing world repository; blank-world creation
+and a generic server-creation form are not implemented.
+
+To verify the scheduled game backup script, identify the room's generated
+CronJob and instantiate one manual Job while no players or offline operations
+are active. Wait for the Job's successful completion and the game Pod to become
+Ready again before requesting suspension. A manually instantiated Job is not
+necessarily represented in the CronJob's active list. Record the script's
+completion and snapshot identifier without dumping game/configuration contents.
 
 The 2026-11-22 preload was interrupted by a host reboot. The dated retry Job
 reuses only its exact temporary binary directory, requires the original world
