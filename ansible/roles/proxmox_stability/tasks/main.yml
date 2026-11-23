@@ -1,0 +1,44 @@
+---
+- name: Read the host identity
+  ansible.builtin.command: hostname
+  changed_when: false
+  check_mode: false
+  register: proxmox_stability_hostname
+
+- name: Restrict the mitigation to the reviewed host
+  ansible.builtin.assert:
+    that:
+      - proxmox_stability_hostname.stdout == proxmox_stability_expected_hostname
+    fail_msg: CPU mitigation is restricted to the reviewed homelab host.
+
+- name: Verify the reviewed CPU model
+  ansible.builtin.command:
+    argv:
+      - grep
+      - -q
+      - "{{ proxmox_stability_expected_cpu }}"
+      - /proc/cpuinfo
+  changed_when: false
+  check_mode: false
+
+- name: Read the supported CPU boost interface
+  ansible.builtin.slurp:
+    src: /sys/devices/system/cpu/cpufreq/boost
+  register: proxmox_stability_current_boost
+
+- name: Install the declared CPU boost setting
+  ansible.builtin.template:
+    src: cpu-boost.service.j2
+    dest: /etc/systemd/system/labops-cpu-boost.service
+    owner: root
+    group: root
+    mode: "0644"
+  register: proxmox_stability_unit
+
+- name: Apply the setting now and before guest startup
+  when: not ansible_check_mode
+  ansible.builtin.systemd_service:
+    name: labops-cpu-boost.service
+    daemon_reload: "{{ proxmox_stability_unit.changed }}"
+    enabled: true
+    state: "{{ 'restarted' if proxmox_stability_unit.changed or (proxmox_stability_current_boost.content | b64decode | trim) != (proxmox_stability_boost_enabled | ternary('1', '0')) else 'started' }}"
