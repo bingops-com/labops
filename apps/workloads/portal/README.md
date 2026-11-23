@@ -10,8 +10,9 @@ the hostname is not published through Cloudflare Tunnel.
 
 - Source: separate `bingops-com/portal` repository (local checkout
   `/opt/homeops/portal`), which documents every widget and option.
-- Image: `docker/portal` clones the `master` branch of the source; the image
-  workflow publishes `ghcr.io/bingops-com/portal:sha-<labops commit>`. See
+- Image: `docker/portal/source.txt` pins the full source commit. The dedicated
+  image workflow smoke-tests the build and promotes its immutable GHCR digest
+  into the Deployment through Git. See
   [`docker/portal/README.md`](../../../docker/portal/README.md) for releases
   and external prerequisites.
 - Layout: `base/portal.yaml` is the source of truth for pages and widgets. The

@@ -1,6 +1,6 @@
 {
   "date": "2026-11-23",
-  "status": "production-suspend-resume-verified-final-suspension-pending",
+  "status": "production-lifecycle-accepted-suspended",
   "stateAdoptionReceipt": "adoption-20261122.json",
   "preload": {
     "requestId": "production-preload-retry-20261123",
@@ -19,7 +19,11 @@
     "gameAPIUnauthenticatedHTTP": 401,
     "gamingWidgetPresent": true,
     "oidcOwnerSessionTested": false,
-    "authorizedLANIngressHTTP": 200
+    "authorizedLANIngressHTTP": 200,
+    "obsoleteLegacyBackupReferences": 0,
+    "stateBackupReferences": 3,
+    "anonymousGameAPIHTTP": 401,
+    "secretReadAllowed": false
   },
   "ownerStateWorkflow": {
     "runId": 45226675267,
@@ -241,7 +245,107 @@
     },
     "rconPlayers": 0,
     "worldPVCUID": "3336dba7-f780-4adf-b7c9-46fa1155c586",
-    "originalWorldPVCUIDRetained": true,
-    "realGameClientJoinTested": false
-  }
+    "realGameClientJoinTested": false,
+    "gameRoomPVCUIDRetained": true
+  },
+  "finalSuspend": {
+    "workflowRunId": 45230428068,
+    "gitCommit": "90d1107",
+    "generation": 7,
+    "observedGeneration": 7,
+    "phase": "Suspended",
+    "restoreSnapshot": "latest",
+    "backup": {
+      "action": "BackupStoppedWorld",
+      "requestId": "94c59e7fb50b1ffc5e98cf58",
+      "snapshot": "beda6740f3be4bafee8645ba7d09d77de33b539837c7eb699212dee6e2e72a4d",
+      "verified": true,
+      "worldId": "pz-bingops"
+    },
+    "gateway": {
+      "applied": true,
+      "enabled": false,
+      "changes": [
+        {
+          "address": "cloudflare_record.public_services[\"pz\"]",
+          "actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "hcloud_firewall.edge_gateway",
+          "actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "hcloud_primary_ip.edge_gateway",
+          "actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "hcloud_server.edge_gateway[0]",
+          "actions": [
+            "delete"
+          ]
+        },
+        {
+          "address": "hcloud_ssh_key.operator",
+          "actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "tailscale_tailnet_key.edge_gateway[0]",
+          "actions": [
+            "delete"
+          ]
+        },
+        {
+          "address": "terraform_data.bootstrap_revision",
+          "actions": [
+            "no-op"
+          ]
+        }
+      ]
+    },
+    "hetznerVMAbsent": true,
+    "retainedIPId": 154062800,
+    "publicIP": "188.245.252.46",
+    "IPUnassigned": true,
+    "IPAutoDelete": false
+  },
+  "finalBackendRecoveryBundle": {
+    "snapshot": "e3a100f5533f0b282a43777e7b0b80c3139f577a18241c07ab4725f7dc1a45a3",
+    "stateSecretsChecked": 1,
+    "resticIntegrity": "passed",
+    "restoredBundleMatches": true,
+    "terraformStateDecoded": true,
+    "liveBackendModified": false
+  },
+  "remainingLimits": {
+    "realGameClientJoinTested": false,
+    "differentSteamBuildUpgradeTested": false,
+    "liveTerraformBackendRestoreApplied": false,
+    "integratedPortalWritesEnabled": false,
+    "ownerOIDCSessionTested": false,
+    "blankWorldCreationSupported": false,
+    "otherGameAdaptersSupported": false,
+    "hostRebootCauseResolved": false
+  },
+  "retainedWorldVolumes": [
+    {
+      "namespace": "gaming",
+      "name": "gaas-world-pz-bingops-34c51677",
+      "uid": "3336dba7-f780-4adf-b7c9-46fa1155c586",
+      "phase": "Bound"
+    },
+    {
+      "namespace": "pz-server",
+      "name": "pz-server-pz-server-data",
+      "uid": "95cc3039-af28-458c-9b9c-8f30cecd0cf5",
+      "phase": "Bound"
+    }
+  ]
 }
