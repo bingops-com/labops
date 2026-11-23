@@ -32,7 +32,7 @@ spec:
                   root=Path('/data')
                   assert not (root/'.server-running').exists() and not (root/'.backup-lock').exists()
                   api['check_world'](root/'Zomboid')
-                  output=api['run'](['restic','backup','/data/Zomboid','--tag','project-zomboid','--host','project-zomboid','--json'])
+                  output=api['run'](['restic','backup','/data/Zomboid','--tag','project-zomboid','--tag','gaas-cutover-20261123','--host','project-zomboid','--json'])
                   summaries=[json.loads(line) for line in output.splitlines() if json.loads(line).get('message_type')=='summary']
                   assert len(summaries)==1
                   snapshot=summaries[0]['snapshot_id']
