@@ -23,7 +23,8 @@
     "obsoleteLegacyBackupReferences": 0,
     "stateBackupReferences": 3,
     "anonymousGameAPIHTTP": 401,
-    "secretReadAllowed": false
+    "secretReadAllowed": false,
+    "runtimeImage": "ghcr.io/bingops-com/portal@sha256:0a3039b54bba2363da9e3e9b640b894badf0ce8bc4824f018c31653c78921acb"
   },
   "ownerStateWorkflow": {
     "runId": 45226675267,
@@ -346,6 +347,47 @@
       "name": "pz-server-pz-server-data",
       "uid": "95cc3039-af28-458c-9b9c-8f30cecd0cf5",
       "phase": "Bound"
+    }
+  ],
+  "transientTerminalJobCleanup": [
+    {
+      "namespace": "gaming",
+      "name": "gaas-production-preload-20261122",
+      "result": "deleted"
+    },
+    {
+      "namespace": "gaming",
+      "name": "gaas-production-preload-retry-20261123",
+      "result": "deleted"
+    },
+    {
+      "namespace": "gaming",
+      "name": "gaas-production-state-verify-20261122",
+      "result": "already-absent"
+    },
+    {
+      "namespace": "gaming",
+      "name": "gaas-production-final-state-verify-20261123",
+      "uid": "79fe6350-ea3c-4016-90cc-8365072d3bcf",
+      "result": "deleted"
+    },
+    {
+      "namespace": "gaming",
+      "name": "pz-production-croncheck-20261123",
+      "uid": "6cbee4a3-8c7c-4d7a-ae90-699100a7774e",
+      "result": "deleted"
+    },
+    {
+      "namespace": "pz-server",
+      "name": "pz-production-final-backup-20261123",
+      "uid": "e15e5707-590f-4705-85fc-c72da45436a7",
+      "result": "deleted"
+    },
+    {
+      "namespace": "pz-server",
+      "name": "pz-production-final-backup-retry-20261123",
+      "uid": "2696921d-2315-4e21-a9a4-c1c5b7735490",
+      "result": "deleted"
     }
   ]
 }
