@@ -8,7 +8,7 @@ metadata:
 spec:
   game: project-zomboid
   version: pz-steam-26486687-r1
-  state: Suspended
+  state: Running
   gatewayRef: shared
   world:
     id: pz-bingops
