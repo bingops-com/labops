@@ -25,7 +25,7 @@ data:
         "public_dns_records": [
           "pz"
         ],
-        "tailscale_ephemeral": false,
+        "tailscale_ephemeral": true,
         "forwards": {
           "project-zomboid-game": {
             "protocol": "udp",
