@@ -1,0 +1,28 @@
+---
+apiVersion: gaming.bingops.com/v1alpha1
+kind: GameRoom
+metadata:
+  name: pz-bingops
+  namespace: gaming
+  finalizers:
+    - gaming.bingops.com/preserve-world
+spec:
+  game: project-zomboid
+  version: pz-steam-26486687-r1
+  state: Suspended
+  gatewayRef: shared
+  world:
+    id: pz-bingops
+    repository: s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/server
+    credentialsSecretRef: pz-r2-credentials
+    serverName: bingops
+    restoreSnapshot: latest
+  serverCredentialsSecretRef: pz-server-secrets
+  network:
+    targetIP: 192.168.10.151
+    nodePorts:
+      game: 30261
+      direct: 30262
+    publicPorts:
+      game: 16261
+      direct: 16262

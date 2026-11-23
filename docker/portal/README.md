@@ -1,50 +1,20 @@
-# portal
+# Portal image publication
 
-Image build for the private LabOps Portal. The source lives in
-[`bingops-com/portal`](https://github.com/bingops-com/portal); this directory
-only holds the Dockerfile, which clones the `master` branch of that
-repository, builds the React UI, embeds it in the Go binary and ships it on a
-distroless base (same pattern as `docker/www`).
+`portal-release.yml` reads the full public source SHA from `source.txt`, builds
+this Dockerfile with `PORTAL_SOURCE_REF`, publishes an immutable GHCR digest,
+and smoke-tests `/healthz`. On `master` it promotes only the Deployment image
+in a non-force Git commit. A concurrent edit rejects the push; rerun from the
+current branch rather than force-pushing. Feature-branch builds publish an
+artifact only. The recorded artifact contains the image digest and source SHA.
 
-```bash
-docker build -t ghcr.io/bingops-com/portal docker/portal
-```
+The old `deploy-target` marker and cross-repository `REPO_INFRA_TOKEN` dispatch
+are retired for Portal. Publication uses LabOps' own `GITHUB_TOKEN` with package
+write and contents write for the promotion commit. No new long-lived CI token
+is required. Generic Docker builds may publish tags, but production follows the
+reviewed source pin and the digest promoted by `portal-release.yml`.
 
-The build writes the source commit to `/version.txt`, which the portal shows
-in its footer. The image contains no configuration: it reads `PORTAL_CONFIG`
-(`/etc/portal/portal.yaml`), mounted from the `apps/workloads/portal`
-ConfigMap, and writes the layout saved from the browser to `PORTAL_DATA`
-(`/data`).
-
-## Releases
-
-The image workflow publishes `ghcr.io/bingops-com/portal` with the tags
-`latest`, `sha-<short labops commit>` and a timestamp whenever:
-
-- a push to `master` of the source repository changes its code (it sends a
-  `rebuild-image` dispatch; a pull request there builds without publishing);
-- a change under `docker/portal` reaches `master` here.
-
-A published image is not deployed by itself. After each publication the
-workflow opens a pull request (`deploy/portal-<tag>`) that sets the image of
-the manifest named in `deploy-target` to the new timestamp tag
-(`YYYYMMDD-HHmmss`); merging it is the deployment, closing it skips the build.
-The timestamp tag is used rather than `sha-<commit>` because that `sha` is the
-commit of this repository at build time: two source builds without a commit
-here in between would publish the same `sha` tag. Pull requests opened by the
-workflow token do not start other workflows, so they carry no checks.
-
-## External prerequisites
-
-| Prerequisite | Purpose | Owner and storage | Verification |
-| --- | --- | --- | --- |
-| `bingops-com/portal` is public | The build clones it anonymously | GitHub organisation owner | `git ls-remote --heads https://github.com/bingops-com/portal.git master` |
-| GHCR package `portal` is public | `labprod` pulls it without a pull secret | Package settings, set once after the first publish | `docker manifest inspect ghcr.io/bingops-com/portal:latest` from a logged-out client |
-| `REPO_INFRA_TOKEN` organisation secret of `bingops-com`, readable by `portal` | Lets the source repository dispatch `rebuild-image` here | Fine-grained token limited to this repository with `Contents: read and write`, shared with the other source repositories; creation and rotation are described in [`docker/status/README.md`](../status/README.md#creating-or-rotating-repo_infra_token) | A code push to `master` of the source starts the "Build and Push Docker image to GHCR" workflow |
-
-Without the token the dispatch fails, but a change under `docker/portal`
-still builds the image.
-| Actions may create pull requests | Lets the image workflow open the deployment pull request | Repository setting **Settings > Actions > General > Allow GitHub Actions to create and approve pull requests**; owner: repository admin | A publication is followed by a `deploy/portal-<tag>` pull request |
-
-Without that setting the publication still succeeds and the last step fails;
-update the image tag in `deploy-target`'s manifest by hand.
+The source repository and GHCR package remain public for anonymous source
+fetches and cluster image pulls. Recover access through the GitHub organisation
+administrator if either visibility changes. Configuration, OIDC settings and
+the retained `portal-data` session/layout volume belong to the workload runbook;
+no application configuration or private key is baked into the image.

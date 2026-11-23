@@ -114,3 +114,21 @@ curl --fail --silent --show-error --output /dev/null --write-out '%{http_code}\n
 Replaces: the Cluster Portal prototype and the Glance dashboard. The pruned
 `glance` namespace and the Tailscale `welcome.lab.bingo` split-DNS entry
 disappear on the next reconcile and Terraform apply respectively.
+
+## GameRoom controls
+
+The production overlay mounts only public gaming config. The service account
+has get-only access to `gaming/pz-bingops` and existing Argo status. OIDC and
+`portal-editors` remain required for gaming API access. Without an App key the
+widget links to the owner-only GitHub form, which writes typed state in Git;
+see [the gaming runbook](../gaas/production/README.md). Integrated commands and
+version PRs can be enabled later with a repository-restricted App whose key is
+materialized through Bitwarden. No connector/ARC token is reused.
+
+Image publication and promotion use [the pinned-source release workflow](../../../docker/portal/README.md).
+
+The PostSync layout hook adds the owned gaming widget to an existing saved
+layout without replacing personal pages. It updates only the old PZ probe
+address, preserves a private pre-migration copy on the same PVC, rejects
+concurrent edits and is idempotent. It runs after the new image is healthy;
+no OIDC session key or private layout content is read into Git or logs.

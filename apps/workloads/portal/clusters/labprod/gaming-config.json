@@ -1,0 +1,15 @@
+{
+  "repository": "bingops-com/labops",
+  "branch": "master",
+  "directory": "apps/workloads/gaas/production/rooms",
+  "catalogue": "apps/workloads/gaas/production/system/config.yaml",
+  "namespace": "gaming",
+  "gateway": "shared",
+  "rooms": [
+    "pz-bingops"
+  ],
+  "argoNamespace": "argocd-system",
+  "argoApplication": "gaming-rooms",
+  "endpointHost": "pz.bingops.com",
+  "stateWorkflow": "game-room-state.yml"
+}

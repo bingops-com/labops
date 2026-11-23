@@ -1,6 +1,7 @@
 version: "3"
 
 includes:
+  edge: .taskfiles/edge.yml
   capi: .taskfiles/capi.yml
   clients: .taskfiles/clients.yml
   hacks: .taskfiles/hacks.yml

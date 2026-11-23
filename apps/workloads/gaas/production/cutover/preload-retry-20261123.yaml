@@ -1,0 +1,100 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gaas-production-preload-retry-20261123
+  namespace: gaming
+  labels:
+    gaming.bingops.com/room-uid: 46088baf-1790-4293-8c21-5adfd2b058dd
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: preload
+          image: ghcr.io/bingops-com/pz-server@sha256:6a8385569f6e6871acae17a4a472b7abdcad3432869da5c09eef0320268d368c
+          command:
+            - python3
+            - -c
+            - |
+              import json,os,runpy,shutil
+              from pathlib import Path
+              try:
+                  api=runpy.run_path('/usr/local/bin/gaas-operation',run_name='preload_helpers')
+                  root=Path('/data');stage=root/'.gaas-release-kvf11fuc'
+                  assert not (root/'Zomboid').exists(), 'World must not be loaded during binary preload'
+                  assert not (root/'.server-running').exists() and not (root/'.backup-lock').exists()
+                  if (root/'server').exists() or not stage.exists():
+                      value=api['operate']('InstallRelease',os.environ['GAAS_REQUEST_ID'],os.environ['GAAS_WORLD_ID'])
+                  else:
+                      assert stage.is_dir() and not stage.is_symlink() and stage.resolve().parent==root
+                      assert '--verify' in api['run'](['restic','restore','--help'])
+                      api['run'](['restic','--limit-download','4096','restore',os.environ['GAAS_BINARY_SNAPSHOT'],'--target',str(stage),'--include','/data/server','--verify','--quiet'],repository=os.environ['GAAS_BINARY_REPOSITORY'])
+                      candidate=stage/'data/server'
+                      assert candidate.resolve().is_relative_to(stage.resolve())
+                      assert api['steam_build'](candidate)==os.environ['GAAS_STEAM_BUILD_ID']
+                      assert not (root/'server').exists()
+                      candidate.rename(root/'server')
+                      value={'requestId':os.environ['GAAS_REQUEST_ID'],'action':'InstallRelease','worldId':os.environ['GAAS_WORLD_ID'],'version':os.environ['GAAS_VERSION'],'steamBuildId':os.environ['GAAS_STEAM_BUILD_ID'],'binaryRepository':os.environ['GAAS_BINARY_REPOSITORY'],'binarySnapshot':os.environ['GAAS_BINARY_SNAPSHOT'],'artifactReused':False,'resumedInterruptedDownload':True,'fullResticRestoreVerify':True}
+                      api['atomic_json'](root/'.gaas-release.json',value)
+                      shutil.rmtree(stage)
+                  print('GAAS_RESULT_JSON='+json.dumps(value))
+              except (AssertionError,ValueError,RuntimeError,OSError,KeyError):
+                  raise SystemExit('Production preload retry failed; retained volume unchanged or recoverable; private diagnostics withheld')
+          env:
+            - name: GAAS_ACTION
+              value: InstallRelease
+            - name: GAAS_REQUEST_ID
+              value: production-preload-retry-20261123
+            - name: GAAS_WORLD_ID
+              value: pz-bingops
+            - name: GAAS_SERVER_NAME
+              value: bingops
+            - name: GAAS_VERSION
+              value: pz-steam-26486687-r1
+            - name: GAAS_STEAM_BUILD_ID
+              value: '26486687'
+            - name: GAAS_BINARY_REPOSITORY
+              value: s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/gaas-releases-20261122
+            - name: GAAS_BINARY_SNAPSHOT
+              value: d238fa72ae31f746704fb049a7a959a3eecd8d15e3b366acd5a33e8ca6d58ba7
+            - name: RESTIC_REPOSITORY
+              value: s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/server
+            - name: RESTIC_CACHE_DIR
+              value: /tmp/restic-cache
+            - name: AWS_DEFAULT_REGION
+              value: auto
+            - name: GOMAXPROCS
+              value: '1'
+          envFrom:
+            - secretRef:
+                name: pz-r2-credentials
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: world
+              mountPath: /data
+      volumes:
+        - name: world
+          persistentVolumeClaim:
+            claimName: gaas-world-pz-bingops-34c51677

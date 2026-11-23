@@ -1,0 +1,74 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gaas-production-preload-20261122
+  namespace: gaming
+  labels:
+    gaming.bingops.com/room-uid: 46088baf-1790-4293-8c21-5adfd2b058dd
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: preload
+          image: ghcr.io/bingops-com/pz-server@sha256:6a8385569f6e6871acae17a4a472b7abdcad3432869da5c09eef0320268d368c
+          command:
+            - /usr/local/bin/gaas-operation
+          env:
+            - name: GAAS_ACTION
+              value: InstallRelease
+            - name: GAAS_REQUEST_ID
+              value: production-preload-20261122
+            - name: GAAS_WORLD_ID
+              value: pz-bingops
+            - name: GAAS_SERVER_NAME
+              value: bingops
+            - name: GAAS_VERSION
+              value: pz-steam-26486687-r1
+            - name: GAAS_STEAM_BUILD_ID
+              value: '26486687'
+            - name: GAAS_BINARY_REPOSITORY
+              value: s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/gaas-releases-20261122
+            - name: GAAS_BINARY_SNAPSHOT
+              value: d238fa72ae31f746704fb049a7a959a3eecd8d15e3b366acd5a33e8ca6d58ba7
+            - name: RESTIC_REPOSITORY
+              value: s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/server
+            - name: RESTIC_CACHE_DIR
+              value: /tmp/restic-cache
+            - name: AWS_DEFAULT_REGION
+              value: auto
+            - name: GOMAXPROCS
+              value: '1'
+          envFrom:
+            - secretRef:
+                name: pz-r2-credentials
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: world
+              mountPath: /data
+      volumes:
+        - name: world
+          persistentVolumeClaim:
+            claimName: gaas-world-pz-bingops-34c51677

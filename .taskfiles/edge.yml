@@ -1,0 +1,36 @@
+version: '3'
+vars:
+  EDGE_TERRAFORM_DIR: terraform/edge-gateway
+tasks:
+  init:
+    desc: Initialize the public edge-gateway Terraform stack
+    cmds:
+    - terraform -chdir={{.EDGE_TERRAFORM_DIR}} init
+    preconditions:
+    - sh: test -f {{.EDGE_TERRAFORM_DIR}}/backend.tf.json
+      msg: Configure the gaming-state Kubernetes backend first; local empty-state
+        initialization is disabled.
+  fmt:
+    desc: Check formatting of the edge-gateway Terraform stack
+    cmds:
+    - terraform fmt -check {{.EDGE_TERRAFORM_DIR}}
+  validate:
+    desc: Validate the initialized edge-gateway Terraform stack offline
+    cmds:
+    - terraform -chdir={{.EDGE_TERRAFORM_DIR}} validate
+  plan:
+    desc: Build and save the Hetzner edge-gateway plan
+    prompt: This reads live Hetzner and Tailscale state and creates a sensitive saved
+      plan. Continue?
+    cmds:
+    - task: init
+    - terraform -chdir={{.EDGE_TERRAFORM_DIR}} plan -out=edge-gateway.tfplan
+  apply:
+    desc: Apply the reviewed edge-gateway plan
+    prompt: This creates or updates the public Hetzner gateway and its forwarding
+      rules. Continue?
+    preconditions:
+    - sh: test -f {{.EDGE_TERRAFORM_DIR}}/edge-gateway.tfplan
+      msg: Run task edge:plan and review the saved plan first.
+    cmds:
+    - terraform -chdir={{.EDGE_TERRAFORM_DIR}} apply edge-gateway.tfplan

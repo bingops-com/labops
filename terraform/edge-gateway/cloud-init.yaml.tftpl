@@ -1,0 +1,40 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+
+packages:
+  - ca-certificates
+  - curl
+  - nftables
+
+write_files:
+  - path: /etc/nftables.conf
+    owner: root:root
+    permissions: "0644"
+    encoding: b64
+    content: ${nftables_config_b64}
+  - path: /etc/sysctl.d/99-edge-gateway.conf
+    owner: root:root
+    permissions: "0644"
+    content: |
+      net.ipv4.ip_forward = 1
+      net.ipv4.conf.all.rp_filter = 2
+      net.ipv4.conf.default.rp_filter = 2
+  - path: /run/tailscale-auth-key
+    owner: root:root
+    permissions: "0600"
+    encoding: b64
+    content: ${auth_key_b64}
+
+runcmd:
+  - [sysctl, --system]
+  - [systemctl, enable, --now, nftables]
+  - [mkdir, -p, /usr/share/keyrings]
+  - [bash, -ec, "curl --fail --silent --show-error --location https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg --output /usr/share/keyrings/tailscale-archive-keyring.gpg"]
+  - [bash, -ec, "curl --fail --silent --show-error --location https://pkgs.tailscale.com/stable/debian/trixie.tailscale-keyring.list --output /etc/apt/sources.list.d/tailscale.list"]
+  - [apt-get, update]
+  - [apt-get, install, --yes, "tailscale=${tailscale_version}"]
+  - [systemctl, enable, --now, tailscaled]
+  - [bash, -ec, "trap 'shred --remove /run/tailscale-auth-key; rm -f /var/lib/cloud/instance/user-data.txt /var/lib/cloud/instance/user-data.txt.i' EXIT; tailscale up --auth-key=file:/run/tailscale-auth-key --hostname=${hostname} --accept-routes --netfilter-mode=off --ssh"]
+
+final_message: "LabOps edge gateway bootstrap completed"

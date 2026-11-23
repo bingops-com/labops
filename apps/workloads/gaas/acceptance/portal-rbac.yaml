@@ -1,0 +1,24 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: portal-game-observation
+  namespace: pz-server
+rules:
+  - apiGroups: [gaming.bingops.com]
+    resources: [gamerooms]
+    resourceNames: [gaas-pz-one, gaas-pz-two]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: portal-game-observation
+  namespace: pz-server
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: portal-game-observation
+subjects:
+  - kind: ServiceAccount
+    name: portal
+    namespace: portal

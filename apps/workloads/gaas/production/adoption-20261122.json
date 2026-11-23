@@ -1,0 +1,127 @@
+{
+  "originalStateBackupSnapshot": "c4884e5e8d824abd9db776c1ee73532bc692acbdd74615f69a28dc689d755085",
+  "resticFullIntegrity": "passed",
+  "restoredOriginalStateMatches": true,
+  "originalStateUnchanged": true,
+  "liveBackendModified": false,
+  "refreshedAdoptionPlan": [
+    {
+      "address": "cloudflare_record.public_services[\"pz\"]",
+      "actions": [
+        "no-op"
+      ],
+      "previousAddress": null
+    },
+    {
+      "address": "hcloud_firewall.edge_gateway",
+      "actions": [
+        "no-op"
+      ],
+      "previousAddress": null
+    },
+    {
+      "address": "hcloud_primary_ip.edge_gateway",
+      "actions": [
+        "no-op"
+      ],
+      "previousAddress": null
+    },
+    {
+      "address": "hcloud_server.edge_gateway[0]",
+      "actions": [
+        "no-op"
+      ],
+      "previousAddress": "hcloud_server.edge_gateway"
+    },
+    {
+      "address": "hcloud_ssh_key.operator",
+      "actions": [
+        "no-op"
+      ],
+      "previousAddress": null
+    },
+    {
+      "address": "tailscale_tailnet_key.edge_gateway[0]",
+      "actions": [
+        "no-op"
+      ],
+      "previousAddress": "tailscale_tailnet_key.edge_gateway"
+    },
+    {
+      "address": "terraform_data.bootstrap_revision",
+      "actions": [
+        "no-op"
+      ],
+      "previousAddress": null
+    }
+  ],
+  "status": "remote-state-adopted-legacy-game-still-running",
+  "originalVMId": 169230729,
+  "retainedIPId": 154062800,
+  "publicIP": "188.245.252.46",
+  "namespace": "gaming",
+  "backendNamespace": "gaming-state",
+  "backendSuffix": "edge-gateway",
+  "retainedVMId": "169230729",
+  "retainedPrimaryIPId": "154062800",
+  "lineagePreserved": true,
+  "managedChanges": [
+    {
+      "address": "cloudflare_record.public_services[\"pz\"]",
+      "actions": [
+        "no-op"
+      ],
+      "previousAddress": null
+    },
+    {
+      "address": "hcloud_firewall.edge_gateway",
+      "actions": [
+        "no-op"
+      ],
+      "previousAddress": null
+    },
+    {
+      "address": "hcloud_primary_ip.edge_gateway",
+      "actions": [
+        "no-op"
+      ],
+      "previousAddress": null
+    },
+    {
+      "address": "hcloud_server.edge_gateway[0]",
+      "actions": [
+        "no-op"
+      ],
+      "previousAddress": "hcloud_server.edge_gateway"
+    },
+    {
+      "address": "hcloud_ssh_key.operator",
+      "actions": [
+        "no-op"
+      ],
+      "previousAddress": null
+    },
+    {
+      "address": "tailscale_tailnet_key.edge_gateway[0]",
+      "actions": [
+        "no-op"
+      ],
+      "previousAddress": "tailscale_tailnet_key.edge_gateway"
+    },
+    {
+      "address": "terraform_data.bootstrap_revision",
+      "actions": [
+        "no-op"
+      ],
+      "previousAddress": null
+    }
+  ],
+  "localExecutionStateRetired": true,
+  "backendRecoveryBundle": {
+    "snapshot": "34f8a615be384d5787c8515a02713ff69c612b2fc9437225df5a34ce6136498a",
+    "resticIntegrity": "passed",
+    "restoredBundleMatches": true,
+    "liveBackendModified": false
+  },
+  "idempotentMigrationRetryVerified": true
+}

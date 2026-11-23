@@ -1,0 +1,27 @@
+name: gaas-edge-test
+
+on:
+  push:
+    branches: [master, feat/gaas-lifecycle]
+    paths: ['terraform/edge-gateway/**', '.github/workflows/gaas-edge-test.yml']
+  pull_request:
+    paths: ['terraform/edge-gateway/**', '.github/workflows/gaas-edge-test.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  mocked-lifecycle:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/edge-gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false -lockfile=readonly
+      - run: terraform validate -no-color
+      - run: terraform test -no-color

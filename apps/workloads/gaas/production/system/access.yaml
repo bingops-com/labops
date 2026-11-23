@@ -1,0 +1,236 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gaming
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+    argocd.argoproj.io/sync-wave: '-4'
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gaming-state
+  labels:
+    app.kubernetes.io/name: gaas-state
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+    argocd.argoproj.io/sync-wave: '-4'
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gaas-controller
+  namespace: gaming
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gaas-terraform
+  namespace: gaming
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gaming-gaas-controller-games
+rules:
+  - apiGroups:
+      - gaming.bingops.com
+    resources:
+      - gamerooms
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+  - apiGroups:
+      - gaming.bingops.com
+    resources:
+      - gamerooms/status
+      - gamerooms/finalizers
+    verbs:
+      - get
+      - update
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: gaming-gaas-controller-games
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gaming-gaas-controller-games
+subjects:
+  - kind: ServiceAccount
+    name: gaas-controller
+    namespace: gaming
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gaming-gaas-terraform-games
+rules:
+  - apiGroups:
+      - gaming.bingops.com
+    resources:
+      - gamerooms
+    verbs:
+      - get
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: gaming-gaas-terraform-games
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gaming-gaas-terraform-games
+subjects:
+  - kind: ServiceAccount
+    name: gaas-terraform
+    namespace: gaming
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: gaas-runtime
+  namespace: gaming
+rules:
+  - apiGroups:
+      - ''
+    resources:
+      - configmaps
+      - services
+    verbs:
+      - get
+      - list
+      - create
+      - patch
+  - apiGroups:
+      - ''
+    resources:
+      - persistentvolumeclaims
+    verbs:
+      - get
+      - list
+      - create
+  - apiGroups:
+      - ''
+    resources:
+      - pods
+      - pods/log
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets
+    verbs:
+      - get
+      - list
+      - create
+      - patch
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+      - cronjobs
+    verbs:
+      - get
+      - list
+      - create
+      - patch
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - create
+      - update
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gaas-runtime
+  namespace: gaming
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: gaas-runtime
+subjects:
+  - kind: ServiceAccount
+    name: gaas-controller
+    namespace: gaming
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: gaas-terraform-state
+  namespace: gaming-state
+rules:
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - patch
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gaas-terraform-state
+  namespace: gaming-state
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: gaas-terraform-state
+subjects:
+  - kind: ServiceAccount
+    name: gaas-terraform
+    namespace: gaming
+---
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: gaas-terraform-credentials
+  namespace: gaming
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+spec:
+  organizationId: 38fd86e7-06ee-4ee3-b013-b48f00d76a9e
+  projectId: 113f6039-1da2-4f51-aa24-b48f00d909de
+  secretName: gaas-terraform-credentials
+  onlyMappedSecrets: true
+  map:
+    - bwSecretId: e23ff5de-6b12-42b8-8679-b4dc00e2e85a
+      secretKeyName: HCLOUD_TOKEN
+    - bwSecretId: ea9e6b51-6426-40f3-8974-b48f00e7e379
+      secretKeyName: CLOUDFLARE_API_TOKEN
+    - bwSecretId: f98dcdb9-08ec-4b28-b0be-b4dc00e81d46
+      secretKeyName: TAILSCALE_OAUTH_CLIENT_ID
+    - bwSecretId: b84e3350-bab4-4dd5-b761-b4dc00e83457
+      secretKeyName: TAILSCALE_OAUTH_CLIENT_SECRET
+  authToken:
+    secretName: bw-auth-token
+    secretKey: token

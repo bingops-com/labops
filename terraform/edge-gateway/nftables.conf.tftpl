@@ -1,0 +1,53 @@
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+table inet edge_gateway {
+  chain input {
+    type filter hook input priority filter; policy drop;
+
+    iifname "lo" accept
+    ct state established,related accept
+    ip protocol icmp accept
+    ip6 nexthdr ipv6-icmp accept
+    udp sport 67 udp dport 68 accept
+    udp dport 41641 accept comment "Tailscale direct traffic"
+    iifname "tailscale0" accept comment "Private administration through Tailscale"
+%{ if length(public_ssh_source_cidrs) > 0 ~}
+    ip saddr { ${join(", ", sort(tolist(public_ssh_source_cidrs)))} } tcp dport 22 accept comment "Restricted public SSH recovery"
+%{ endif ~}
+  }
+
+  chain forward {
+    type filter hook forward priority filter; policy drop;
+
+    ct state established,related accept
+%{ for name, forward in forwards ~}
+%{ for source_cidr in sort(tolist(forward.source_cidrs)) ~}
+    iifname != "tailscale0" oifname "tailscale0" ip saddr ${source_cidr} ip daddr ${forward.target_ip} ${lower(forward.protocol)} dport ${forward.target_port} accept comment "${name}"
+%{ endfor ~}
+%{ endfor ~}
+  }
+
+  chain output {
+    type filter hook output priority filter; policy accept;
+  }
+
+  chain prerouting {
+    type nat hook prerouting priority dstnat; policy accept;
+
+%{ for name, forward in forwards ~}
+%{ for source_cidr in sort(tolist(forward.source_cidrs)) ~}
+    iifname != "tailscale0" ip saddr ${source_cidr} ${lower(forward.protocol)} dport ${forward.listen_port} dnat ip to ${forward.target_ip}:${forward.target_port} comment "${name}"
+%{ endfor ~}
+%{ endfor ~}
+  }
+
+  chain postrouting {
+    type nat hook postrouting priority srcnat; policy accept;
+
+%{ for name, forward in forwards ~}
+    oifname "tailscale0" ip daddr ${forward.target_ip} ${lower(forward.protocol)} dport ${forward.target_port} masquerade comment "${name}"
+%{ endfor ~}
+  }
+}

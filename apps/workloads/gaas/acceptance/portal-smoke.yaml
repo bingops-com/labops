@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gaas-portal-smoke
+  namespace: pz-server
+data:
+  portal.yaml: |
+    title: Gaming smoke
+    pages:
+      - name: Jeux
+        columns:
+          - size: full
+            widgets:
+              - type: gamerooms
+  gaming.json: |
+    {
+      "repository": "bingops-com/labops",
+      "branch": "feat/gaas-lifecycle",
+      "directory": "apps/workloads/gaas/acceptance/rooms",
+      "catalogue": "apps/workloads/gaas/acceptance/config.yaml",
+      "namespace": "pz-server",
+      "gateway": "shared-test",
+      "rooms": ["gaas-pz-one", "gaas-pz-two"],
+      "argoNamespace": "argocd-system",
+      "argoApplication": "gaas-acceptance",
+      "endpointHost": "pz-gaas-20261122.bingops.com"
+    }
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gaas-portal-cache-smoke-20261122
+  namespace: pz-server
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  activeDeadlineSeconds: 600
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+  - name: portal
+    image: ghcr.io/bingops-com/portal@sha256:ed94371747d5c6cf74138d702eb6f57d16af7bc15c1cc1071e82acded3e37ddd
+    env:
+    - name: PORTAL_CONFIG
+      value: /etc/portal/portal.yaml
+    - name: PORTAL_GAMES_CONFIG
+      value: /etc/portal/gaming.json
+    - name: PORTAL_DATA
+      value: /data
+    - name: PORTAL_OIDC_ISSUER
+      value: https://auth.example.invalid
+    - name: PORTAL_OIDC_CLIENT_ID
+      value: example-smoke-only
+    - name: PORTAL_OIDC_GROUP
+      value: example-smoke-owners
+    - name: PORTAL_PUBLIC_URL
+      value: http://localhost:33099
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+        - ALL
+    resources:
+      requests:
+        cpu: 20m
+        memory: 48Mi
+      limits:
+        cpu: 200m
+        memory: 192Mi
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: 3000
+      periodSeconds: 2
+    volumeMounts:
+    - name: config
+      mountPath: /etc/portal
+      readOnly: true
+    - name: data
+      mountPath: /data
+  volumes:
+  - name: config
+    configMap:
+      name: gaas-portal-smoke
+  - name: data
+    emptyDir:
+      medium: Memory
+      sizeLimit: 16Mi

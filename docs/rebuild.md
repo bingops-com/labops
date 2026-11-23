@@ -305,6 +305,24 @@ hacks/bootstrap-cka-study.py. cert-manager owns the dedicated controller TLS
 CA and certificates; deploy web wave 0 before singleton controller wave 1.
 Public simulations must stay usable without SSO; all real-lab APIs require SSO.
 
+## Gaming and Portal release ownership
+
+The [production gaming runbook](../apps/workloads/gaas/production/README.md)
+owns the `gaming` operator, GameRoom intent and protected `gaming-state` backend.
+Recover its encrypted state before enabling cloud workers; an empty backend is
+never an adoption shortcut. Bitwarden namespace synchronizers recover provider,
+R2 and game credentials. Git retains the original gateway public key and
+immutable game/runtime catalogue. Retained world PVCs and public IPv4 survive
+server removal. The legacy PZ PVC is retained during the ownership handoff.
+
+Portal publication now pins a full source SHA in `docker/portal/source.txt`.
+`portal-release.yml` uses its own repository token, smoke-tests the image and
+promotes a digest in Git; the old cross-repository PAT/dispatch is retired.
+The owner GitHub workflow is sufficient for game start/stop without a new secret.
+A dedicated GitHub App key is optional for integrated Portal writes/version PRs;
+recover it from Bitwarden if that mode has been configured. Preserve existing
+OIDC settings and the Portal session/layout PVC when changing images.
+
 ## Temporary homelab stability setting
 
 Reapply the reviewed [homelab CPU stability role](host-stability.md) on this

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gaas-acceptance-controller
+  namespace: pz-server
+  labels:
+    app.kubernetes.io/name: gaas-acceptance-controller
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gaas-acceptance-controller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gaas-acceptance-controller
+    spec:
+      serviceAccountName: gaas-controller
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: controller
+        image: ghcr.io/bingops-com/pz-server@sha256:21f974998fff6ee1e3cae3ad912aef50bd000415f2f639c76e18ed80c08326fa
+        args:
+        - --namespace
+        - pz-server
+        - --game-namespace
+        - pz-server
+        - --apply
+        - --interval
+        - '5'
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL

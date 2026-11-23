@@ -1,0 +1,16 @@
+{
+  "name": "Serveurs de jeu",
+  "slug": "serveurs",
+  "columns": [
+    {
+      "size": "full",
+      "widgets": [
+        {
+          "id": "gaming-rooms",
+          "type": "gamerooms",
+          "title": "Serveurs de jeu"
+        }
+      ]
+    }
+  ]
+}

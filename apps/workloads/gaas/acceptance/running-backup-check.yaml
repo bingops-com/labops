@@ -1,0 +1,84 @@
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: gaas-running-backup-check-20261122
+  namespace: pz-server
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: backup
+        app.kubernetes.io/instance: gaas-gaas-pz-two-c95c8abb
+        app.kubernetes.io/name: pz-server
+        gaming.bingops.com/room-uid: c95c8abb-1c4f-464c-9dd9-4ee958481411
+    spec:
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: gaas-world-gaas-pz-two-20261122-aedd39b8
+      containers:
+      - name: backup
+        image: ghcr.io/bingops-com/pz-server@sha256:4e190125eb41ebc003a0e4f1ee70495301ed03b46d68221358ecffc96dc27853
+        command:
+        - /usr/local/bin/backup-server
+        env:
+        - name: RESTIC_REPOSITORY
+          value: s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/gaas-world-20261122-two
+        - name: RESTIC_CACHE_DIR
+          value: /tmp/restic-cache
+        - name: AWS_DEFAULT_REGION
+          value: auto
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: pz-r2-credentials
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: pz-r2-credentials
+              key: AWS_SECRET_ACCESS_KEY
+        - name: RESTIC_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: pz-r2-credentials
+              key: RESTIC_PASSWORD
+        - name: KEEP_DAILY
+          value: '7'
+        - name: KEEP_WEEKLY
+          value: '4'
+        - name: KEEP_MONTHLY
+          value: '6'
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          allowPrivilegeEscalation: false
+          seccompProfile:
+            type: RuntimeDefault
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      schedulerName: default-scheduler
+      automountServiceAccountToken: false
+  activeDeadlineSeconds: 600
