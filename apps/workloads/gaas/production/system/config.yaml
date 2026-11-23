@@ -8,8 +8,8 @@ data:
   config.json: |
     {
       "name": "shared",
-      "approved": false,
-      "productionAdoptionApproved": false,
+      "approved": true,
+      "productionAdoptionApproved": true,
       "workerImage": "ghcr.io/bingops-com/pz-server@sha256:66ad7ec80875c462cba3b69e883000ddb6fc11b0993c4f0a6b84e98e529d5a4f",
       "credentialsSecretRef": "gaas-terraform-credentials",
       "publicKeyConfigMap": "gaas-operator-key",
