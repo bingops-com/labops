@@ -128,7 +128,11 @@ materialized through Bitwarden. No connector/ARC token is reused.
 Image publication and promotion use [the pinned-source release workflow](../../../docker/portal/README.md).
 
 The PostSync layout hook adds the owned gaming widget to an existing saved
-layout without replacing personal pages. It updates only the old PZ probe
-address, preserves a private pre-migration copy on the same PVC, rejects
+layout without replacing personal pages. It replaces the old PZ probe with
+the gaming shortcut and retargets the retired legacy backup references to the
+stable gateway-state backup CronJob. World lifecycle backup verification is
+shown in the GameRoom widget; it does not require a generated CronJob name in
+Git or report an intentionally suspended game as a missing legacy service.
+The hook preserves a private pre-migration copy on the same PVC, rejects
 concurrent edits and is idempotent. It runs after the new image is healthy;
 no OIDC session key or private layout content is read into Git or logs.

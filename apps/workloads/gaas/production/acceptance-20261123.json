@@ -1,6 +1,6 @@
 {
   "date": "2026-11-23",
-  "status": "production-cron-verified-first-suspension-requested",
+  "status": "production-suspend-resume-verified-final-suspension-pending",
   "stateAdoptionReceipt": "adoption-20261122.json",
   "preload": {
     "requestId": "production-preload-retry-20261123",
@@ -155,5 +155,93 @@
   "firstSuspendWorkflow": {
     "runId": 45229223301,
     "state": "Suspended"
+  },
+  "firstSuspend": {
+    "generation": 4,
+    "phase": "Suspended",
+    "backup": {
+      "action": "BackupStoppedWorld",
+      "requestId": "647f44800534a7396196a3ec",
+      "snapshot": "d5497aab37d634668353739d13a0004fc69720f6c0fbf23d17ff7f628cbb2679",
+      "verified": true,
+      "worldId": "pz-bingops"
+    },
+    "gateway": {
+      "applied": true,
+      "enabled": false,
+      "changes": [
+        {
+          "address": "cloudflare_record.public_services[\"pz\"]",
+          "actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "hcloud_firewall.edge_gateway",
+          "actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "hcloud_primary_ip.edge_gateway",
+          "actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "hcloud_server.edge_gateway[0]",
+          "actions": [
+            "delete"
+          ]
+        },
+        {
+          "address": "hcloud_ssh_key.operator",
+          "actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "tailscale_tailnet_key.edge_gateway[0]",
+          "actions": [
+            "delete"
+          ]
+        },
+        {
+          "address": "terraform_data.bootstrap_revision",
+          "actions": [
+            "no-op"
+          ]
+        }
+      ]
+    },
+    "hetznerVMAbsent": true,
+    "retainedIPId": 154062800,
+    "publicIP": "188.245.252.46",
+    "IPUnassigned": true
+  },
+  "resumeWorkflow": {
+    "runId": 45229746369,
+    "conclusion": "success"
+  },
+  "resume": {
+    "generation": 5,
+    "observedGeneration": 5,
+    "phase": "Running",
+    "newGatewayVMId": 177357983,
+    "originalGatewayVMId": 169230729,
+    "retainedIPId": 154062800,
+    "publicIP": "188.245.252.46",
+    "publicA2S": {
+      "online": true,
+      "players": 0,
+      "maxPlayers": 16,
+      "queryVersion": "1.0.0.0",
+      "latencyMs": 323,
+      "endpoint": "pz.bingops.com:16261"
+    },
+    "rconPlayers": 0,
+    "worldPVCUID": "3336dba7-f780-4adf-b7c9-46fa1155c586",
+    "originalWorldPVCUIDRetained": true,
+    "realGameClientJoinTested": false
   }
 }

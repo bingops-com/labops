@@ -31,6 +31,10 @@ data:
             else:column['widgets'].extend(page['columns'][0]['widgets'])
         changed=True
     for w in widgets:
+        refs=w.get('options',{}).get('cronjobs')
+        if isinstance(refs,list) and 'pz-server/pz-server-pz-server-backup' in refs:
+            w['options']['cronjobs']=list(dict.fromkeys('gaming/gaas-state-backup' if ref=='pz-server/pz-server-pz-server-backup' else ref for ref in refs))
+            changed=True
         if w.get('type')=='gameserver' and w.get('options',{}).get('address')=='pz-server-pz-server.pz-server.svc.cluster.local:16261':
             w['type']='bookmarks'
             w['options'].pop('address',None)

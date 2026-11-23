@@ -18,7 +18,7 @@ pages:
             options:
               url: ${PORTAL_VAR_PROMETHEUS_URL}
               cronjobs:
-                - pz-server/pz-server-pz-server-backup
+                - gaming/gaas-state-backup
                 - coder-workspaces/coder-home-r2-backup
                 - rom/rom-files-r2-backup
                 - romm/romm-files-r2-backup
@@ -149,7 +149,7 @@ pages:
               maxAgeHours: 26
               cronjobs:
                 - coder-workspaces/coder-home-r2-backup
-                - pz-server/pz-server-pz-server-backup
+                - gaming/gaas-state-backup
                 - rom/rom-files-r2-backup
                 - romm/romm-files-r2-backup
           - type: certificates
@@ -206,7 +206,7 @@ pages:
               url: ${PORTAL_VAR_PROMETHEUS_URL}
               cronjobs:
                 - coder-workspaces/coder-home-r2-backup
-                - pz-server/pz-server-pz-server-backup
+                - gaming/gaas-state-backup
                 - rom/rom-files-r2-backup
                 - romm/romm-files-r2-backup
               hours: 72
