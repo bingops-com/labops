@@ -106,12 +106,24 @@ That stage does not stop the active legacy server. Before activation:
    no cloud worker is active; future VM registrations then use ephemeral nodes.
    Never apply that boot-input change over the running original VM.
 
-Rollback before acceptance: suspend the new room and wait for its writers to
-finish, then restore the legacy Helm overrides and NodePorts in Git. Use the
-original PVC and its pre-cutover build. If gameplay changed the new world,
-explicitly select and restore its latest verified backup before reusing legacy
-storage; do not silently discard progress or downgrade a newer save. Never run
-two game processes or two backups against one world repository during handoff.
+The retained legacy installation is a recovery source, not an automatic
+rollback switch. For a reviewed return to legacy ownership, first disable
+cloud execution in Git and wait for any gateway worker to finish. This retains
+an existing running gateway while suspending the new room and verifying its
+shutdown backup. If gameplay changed the new world, explicitly select and
+restore its latest verified backup before reusing legacy storage; never discard
+progress or downgrade a newer save silently.
+
+Suspension retains the generated NodePort Service. Before restoring the legacy
+NodePorts, explicitly retire the GameRoom through the reviewed Git/manual
+decommissioning flow, wait for its preservation finalizer and generated Service
+to disappear, and retain both PVCs. Merely removing its YAML does not delete it
+because automatic pruning is disabled. Keep cloud execution disabled throughout
+this ownership handoff. If the gateway is already absent, it also needs a
+separately reviewed `enabled=true` saved plan against the migrated backend,
+with all controller/cloud workers stopped; never use the retired local state.
+Only then restore the legacy Service and replica overrides in Git. Never run
+two game processes or backups against one world repository during handoff.
 The legacy Application keeps its immutable runtime/build pins when changing
 replicas back to one and Service type back to NodePort. Removing these pins
 would let the legacy init container download a moving Steam branch on rollback.
