@@ -1,5 +1,12 @@
 # Project Zomboid
 
+The legacy Application is retained at zero replicas with no backup CronJob
+and a ClusterIP Service during the GameRoom ownership handoff. Its original
+PVC and immutable runtime/build pins are the rollback source. Active game
+ownership moves to `gaming/pz-bingops`; follow the
+[production gaming runbook](../gaas/production/README.md) for the final backup,
+activation and safe rollback order. Never start both copies concurrently.
+
 Argo CD combines the environment resources in this directory with the Helm
 chart owned by `bingops-com/pz-server`. The chart runs the Build 42 server on a
 retained `local-path` PVC and publishes UDP NodePorts `30261` and `30262` for

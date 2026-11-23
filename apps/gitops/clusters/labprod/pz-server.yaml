@@ -16,6 +16,16 @@ spec:
       path: charts/pz-server
       helm:
         releaseName: pz-server
+        valuesObject:
+          replicaCount: 0
+          backup:
+            enabled: false
+          service:
+            type: ClusterIP
+          image:
+            digest: sha256:6a8385569f6e6871acae17a4a472b7abdcad3432869da5c09eef0320268d368c
+          steam:
+            expectedBuildId: "26486687"
   destination:
     server: https://kubernetes.default.svc
     namespace: pz-server

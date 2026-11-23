@@ -67,9 +67,16 @@ That stage does not stop the active legacy server. Before activation:
    build. A later controller request reuses those exact verified binaries and
    emits a fresh receipt; other artifacts require restoration.
 4. Verify zero connected players. Commit the legacy Helm overrides:
-   `replicaCount: 0`, `backup.enabled: false`, `service.type: ClusterIP`.
+   `replicaCount: 0`, `backup.enabled: false`, `service.type: ClusterIP`, the
+   catalogue runtime digest and `steam.expectedBuildId: "26486687"`.
    The original StatefulSet and data PVC remain a rollback source. Wait for the
    game Pod and any backup writer to terminate before the final offline backup.
+   The dated `cutover/final-backup-20261123.yaml` Job mounts only the original
+   PVC read-only, adds a snapshot without pruning history, checks the complete
+   repository, verifies a disposable restore and checks every SQLite database.
+   Create it only after confirming no game or backup writer remains. Its bounded
+   receipt provides the full snapshot to select for the handoff; a failed Job
+   cannot authorize starting the new game.
 5. Take a verified, restorable final snapshot of the original world. Enable
    production adoption only with the migrated backend present, select that full
    world snapshot in the GameRoom, and commit Running. The operator restores
@@ -86,6 +93,9 @@ original PVC and its pre-cutover build. If gameplay changed the new world,
 explicitly select and restore its latest verified backup before reusing legacy
 storage; do not silently discard progress or downgrade a newer save. Never run
 two game processes or two backups against one world repository during handoff.
+The legacy Application keeps its immutable runtime/build pins when changing
+replicas back to one and Service type back to NodePort. Removing these pins
+would let the legacy init container download a moving Steam branch on rollback.
 
 ## Owner UX
 
