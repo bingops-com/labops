@@ -322,3 +322,9 @@ The owner GitHub workflow is sufficient for game start/stop without a new secret
 A dedicated GitHub App key is optional for integrated Portal writes/version PRs;
 recover it from Bitwarden if that mode has been configured. Preserve existing
 OIDC settings and the Portal session/layout PVC when changing images.
+
+## Temporary homelab stability setting
+
+Reapply the reviewed [homelab CPU stability role](host-stability.md) on this
+Ryzen 5950X host before starting guests. It is a reversible boost limitation
+for the ongoing Machine Check investigation, not a confirmed hardware repair.

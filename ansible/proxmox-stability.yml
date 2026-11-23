@@ -1,0 +1,7 @@
+---
+- name: Apply the temporary homelab CPU stability mitigation
+  hosts: proxmox
+  become: true
+  gather_facts: false
+  roles:
+    - proxmox_stability

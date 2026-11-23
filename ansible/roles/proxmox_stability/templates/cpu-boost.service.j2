@@ -1,0 +1,13 @@
+[Unit]
+Description=LabOps CPU boost setting during MCE investigation
+After=systemd-modules-load.service
+Before=pve-guests.service
+ConditionPathExists=/sys/devices/system/cpu/cpufreq/boost
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -ec 'printf {{ proxmox_stability_boost_enabled | ternary("1", "0") }} > /sys/devices/system/cpu/cpufreq/boost'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

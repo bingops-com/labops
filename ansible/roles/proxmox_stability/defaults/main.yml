@@ -1,0 +1,4 @@
+---
+proxmox_stability_expected_hostname: homelab
+proxmox_stability_expected_cpu: AMD Ryzen 9 5950X
+proxmox_stability_boost_enabled: false
