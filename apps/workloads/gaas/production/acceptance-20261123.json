@@ -1,6 +1,6 @@
 {
   "date": "2026-11-23",
-  "status": "verified-preload-legacy-stopping",
+  "status": "final-world-backup-verified-awaiting-running-intent",
   "stateAdoptionReceipt": "adoption-20261122.json",
   "preload": {
     "requestId": "production-preload-retry-20261123",
@@ -18,7 +18,8 @@
     "healthHTTP": 200,
     "gameAPIUnauthenticatedHTTP": 401,
     "gamingWidgetPresent": true,
-    "oidcOwnerSessionTested": false
+    "oidcOwnerSessionTested": false,
+    "authorizedLANIngressHTTP": 200
   },
   "ownerStateWorkflow": {
     "runId": 45226675267,
@@ -30,5 +31,24 @@
     "cpuBoostDisabled": true,
     "rootCauseResolved": false,
     "longTermStabilityProven": false
+  },
+  "legacy": {
+    "replicas": 0,
+    "serviceType": "ClusterIP",
+    "nodePortsReleased": true,
+    "originalPVCRetained": true
+  },
+  "finalBackup": {
+    "action": "BackupStoppedWorld",
+    "existingHandoffSnapshotReused": true,
+    "fullRestoreVerify": true,
+    "legacyPVCReadOnly": true,
+    "requestId": "production-final-backup-retry-20261123",
+    "resticFullIntegrity": true,
+    "retentionPruned": false,
+    "snapshot": "ccaa6884c8bc7aa50abca34ed428c246af4bb748fbc047e3988e49c329cf20e6",
+    "sqliteDatabasesChecked": 3,
+    "verified": true,
+    "worldId": "pz-bingops"
   }
 }
