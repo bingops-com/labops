@@ -102,3 +102,10 @@ The Portal has get-only access to the configured room and Argo Application.
 Adding another server still requires its reviewed GameRoom, route allocation
 and immutable release; other game adapters and hot gateway-route changes are
 not implemented. Existing route changes require the shared gateway suspended.
+
+The 2026-11-22 preload was interrupted by a host reboot. The dated retry Job
+reuses only its exact temporary binary directory, requires the original world
+PVC binding and no loaded/running world, uses the same immutable snapshot and
+Restic full restore verification, then atomically publishes the installation.
+It does not mount the legacy PVC. If that staging directory is absent it uses
+the normal installer. Review the UID, path and artifact for a different run.
