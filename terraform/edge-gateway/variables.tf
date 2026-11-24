@@ -1,7 +1,30 @@
 variable "enabled" {
   type        = bool
-  description = "Whether the gateway VM exists. False retains its IPv4, DNS, firewall and SSH key, but removes the VM and consumed Tailscale bootstrap key."
+  description = "Whether the gateway VM exists. False removes compute; retain_gateway_resources and publish_dns select idle infrastructure and endpoint retention."
   default     = true
+}
+
+variable "retain_gateway_resources" {
+  type        = bool
+  description = "Retain IPv4, firewall, SSH key and bootstrap marker while compute is disabled. Default preserves existing installations."
+  default     = true
+}
+
+variable "publish_dns" {
+  type        = bool
+  description = "Publish the gateway A records. Disable before releasing a temporary IPv4."
+  default     = true
+}
+
+variable "public_dns_ttl" {
+  type        = number
+  description = "Cloudflare DNS-only TTL in seconds; 1 retains legacy Auto behavior."
+  default     = 1
+
+  validation {
+    condition     = var.public_dns_ttl == 1 || (var.public_dns_ttl >= 60 && var.public_dns_ttl <= 86400 && floor(var.public_dns_ttl) == var.public_dns_ttl)
+    error_message = "Use Auto (1) or a whole-second TTL from 60 to 86400."
+  }
 }
 
 variable "name" {
