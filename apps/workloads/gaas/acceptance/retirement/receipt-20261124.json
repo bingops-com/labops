@@ -1,0 +1,121 @@
+{
+  "date": "2026-11-24",
+  "status": "test-cloud-retired-worlds-retained",
+  "configurationCommit": "723d034764373e803f87b1245ce2fbb225433110",
+  "reviewedPlan": [
+    {
+      "actions": [
+        "delete"
+      ],
+      "address": "cloudflare_record.public_services[\"pz-gaas-20261122\"]",
+      "content": "91.98.196.54",
+      "id": "d591ad5ab779aea5770fd9eeccdd4eeb",
+      "name": "pz-gaas-20261122",
+      "zone_id": "d1788a49b58af8280cb8c11514f23429"
+    },
+    {
+      "actions": [
+        "delete"
+      ],
+      "address": "hcloud_firewall.edge_gateway",
+      "id": "12132632",
+      "name": "gaas-test-edge-20261122-firewall"
+    },
+    {
+      "actions": [
+        "delete"
+      ],
+      "address": "hcloud_primary_ip.edge_gateway",
+      "id": "164378290",
+      "ip_address": "91.98.196.54",
+      "name": "gaas-test-edge-20261122-ipv4"
+    },
+    {
+      "actions": [
+        "delete"
+      ],
+      "address": "hcloud_ssh_key.operator",
+      "id": "132947769",
+      "name": "gaas-test-edge-20261122-operator"
+    },
+    {
+      "actions": [
+        "delete"
+      ],
+      "address": "terraform_data.bootstrap_revision",
+      "id": "c5627771-2c1d-2e94-fc7e-1eb9263ab6fc"
+    }
+  ],
+  "verification": {
+    "beforeStateBackup": {
+      "backendResourceVersion": "28100388",
+      "liveBackendModified": false,
+      "managedInstances": 5,
+      "resticIntegrity": "passed",
+      "restoredBundleMatches": true,
+      "snapshot": "2c69d7f4c5feeb7a3951d6634a7422d311569fc0d7f41980ffa6fa55d0ae0879",
+      "stateSecretsChecked": 1,
+      "terraformStateDecoded": true
+    },
+    "productionBackendUnchanged": true,
+    "productionIPv4Preserved": "188.245.252.46",
+    "testBackendEmpty": true,
+    "testDNSDeleted": "pz-gaas-20261122.bingops.com",
+    "testFirewallAndSSHKeyAbsent": true,
+    "testIPv4Deleted": "91.98.196.54",
+    "testPrimaryIPId": 164378290,
+    "testStateLineagePreserved": true,
+    "testVMAbsent": true,
+    "worldPVCsPreserved": [
+      {
+        "name": "gaas-world-gaas-pz-one-20261122-74b98351",
+        "namespace": "pz-server",
+        "uid": "74c35773-fe24-4ae7-99e2-137fc3091549"
+      },
+      {
+        "name": "gaas-world-gaas-pz-two-20261122-aedd39b8",
+        "namespace": "pz-server",
+        "uid": "afea6ea3-a25b-4d0f-9e70-d668e007b607"
+      },
+      {
+        "name": "pz-server-pz-server-data",
+        "namespace": "pz-server",
+        "uid": "95cc3039-af28-458c-9b9c-8f30cecd0cf5"
+      },
+      {
+        "name": "gaas-world-pz-bingops-34c51677",
+        "namespace": "gaming",
+        "uid": "3336dba7-f780-4adf-b7c9-46fa1155c586"
+      }
+    ]
+  },
+  "afterStateBackup": {
+    "snapshot": "04697e16ed5b5be6c3f80543d7a4194f1f0928b6b76a56c25674d2ba50cc7542",
+    "stateSecretsChecked": 1,
+    "resticIntegrity": "passed",
+    "restoredBundleMatches": true,
+    "terraformStateDecoded": true,
+    "liveBackendModified": false,
+    "backendResourceVersion": "29676758",
+    "managedInstances": 0
+  },
+  "alreadyRetiredRetryVerified": true,
+  "automation": {
+    "cloudApproved": false,
+    "testControllerReplicas": 0,
+    "argoBranch": "master",
+    "argoAutoSync": false
+  },
+  "reproducibility": {
+    "rebuildWithoutChat": "The acceptance README and docs/rebuild.md describe the retired desired state; do not bootstrap the obsolete feature branch.",
+    "inputsOutsideGit": "Provider/R2 credentials and passwords are recovered through Bitwarden; encrypted before/after backend bundles and retained world/artifact repositories are in R2.",
+    "partialFailureOrAbsentResources": "Saved plans bind exact IDs and backend data; changes block apply. The verified already-empty state is accepted without recreating resources.",
+    "lifecycleOwnership": "Terraform owns only the disposable cloud stack; acceptance GitOps is manual and its controller stopped; production has its separate controller/backend.",
+    "safeVerification": "Bounded backup receipts, exact resource IDs, cloud absence and preserved PVC UID checks expose no credentials or raw state."
+  },
+  "liveBackendRestoreApplied": false,
+  "terminalRecoveryJobsRemoved": [
+    "gaas-test-state-before-retire-20261124",
+    "gaas-test-state-after-retire-20261124"
+  ]
+}
