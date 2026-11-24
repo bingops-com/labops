@@ -1,4 +1,6 @@
 locals {
+  resources_enabled = var.enabled || var.retain_gateway_resources
+
   nftables_config = templatefile("${path.module}/nftables.conf.tftpl", {
     forwards                = var.forwards
     public_ssh_source_cidrs = var.public_ssh_source_cidrs
@@ -17,6 +19,7 @@ locals {
 }
 
 resource "terraform_data" "bootstrap_revision" {
+  count            = local.resources_enabled ? 1 : 0
   triggers_replace = [local.bootstrap_revision]
 }
 
@@ -29,16 +32,18 @@ resource "tailscale_tailnet_key" "edge_gateway" {
   tags          = [var.tailscale_tag]
 
   lifecycle {
-    replace_triggered_by = [terraform_data.bootstrap_revision]
+    replace_triggered_by = [terraform_data.bootstrap_revision[0]]
   }
 }
 
 resource "hcloud_ssh_key" "operator" {
+  count      = local.resources_enabled ? 1 : 0
   name       = "${var.name}-operator"
   public_key = trimspace(file(pathexpand(var.ssh_public_key_path)))
 }
 
 resource "hcloud_primary_ip" "edge_gateway" {
+  count       = local.resources_enabled ? 1 : 0
   name        = "${var.name}-ipv4"
   type        = "ipv4"
   location    = var.location
@@ -51,7 +56,8 @@ resource "hcloud_primary_ip" "edge_gateway" {
 }
 
 resource "hcloud_firewall" "edge_gateway" {
-  name = "${var.name}-firewall"
+  count = local.resources_enabled ? 1 : 0
+  name  = "${var.name}-firewall"
 
   rule {
     direction   = "in"
@@ -102,9 +108,9 @@ resource "hcloud_server" "edge_gateway" {
   image       = var.image
   server_type = var.server_type
   location    = var.location
-  ssh_keys    = [hcloud_ssh_key.operator.id]
+  ssh_keys    = [hcloud_ssh_key.operator[0].id]
   firewall_ids = [
-    hcloud_firewall.edge_gateway.id,
+    hcloud_firewall.edge_gateway[0].id,
   ]
 
   user_data = templatefile("${path.module}/cloud-init.yaml.tftpl", {
@@ -116,7 +122,7 @@ resource "hcloud_server" "edge_gateway" {
 
   public_net {
     ipv4_enabled = true
-    ipv4         = hcloud_primary_ip.edge_gateway.id
+    ipv4         = hcloud_primary_ip.edge_gateway[0].id
     ipv6_enabled = false
   }
 
@@ -135,12 +141,12 @@ data "cloudflare_zone" "public" {
 }
 
 resource "cloudflare_record" "public_services" {
-  for_each = var.public_dns_records
+  for_each = local.resources_enabled && var.publish_dns ? var.public_dns_records : toset([])
 
   zone_id = data.cloudflare_zone.public.id
   name    = each.value
-  content = hcloud_primary_ip.edge_gateway.ip_address
+  content = hcloud_primary_ip.edge_gateway[0].ip_address
   type    = "A"
-  ttl     = 1
+  ttl     = var.public_dns_ttl
   proxied = false
 }

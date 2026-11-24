@@ -68,7 +68,7 @@ run "suspend_retains_address_and_dns" {
   }
 
   assert {
-    condition     = hcloud_primary_ip.edge_gateway.auto_delete == false
+    condition     = hcloud_primary_ip.edge_gateway[0].auto_delete == false
     error_message = "The stable IPv4 must not disappear with the VM."
   }
 }
@@ -87,12 +87,73 @@ run "resume_recreates_compute_with_same_address" {
   }
 
   assert {
-    condition     = one(hcloud_server.edge_gateway[0].public_net).ipv4 == tonumber(hcloud_primary_ip.edge_gateway.id)
+    condition     = one(hcloud_server.edge_gateway[0].public_net).ipv4 == tonumber(hcloud_primary_ip.edge_gateway[0].id)
     error_message = "The resumed VM must use the retained address."
   }
 
   assert {
     condition     = tailscale_tailnet_key.edge_gateway[0].ephemeral
     error_message = "New session gateways should enroll as ephemeral Tailscale nodes."
+  }
+}
+
+run "withdraw_dns_without_releasing_address" {
+  command = apply
+  variables {
+    enabled                  = false
+    retain_gateway_resources = true
+    publish_dns              = false
+  }
+  assert {
+    condition     = length(hcloud_primary_ip.edge_gateway) == 1 && length(cloudflare_record.public_services) == 0 && length(hcloud_server.edge_gateway) == 0
+    error_message = "DNS draining must keep the address while removing records and compute."
+  }
+}
+
+run "release_all_ephemeral_resources" {
+  command = apply
+  variables {
+    enabled                  = false
+    retain_gateway_resources = false
+    publish_dns              = false
+  }
+  assert {
+    condition     = length(hcloud_primary_ip.edge_gateway) == 0 && length(hcloud_firewall.edge_gateway) == 0 && length(hcloud_ssh_key.operator) == 0 && length(terraform_data.bootstrap_revision) == 0
+    error_message = "An idle ephemeral gateway must retain no cloud infrastructure."
+  }
+  assert {
+    condition     = output.public_ipv4 == null && length(output.public_forwards) == 0 && length(output.public_hostnames) == 0
+    error_message = "Absent endpoints must have safe null/empty outputs."
+  }
+}
+
+run "start_ephemeral_gateway_and_publish_dns" {
+  command = apply
+  variables {
+    enabled                  = true
+    retain_gateway_resources = false
+    publish_dns              = true
+    public_dns_ttl           = 60
+  }
+  assert {
+    condition     = length(hcloud_server.edge_gateway) == 1 && length(hcloud_primary_ip.edge_gateway) == 1 && length(cloudflare_record.public_services) == 1 && length(tailscale_tailnet_key.edge_gateway) == 1
+    error_message = "Starting must allocate an address, compute, fresh key and DNS together."
+  }
+  assert {
+    condition     = alltrue([for r in cloudflare_record.public_services : r.ttl == 60 && !r.proxied && r.content == output.public_ipv4])
+    error_message = "Each game hostname must follow the current unproxied IPv4 with a short TTL."
+  }
+}
+
+run "second_ephemeral_stop_releases_everything" {
+  command = apply
+  variables {
+    enabled                  = false
+    retain_gateway_resources = false
+    publish_dns              = false
+  }
+  assert {
+    condition     = length(hcloud_server.edge_gateway) == 0 && length(hcloud_primary_ip.edge_gateway) == 0 && length(cloudflare_record.public_services) == 0 && length(tailscale_tailnet_key.edge_gateway) == 0
+    error_message = "Repeated start/stop cycles must not leave paid resources or stale DNS."
   }
 }

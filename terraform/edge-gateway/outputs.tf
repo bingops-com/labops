@@ -1,6 +1,6 @@
 output "public_ipv4" {
-  description = "Stable public IPv4 address to publish in DNS or game connection details."
-  value       = hcloud_primary_ip.edge_gateway.ip_address
+  description = "Current public IPv4 address (null when fully suspended) to publish in DNS or game connection details."
+  value       = try(hcloud_primary_ip.edge_gateway[0].ip_address, null)
 }
 
 output "server_id" {
@@ -16,9 +16,9 @@ output "server_name" {
 output "public_forwards" {
   description = "Non-sensitive summary of the public layer-4 forwarding table."
   value = {
-    for name, forward in var.forwards : name => {
+    for name, forward in(local.resources_enabled ? var.forwards : {}) : name => {
       protocol    = lower(forward.protocol)
-      public      = "${hcloud_primary_ip.edge_gateway.ip_address}:${forward.listen_port}"
+      public      = "${hcloud_primary_ip.edge_gateway[0].ip_address}:${forward.listen_port}"
       destination = "${forward.target_ip}:${forward.target_port}"
     }
   }

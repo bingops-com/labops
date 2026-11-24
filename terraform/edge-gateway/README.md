@@ -193,3 +193,28 @@ owns the dated receipts and `retire-acceptance.py` procedure. That helper accept
 only the exact disposable resource IDs, and does not relax the production
 worker's retained-resource guards. Never bootstrap the obsolete feature-branch
 controller or reuse the retired local production state for test recovery.
+
+
+### Optional ephemeral gateway resources
+
+The default remains retained for backward compatibility. An ephemeral owner sets
+`retain_gateway_resources=false`: an enabled gateway allocates IPv4, firewall,
+SSH key, bootstrap marker, VM, Tailscale key and DNS; a fully disabled gateway
+has none of those resources and null/empty endpoint outputs. The added moved
+blocks preserve singleton resource identities when adopting indexed addresses.
+Do not remove these blocks or initialize an empty backend for migration.
+
+The operator must first stop the last game and verify its current backup. It
+then applies `enabled=false`, `retain_gateway_resources=true`, `publish_dns=false`
+to remove compute/DNS while temporarily holding the address. Only after the
+persisted DNS-drain deadline may it apply `enabled=false`,
+`retain_gateway_resources=false`, `publish_dns=false`. A new Running request
+cancels the drain and reuses any still-held address. This two-phase procedure
+avoids retaining DNS pointing at a released address. Keep the drain at least
+as long as the previous published TTL (Auto is 300 seconds); use a 60-second
+TTL for later ephemeral sessions. Lowering TTL does not clear existing caches.
+
+Provider credentials, the protected Kubernetes backend and world backups remain
+independent of disposable cloud resources. A future start allocates a fresh
+address and updates all declared service names; cached IP favorites may need
+refreshing. Do not claim game-client compatibility from an A2S query alone.
