@@ -45,7 +45,7 @@ data:
       },
       "retryNonce": "production-adoption-20261122",
       "resourcePolicy": "ephemeral",
-      "dnsDrainSeconds": 300
+      "dnsDrainSeconds": 60
     }
 ---
 apiVersion: v1
