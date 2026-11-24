@@ -40,10 +40,11 @@ data:
             "target_port": 30262
           }
         },
-        "retain_gateway_resources": true
+        "retain_gateway_resources": false,
+        "public_dns_ttl": 60
       },
       "retryNonce": "production-adoption-20261122",
-      "resourcePolicy": "retained",
+      "resourcePolicy": "ephemeral",
       "dnsDrainSeconds": 300
     }
 ---
