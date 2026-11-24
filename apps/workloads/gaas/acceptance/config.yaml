@@ -7,7 +7,7 @@ data:
   config.json: |
     {
       "name": "shared-test",
-      "approved": true,
+      "approved": false,
       "productionAdoptionApproved": false,
       "workerImage": "ghcr.io/bingops-com/pz-server@sha256:b7db20aaf4a3681a486d52bdc48652459a7187626b4812def2446b3f65c7b8ee",
       "credentialsSecretRef": "gaas-terraform-credentials",

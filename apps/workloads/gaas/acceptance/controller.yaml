@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: gaas-acceptance-controller
 spec:
-  replicas: 1
+  replicas: 0
   strategy:
     type: Recreate
   selector:

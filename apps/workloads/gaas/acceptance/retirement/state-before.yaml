@@ -1,0 +1,103 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gaas-test-state-before-retire-20261124
+  namespace: pz-server
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 900
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: recovery
+          image: ghcr.io/bingops-com/pz-server@sha256:e00438367209e4812472a90c2e18616567e83fd8cc5f0ad62d4ff5596a8e1e6d
+          command:
+            - python3
+            - -c
+          args:
+            - |
+              import base64, gzip, json, os, ssl, subprocess, urllib.request
+              from pathlib import Path
+              os.umask(0o077)
+              sa=Path('/var/run/secrets/kubernetes.io/serviceaccount')
+              context=ssl.create_default_context(cafile=str(sa/'ca.crt'))
+              api='https://'+os.environ['KUBERNETES_SERVICE_HOST']+':'+os.environ.get('KUBERNETES_SERVICE_PORT_HTTPS','443')
+              def get(path):
+                  req=urllib.request.Request(api+path,headers={'Authorization':'Bearer '+(sa/'token').read_text().strip()})
+                  with urllib.request.urlopen(req,context=context,timeout=30) as response:return json.load(response)
+              def run(args):
+                  p=subprocess.run(args,text=True,capture_output=True)
+                  if p.returncode:raise RuntimeError('State backup command failed')
+                  return p.stdout
+              def unlocked():
+                  leases=get('/apis/coordination.k8s.io/v1/namespaces/gaas-state/leases')['items']
+                  if any(l.get('spec',{}).get('holderIdentity') or l['metadata'].get('annotations') for l in leases):
+                      raise ValueError('Test backend must be idle')
+              try:
+                  unlocked()
+                  response=get('/api/v1/namespaces/gaas-state/secrets?labelSelector=tfstateSecretSuffix%3Dgaas-test-20261122-edge')
+                  secrets=response['items']
+                  if len(secrets)!=1 or secrets[0]['metadata']['name']!='tfstate-default-gaas-test-20261122-edge':raise ValueError('Unexpected test state inventory')
+                  original=secrets[0]
+                  state=json.loads(gzip.decompress(base64.b64decode(original['data']['tfstate'])))
+                  if not state.get('lineage') or not isinstance(state.get('serial'),int):raise ValueError('Invalid Terraform state')
+                  metadata={'name':original['metadata']['name'],'namespace':'gaas-state','labels':original['metadata']['labels']}
+                  bundle={'apiVersion':'v1','kind':'List','items':[{'apiVersion':'v1','kind':'Secret','metadata':metadata,'type':original.get('type','Opaque'),'data':original['data']}]}
+                  Path('/work/state-secrets.json').write_text(json.dumps(bundle,sort_keys=True))
+                  Path('/tmp/restic-cache').mkdir(exist_ok=True)
+                  if subprocess.run(['restic','cat','config'],capture_output=True).returncode:run(['restic','init'])
+                  output=run(['restic','backup','/work/state-secrets.json','--tag','gaas-state-recovery','--host','gaas-state-recovery','--json'])
+                  summary=next(json.loads(line) for line in output.splitlines() if json.loads(line).get('message_type')=='summary')
+                  snapshots=json.loads(run(['restic','snapshots','--json',summary['snapshot_id']]))
+                  if len(snapshots)!=1:raise ValueError('Ambiguous state backup')
+                  snapshot=snapshots[0]['id']
+                  run(['restic','check','--read-data'])
+                  run(['restic','restore',snapshot,'--target','/work/restored','--quiet'])
+                  restored=json.loads(Path('/work/restored/work/state-secrets.json').read_text())
+                  if restored!=bundle:raise ValueError('State recovery differs from original')
+                  after=get('/api/v1/namespaces/gaas-state/secrets/'+metadata['name'])
+                  unlocked()
+                  if after['metadata']['resourceVersion']!=original['metadata']['resourceVersion']:raise ValueError('State changed during backup')
+                  print('GAAS_STATE_RECOVERY_JSON='+json.dumps({'snapshot':snapshot,'stateSecretsChecked':1,'resticIntegrity':'passed','restoredBundleMatches':True,'terraformStateDecoded':True,'liveBackendModified':False,'backendResourceVersion':original['metadata']['resourceVersion'],'managedInstances':sum(len(r.get('instances',[])) for r in state.get('resources',[]) if r.get('mode')=='managed')}))
+              except Exception:
+                  raise SystemExit('State recovery check failed; live backend unchanged; diagnostics withheld')
+          env:
+            - name: RESTIC_REPOSITORY
+              value: s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/gaas-state-backups-20261122
+            - name: RESTIC_CACHE_DIR
+              value: /tmp/restic-cache
+            - name: AWS_DEFAULT_REGION
+              value: auto
+          envFrom:
+            - secretRef:
+                name: pz-r2-credentials
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: work
+              mountPath: /work
+      volumes:
+        - name: work
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+      serviceAccountName: gaas-terraform

@@ -26,15 +26,12 @@ spec:
   project: gaas-acceptance
   source:
     repoURL: https://github.com/bingops-com/labops.git
-    targetRevision: feat/gaas-lifecycle
+    targetRevision: master
     path: apps/workloads/gaas/acceptance/rooms
   destination:
     server: https://kubernetes.default.svc
     namespace: pz-server
   syncPolicy:
-    automated:
-      prune: false
-      selfHeal: true
     syncOptions:
       - FailOnSharedResource=true
       - RespectIgnoreDifferences=true

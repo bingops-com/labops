@@ -323,6 +323,13 @@ A dedicated GitHub App key is optional for integrated Portal writes/version PRs;
 recover it from Bitwarden if that mode has been configured. Preserve existing
 OIDC settings and the Portal session/layout PVC when changing images.
 
+The [dated gaming acceptance environment](../apps/workloads/gaas/acceptance/README.md)
+is retired independently: its controller/cloud gate are disabled and its Argo
+Application is manual on the main branch. Its disposable cloud resources may
+be absent while test worlds, R2 artifacts and the protected empty test backend
+remain retained. Do not bootstrap the obsolete feature-branch controller during
+a production rebuild. Recover test state through its own runbook only.
+
 ## Temporary homelab stability setting
 
 Reapply the reviewed [homelab CPU stability role](host-stability.md) on this
