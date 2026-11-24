@@ -312,8 +312,12 @@ owns the `gaming` operator, GameRoom intent and protected `gaming-state` backend
 Recover its encrypted state before enabling cloud workers; an empty backend is
 never an adoption shortcut. Bitwarden namespace synchronizers recover provider,
 R2 and game credentials. Git retains the original gateway public key and
-immutable game/runtime catalogue. Retained world PVCs and public IPv4 survive
-server removal. The legacy PZ PVC is retained during the ownership handoff.
+immutable game/runtime catalogue. World PVCs and the protected backend survive
+server removal. Public IPv4 survives only in retained mode; ephemeral mode
+withdraws DNS, drains its cache and removes all gateway cloud resources. A
+subsequent start allocates a fresh address and updates the stable hostname.
+Restore state matching the selected policy and actual cloud inventory; never
+try to resurrect a released IP from a historical retained-state bundle. The legacy PZ PVC is retained during the ownership handoff.
 
 Portal publication now pins a full source SHA in `docker/portal/source.txt`.
 `portal-release.yml` uses its own repository token, smoke-tests the image and
