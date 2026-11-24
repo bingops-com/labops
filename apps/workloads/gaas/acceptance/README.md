@@ -12,7 +12,12 @@ scope: IPv4 `91.98.196.54` / primary IP `164378290`, DNS
 `pz-gaas-20261122.bingops.com`, its test firewall and test operator SSH key,
 and its Terraform-only bootstrap marker. The VM was already removed by the
 verified final test suspension. The separate production IPv4
-`188.245.252.46` / primary IP `154062800` is retained.
+`188.245.252.46` / primary IP `154062800` was retained during that dated
+retirement. It has since been released by the separate production ephemeral
+gateway workflow; see the [production runbook](../production/README.md).
+The dated helper deliberately requires that original production identity, so
+its historical `verify` must not be reused after this policy change. Do not
+weaken its scope guards or use it to manage the production gateway.
 
 ## Retained data and external inputs
 

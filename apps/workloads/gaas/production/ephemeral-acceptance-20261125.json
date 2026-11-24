@@ -1,0 +1,239 @@
+{
+  "completedAt": "2026-11-24T23:25:23.536165+00:00",
+  "status": "passed",
+  "scope": "Production Project Zomboid gateway VM/IPv4/DNS lifecycle; persistent worlds and backups retained",
+  "policy": {
+    "resourcePolicy": "ephemeral",
+    "dnsTTLSeconds": 60,
+    "dnsDrainSeconds": 60,
+    "historicalAddressDrainSeconds": 300
+  },
+  "operatorImage": "ghcr.io/bingops-com/pz-server@sha256:eebb826453e1d2e6a3b0678a85dcfab911d1a04f2ae1480d0e4da7e5486defb7",
+  "moduleSource": "2db698e654a317b92694339e90f0bd4ae8ec07db",
+  "terraformLineage": "a1683cdf-3dfa-fd94-68c8-063120bf2b6e",
+  "beforeStateRecovery": {
+    "snapshot": "df75f2be998d4378f379cdd3d33bb1767dc9b347b72d3eacc06c3d095e115986",
+    "managedInstances": 5,
+    "resticIntegrity": "passed",
+    "restoredBundleMatches": true,
+    "liveBackendModified": false
+  },
+  "retainedModuleMigration": {
+    "job": "gaas-edge-56bc05374d51c138d6226817",
+    "managedResourcesPreserved": 5,
+    "allResourceActions": "no-op"
+  },
+  "historicalPrimaryIP": {
+    "id": 154062800,
+    "address": "188.245.252.46",
+    "confirmedAbsent": true
+  },
+  "fullyReleasedConfigChangeCreatedResources": false,
+  "cycles": [
+    {
+      "number": 1,
+      "ownerWorkflows": [
+        {
+          "requestedState": "Running",
+          "url": "https://github.com/bingops-com/labops/actions/runs/45507962518",
+          "conclusion": "success"
+        },
+        {
+          "requestedState": "Suspended",
+          "url": "https://github.com/bingops-com/labops/actions/runs/45508364379",
+          "conclusion": "success"
+        }
+      ],
+      "runningGeneration": 8,
+      "allocatedCloudResources": {
+        "servers": [
+          {
+            "id": 177543786,
+            "name": "labops-edge-01",
+            "status": "running"
+          }
+        ],
+        "primary_ips": [
+          {
+            "assignee_id": 177543786,
+            "id": 164893439,
+            "ip": "188.245.252.46",
+            "name": "labops-edge-01-ipv4"
+          }
+        ],
+        "firewalls": [
+          {
+            "id": 12154932,
+            "name": "labops-edge-01-firewall"
+          }
+        ],
+        "ssh_keys": [
+          {
+            "id": 133045797,
+            "name": "labops-edge-01-operator"
+          }
+        ],
+        "originalPrimaryIPAbsent": true,
+        "dns": [
+          {
+            "id": "cbcb3b25cc251d8f1972e7e68407758f",
+            "name": "pz.bingops.com",
+            "content": "188.245.252.46",
+            "ttl": 60,
+            "proxied": false
+          }
+        ]
+      },
+      "publicGameQuery": {
+        "online": true,
+        "players": 0,
+        "maxPlayers": 16,
+        "queryVersion": "1.0.0.0",
+        "latencyMs": 278,
+        "endpoint": "pz.bingops.com:16261",
+        "rconPlayers": 0,
+        "probeHost": "existing Proxmox host",
+        "realGameClientJoined": false
+      },
+      "finalGeneration": 9,
+      "shutdownBackup": {
+        "action": "BackupStoppedWorld",
+        "requestId": "275d69a07a833639c43b7d21",
+        "snapshot": "38b212ec063ac3031005eb747232efafc7654f8b97d98b5508c9ec75397f4625",
+        "verified": true,
+        "worldId": "pz-bingops"
+      },
+      "gatewayReleased": true,
+      "managedInstancesAfter": 0,
+      "cloudResourcesAbsentAfter": true
+    },
+    {
+      "number": 2,
+      "ownerWorkflows": [
+        {
+          "requestedState": "Running",
+          "url": "https://github.com/bingops-com/labops/actions/runs/45508912119",
+          "conclusion": "success"
+        },
+        {
+          "requestedState": "Suspended",
+          "url": "https://github.com/bingops-com/labops/actions/runs/45509274038",
+          "conclusion": "success"
+        }
+      ],
+      "runningGeneration": 10,
+      "allocatedCloudResources": {
+        "servers": [
+          {
+            "id": 177544274,
+            "name": "labops-edge-01",
+            "status": "running"
+          }
+        ],
+        "primary_ips": [
+          {
+            "assignee_id": 177544274,
+            "id": 164894255,
+            "ip": "188.245.252.46",
+            "name": "labops-edge-01-ipv4"
+          }
+        ],
+        "firewalls": [
+          {
+            "id": 12154966,
+            "name": "labops-edge-01-firewall"
+          }
+        ],
+        "ssh_keys": [
+          {
+            "id": 133045939,
+            "name": "labops-edge-01-operator"
+          }
+        ],
+        "originalPrimaryIPAbsent": true,
+        "dns": [
+          {
+            "id": "4f45cdedd514c29e5d3f2da71baeddc5",
+            "name": "pz.bingops.com",
+            "content": "188.245.252.46",
+            "ttl": 60,
+            "proxied": false
+          }
+        ]
+      },
+      "publicGameQuery": {
+        "online": true,
+        "players": 0,
+        "maxPlayers": 16,
+        "queryVersion": "1.0.0.0",
+        "latencyMs": 249,
+        "endpoint": "pz.bingops.com:16261",
+        "rconPlayers": 0,
+        "probeHost": "existing Proxmox host",
+        "realGameClientJoined": false
+      },
+      "finalGeneration": 11,
+      "shutdownBackup": {
+        "action": "BackupStoppedWorld",
+        "requestId": "9eff7495b801fc8801b9c834",
+        "snapshot": "2ba289685379285d44d26a2d20dd4f034711db3385bb529888eef54397c9f108",
+        "verified": true,
+        "worldId": "pz-bingops"
+      },
+      "gatewayReleased": true,
+      "managedInstancesAfter": 0,
+      "cloudResourcesAbsentAfter": true
+    }
+  ],
+  "scheduledGameBackup": {
+    "job": "gaas-pz-bingops-46088baf-pz-server-backup-29924850",
+    "succeeded": true,
+    "completionTime": "2026-11-24T23:15:39Z",
+    "scriptCompletionVerified": true
+  },
+  "afterStateRecovery": {
+    "snapshot": "ac01469fb085146b0b5c64961530699ddfbb7ec43b50bc330710ef8515c5de76",
+    "stateSecretsChecked": 1,
+    "resticIntegrity": "passed",
+    "restoredBundleMatches": true,
+    "terraformStateDecoded": true,
+    "liveBackendModified": false,
+    "backendResourceVersion": "29739131",
+    "managedInstances": 0
+  },
+  "preservedVolumes": [
+    {
+      "namespace": "gaming",
+      "name": "gaas-world-pz-bingops-34c51677",
+      "uid": "3336dba7-f780-4adf-b7c9-46fa1155c586",
+      "phase": "Bound"
+    },
+    {
+      "namespace": "pz-server",
+      "name": "pz-server-pz-server-data",
+      "uid": "95cc3039-af28-458c-9b9c-8f30cecd0cf5",
+      "phase": "Bound"
+    },
+    {
+      "namespace": "pz-server",
+      "name": "gaas-world-gaas-pz-one-20261122-74b98351",
+      "uid": "74c35773-fe24-4ae7-99e2-137fc3091549",
+      "phase": "Bound"
+    },
+    {
+      "namespace": "pz-server",
+      "name": "gaas-world-gaas-pz-two-20261122-aedd39b8",
+      "uid": "afea6ea3-a25b-4d0f-9e70-d668e007b607",
+      "phase": "Bound"
+    }
+  ],
+  "worldRuntimeImageUnchanged": "ghcr.io/bingops-com/pz-server@sha256:6a8385569f6e6871acae17a4a472b7abdcad3432869da5c09eef0320268d368c",
+  "wantedCloudResourcesRemaining": 0,
+  "backendRetained": true,
+  "encryptedWorldAndStateBackupsRetained": true,
+  "limitations": [
+    "Public UDP A2S and RCON were verified; a full game-client join was not exercised.",
+    "A second Steam build/version upgrade was not exercised.",
+    "Fresh allocation can receive the same numeric IPv4; reservation IDs changed after full deletion."
+  ]
+}
