@@ -2,9 +2,10 @@
 
 This component owns the GameRoom controller in `gaming`, the protected
 Kubernetes Terraform backend in `gaming-state` (suffix `edge-gateway`), and the
-GitOps intent in `rooms/pz-bingops.yaml`. It preserves the original public
-`pz.bingops.com` endpoint, IPv4 `188.245.252.46` (Hetzner primary IP `154062800`)
-and the existing gateway `labops-edge-01` during ownership adoption. Its initial
+GitOps intent in `rooms/pz-bingops.yaml`. The stable connection name is
+`pz.bingops.com`. Initial ownership adoption preserved IPv4 `188.245.252.46`
+(primary IP `154062800`) and gateway `labops-edge-01`; those are historical
+adoption identities when the ephemeral address policy is enabled. Its initial
 VM ID is `169230729`; later suspend/resume cycles intentionally change that ID.
 The dated [production acceptance receipt](acceptance-20261123.json) records
 observed results and remaining limits; it is not a source of credentials or
@@ -40,8 +41,8 @@ encrypted `gaas-production-state-backups` repository, restores the bundle to
 memory and compares it. It refuses a locked/changing backend. Its receipt proves
 a file restoration, not live state installation. To recover: stop the controller
 and Terraform Jobs, restore the selected verified bundle into protected memory,
-validate namespace/suffix/lineage and retained IP identity against the current
-cloud inventory, then restore that Secret to `gaming-state` before resuming.
+validate namespace/suffix/lineage and the selected resource policy/current
+cloud identities against the actual inventory, then restore that Secret to `gaming-state` before resuming.
 Discard plaintext temporary recovery files. Do not apply an empty backend over
 retained cloud resources. Terraform's Lease serializes backend writers.
 
@@ -142,7 +143,8 @@ and Running or Suspended, then run the workflow. The form is also available
 Without an App, the Portal caches anonymous Git reads for up to five minutes;
 the controller's observed generation and Argo revision establish actual progress.
 Suspension removes only the last consumer's VM after its verified backup.
-The retained IPv4 and backup storage continue to exist and can still have a cost.
+In retained mode the reserved IPv4 remains billable. In ephemeral mode complete
+gateway release removes the address after DNS draining; backup storage remains.
 
 A dedicated App remains optional for integrated Portal command buttons and
 version PRs. It needs Contents/PR write on LabOps only, explicit OIDC owner-group
@@ -167,3 +169,45 @@ PVC binding and no loaded/running world, uses the same immutable snapshot and
 Restic full restore verification, then atomically publishes the installation.
 It does not mount the legacy PVC. If that staging directory is absent it uses
 the normal installer. Review the UID, path and artifact for a different run.
+
+
+## Ephemeral public gateway policy
+
+The shared gateway can select `resourcePolicy: ephemeral` with
+`variables.retain_gateway_resources: false` and `public_dns_ttl: 60`. Keep the
+original private NodePort targets and user-facing hostname; only public cloud
+identities change. The release catalogue and world PVC are independent of the
+address policy. The existing owner GitHub start/stop form remains the entry point.
+
+Promote the reviewed module and matching immutable operator/worker image first
+in retained mode. Its moved blocks must preserve existing resource IDs. Require
+an encrypted, restored/compared backend bundle before changing the policy. Then
+select ephemeral mode with a 300-second drain for the old Auto-TTL endpoint.
+After that legacy address has been fully released, future sessions may use a
+60-second drain. Changing drain settings while fully released must allocate
+nothing. Do not initialize a second or empty backend for this migration.
+
+Running creates IPv4, firewall, cloud SSH key, marker, VM, a fresh Tailscale key
+and DNS. The controller waits for its DNS resolver to see the allocated address
+before starting the game. Other running rooms keep the same shared gateway.
+The last stop requires the current generation's verified world backup; the
+operator then withdraws DNS/removes compute, persists the cache deadline and
+finally releases every cloud resource. A new start during draining cancels
+release and may reuse the held IP. Later starts after full release allocate a
+fresh address and update every declared DNS name.
+
+`status.phase: Suspended` describes the saved/stopped game. Also require
+`status.gatewayPhase: Released`, no active gateway worker, an empty managed
+Terraform state and cloud/DNS absence before claiming zero retained IPv4/VM.
+The drain floor and pending Job inputs survive controller restarts and failed
+withdrawals. Same-direction failures require a reviewed config retry; a new
+Running request can recover a cancelled shutdown. No resource replacement is
+automatic while games use the gateway. World PVCs, encrypted backups, credentials
+and the protected state backend remain retained during cloud release.
+
+After rebuilding Kubernetes, restore the latest verified backend bundle for
+this policy before enabling workers. An empty managed state is normal after
+full ephemeral release, but a missing backend is still an error. Do not restore
+an old retained-IP snapshot blindly or attempt to reclaim a released IP by ID.
+Keep test and production backends distinct. Real game-client joining and a
+second Steam-build upgrade remain separate validations from UDP A2S probes.
