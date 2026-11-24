@@ -1,6 +1,6 @@
 # Retired Gaming as a Service acceptance environment
 
-The dated acceptance environment is being retired following the production
+The dated acceptance environment was retired following the production
 handoff. `config.yaml` disables cloud execution, `controller.yaml` keeps the
 acceptance controller at zero replicas, and `gitops.yaml` follows the main
 branch without automatic synchronization. These files remain outside the
@@ -22,6 +22,11 @@ and historical acceptance receipts remain retained. The binary artifact
 repository `gaas-releases-20261122` is also used by production and must never
 be removed as test cleanup. No namespace, world PVC, GameRoom finalizer or
 production resource is deleted by this retirement.
+The [2026-11-24 receipt](retirement/receipt-20261124.json) records the exact
+saved-plan scope, cloud checks, preserved PVC identities and verified encrypted
+before/after bundles. A repeated apply verified the already-retired state
+without recreating cloud resources. Its two terminal recovery-check Jobs were
+removed after the receipts were retained.
 
 The test backend stays in namespace `gaas-state`, suffix
 `gaas-test-20261122-edge`. After successful retirement it has its original

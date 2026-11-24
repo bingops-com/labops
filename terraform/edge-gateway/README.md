@@ -133,10 +133,10 @@ If the IPv4 itself is lost, apply the stack to allocate a replacement and update
 the owning public DNS or connection documentation before reopening traffic.
 
 
-## Gaming as a Service preparation
+## Gaming as a Service lifecycle
 
-The lifecycle refactor is staged on `feat/gaas-lifecycle`; it has not been
-applied to the existing gateway. `enabled` defaults to `true`. Set it to
+The production gateway uses this lifecycle through its guarded operator and
+protected Kubernetes backend. `enabled` defaults to `true`. Set it to
 `false` only in a reviewed plan to remove the VM and its consumed bootstrap
 key while retaining the IPv4, DNS records, firewall and operator SSH key.
 The retained IPv4 continues to incur its own charge. Resume with `enabled=true`;
@@ -181,3 +181,15 @@ suspension, retained-IP/world resume and GameRoom deletion/recreation. Its ownin
 report is in `bingops-com/pz-server/operations/gaas-acceptance-20261122.json`.
 Other game adapters, hot route changes and actual second-build acceptance are
 follow-up work; the production catalogue must contain full immutable artifacts.
+
+### Retired acceptance stack
+
+The dated `gaas-test-edge-20261122` cloud stack was retired independently of
+production. Its IPv4/DNS, firewall, test public SSH key and Terraform marker
+were removed after encrypted state recovery verification. Test worlds and the
+empty protected backend remain retained; cloud execution and its controller
+are disabled. The [acceptance runbook](../../apps/workloads/gaas/acceptance/README.md)
+owns the dated receipts and `retire-acceptance.py` procedure. That helper accepts
+only the exact disposable resource IDs, and does not relax the production
+worker's retained-resource guards. Never bootstrap the obsolete feature-branch
+controller or reuse the retired local production state for test recovery.
