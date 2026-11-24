@@ -15,8 +15,9 @@ The system Application owns the CRD, controller, public catalogue, mappings,
 RBAC and retained preload PVC. The rooms Application owns GameRoom intent only.
 The controller owns generated runtime objects; Terraform exclusively owns the
 cloud gateway. Automatic pruning is disabled for both Applications. Namespaces
-and the world PVC also carry `Prune=false`. Never remove world storage or the
-retained address as implicit server cleanup.
+and the world PVC also carry `Prune=false`. Never remove world storage as
+implicit server cleanup. Address release is controlled explicitly by the
+selected gateway resource policy.
 
 ## External inputs and reconstruction
 
@@ -26,7 +27,9 @@ only `argocd-system/bw-auth-token`; no value is in Git or logs. Run its CronJob
 once after bootstrap instead of waiting for the first five-minute schedule.
 The public SSH key in `system/operator-key.yaml` is the existing gateway key,
 recovered from the original Terraform state; replacing it changes boot inputs.
-The pinned Terraform source SHA is retained by Git tag `gaas-gateway-module-v1`.
+The original adoption module is retained by Git tag `gaas-gateway-module-v1`.
+The ephemeral module is pinned to full source SHA
+`2db698e654a317b92694339e90f0bd4ae8ec07db` in the main Git history.
 
 The catalogue promotes the verified Steam build `26486687` artifact in the
 separate encrypted `gaas-releases-20261122` repository. Its full snapshot and
@@ -173,11 +176,19 @@ the normal installer. Review the UID, path and artifact for a different run.
 
 ## Ephemeral public gateway policy
 
-The shared gateway can select `resourcePolicy: ephemeral` with
+The deployed production configuration selects `resourcePolicy: ephemeral` with
 `variables.retain_gateway_resources: false` and `public_dns_ttl: 60`. Keep the
 original private NodePort targets and user-facing hostname; only public cloud
 identities change. The release catalogue and world PVC are independent of the
 address policy. The existing owner GitHub start/stop form remains the entry point.
+The [ephemeral acceptance receipt](ephemeral-acceptance-20261125.json) records
+two owner-form start/suspend cycles, public UDP queries, verified shutdown
+backups and full VM/IPv4/DNS release after each stop. The automatic scheduled
+game backup also completed successfully. The final room is Suspended with the
+gateway Released and zero managed cloud resources. All four wanted world PVCs,
+the protected backend and encrypted world/state backups remain retained.
+Fresh reservations may receive the same numeric address from Hetzner; distinct
+primary-IP IDs and verified absence between sessions establish actual release.
 
 Promote the reviewed module and matching immutable operator/worker image first
 in retained mode. Its moved blocks must preserve existing resource IDs. Require
