@@ -2,7 +2,9 @@
 
 Status (2026-11-25): VM 160 runs the native portal, discovery, gallery, DNS and
 private SSH at `code.lab.bingo`, with the accepted pinned tool release.
-Final migration is authorized. The old home has been recovered independently at
+Final migration is authorized. Recovery and technical acceptance are complete;
+retirement waits only for the owner's real browser SSO test. The old home
+(about 13 GiB, including cached dependencies) has been recovered independently at
 `/home/dev/recovered-coder-20261125`; 38 Git worktrees retain their original HEAD
 and dirty status, including 75 changed paths across five worktrees. Seventeen
 Git bundles and private per-worktree patches provide independent recovery.
@@ -27,9 +29,24 @@ their disks as part of Coder cleanup. Previous VM archives are preserved at
 `/var/lib/vz/dump` and additionally linked under the root-only
 `/var/lib/vz/dev-migration-preserved-20261125` directory on Proxmox.
 
-The new encrypted off-host system checkpoint is uploading. Final data backup,
-isolated restoration and owner browser SSO acceptance remain mandatory before
-the GitOps cutover and exact namespace deletion. Private evidence is in
+The new encrypted data snapshot is
+`23ba4de027c86e2d6ade3a50c712cf63e22eed0dd6a8fe4ec9fac2d783fe139a`.
+Its native integrity sampling and isolated sentinel/SQLite restore passed.
+A separate restore checksum-verified 219 migration files, including unpublished
+work, Terraform states, Git bundles, source SQLite snapshots and the final Coder
+database dump. That dump also restored all 130 public tables in a temporary
+database, which was removed afterward. All 21 repository snapshots passed the
+metadata check; 17 unreferenced packs were retained without pruning.
+The encrypted system snapshot is
+`8528c7e28a9420f41f47fdada793ee0d41a5dd930f275211ad634daaf1055a70`.
+It was restored from R2 and its complete archive SHA-256 matches the exact
+archive boot-tested in VM 162. The active native release remains
+`b36c6cde946931e56b2b388fb8c89bf80cc0572f829f94236a9f2bd66b509601`.
+Only owner browser SSO acceptance is still pending. PR
+[#247](https://github.com/bingops-com/labops/pull/247) remains a draft: its
+branch is pushed, but the production GitOps cutover and namespace deletion
+have not happened. The old Coder task processes remain paused for final sync;
+the VM is the sole operator Terraform runner. Private evidence is in
 `/home/dev/projects/labops/.runtime/dev-vm/migration-20261125` and the dedicated
 cutover worktree's `.runtime/dev-vm`. No namespace or source volume has been
 retired merely because preparation files exist.
@@ -471,6 +488,23 @@ environment during a reviewed maintenance window. Timers/services report
 failures through systemd; monitor failed units and last successful backup/restore.
 These are data recovery checks, not proof of a full bootable VM restoration.
 
+A reboot during Restic can leave a repository lock from the previous boot.
+Verify the recorded process no longer exists, then run the existing
+`dev-backup-init.service`; its `restic unlock` removes only stale locks. Never
+use `unlock --remove-all`, prune packs or delete archives to make acceptance
+pass. The 2026-11-25 checkpoint upload committed successfully but its final
+check initially encountered the 2026-11-22 stale lock. Repeating integrity
+checks and restoring the already committed system snapshot avoids uploading
+another VM archive. Match that restored archive's SHA-256 with the exact local
+archive used for the isolated boot test before recording the accepted checkpoint.
+
+Backup manifests must resolve project aliases to their material files before
+comparing a staged restore. Restic preserves a directory symlink rather than
+copying its target a second time. The recovered CKA Terraform alias now points
+inside the recovered home; its original target is recorded privately. Restore
+into a separate directory and compare material files without following absolute
+restored links back into the active home.
+
 For selective data restore, load the protected Restic environment in a root
 recovery shell with tracing disabled and restore the selected **data** snapshot
 to a separate staging directory. Verify files there before replacing live data.
@@ -527,10 +561,12 @@ substitute an unreviewed version. Rebuilding an empty VM is not data recovery.
 - Safe checks: Terraform fmt/validate, Ansible syntax/lint, local HTTP/WebSocket
   and browser fixtures, real temporary encrypted Restic backup/restore, SQLite
   WAL acceptance, file checksum tampering and Renovate extraction/validation.
-- Runtime verified: native SSH, refusal outside the tailnet, HTTPS and anonymous/
-  spoofed-identity SSO rejection, tools/project copies, plus isolated boot/tools/
-  operator-file restoration from a local VM archive. The owner must still verify
-  their real browser SSO login. Actual encrypted R2 data backup/isolated SQLite
-  recovery passed, and normal backup/restore timers are enabled. The off-host
-  full-system checkpoint is uploading; its R2 archive restore/boot proof remains
-  required before Coder retirement and is distinct from the local VM rehearsal.
+- Runtime verified: trusted native tailnet SSH, LAN refusal, terminal reconnection,
+  current tools and service recovery, real HTTP/WebSocket/image previews, TLS
+  and anonymous/spoofed identity rejection. Data integrity sampling, isolated
+  sentinel/SQLite restoration, 219 restored migration-file checksums and the
+  complete Coder database restore passed. The full local VM archive booted in
+  disconnected VM 162; the encrypted R2 archive was restored and matches that
+  exact boot-tested archive by SHA-256. Both stopped rehearsal VMs and all old
+  archives are retained. The owner must still verify their real browser SSO login.
+  That pending check blocks merging the cutover and deleting the old namespaces.
