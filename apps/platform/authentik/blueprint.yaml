@@ -1012,6 +1012,13 @@ data:
           order: 0
           enabled: true
       # These entries are inserted into the existing shared-outpost blueprint.
+      # Retire the additive hostname-acceptance provider after the final cutover.
+      - model: authentik_core.application
+        state: absent
+        identifiers: {slug: dev-final-migration}
+      - model: authentik_providers_proxy.proxyprovider
+        state: absent
+        identifiers: {name: Dev final migration}
       - model: authentik_core.group
         id: dev-admins
         identifiers:
@@ -1051,38 +1058,6 @@ data:
           enabled: true
           negate: false
           timeout: 30
-      # Temporary final-domain acceptance while the Code endpoint stays live.
-      - model: authentik_providers_proxy.proxyprovider
-        id: dev-final-provider
-        identifiers:
-          name: Dev final migration
-        attrs:
-          mode: forward_domain
-          external_host: https://dev.lab.bingo
-          cookie_domain: dev.lab.bingo
-          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
-          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
-      - model: authentik_core.application
-        id: dev-final-application
-        identifiers:
-          slug: dev-final-migration
-        attrs:
-          name: Dev final migration
-          provider: !KeyOf dev-final-provider
-          meta_launch_url: https://dev.lab.bingo
-          policy_engine_mode: all
-      - model: authentik_policies.policybinding
-        identifiers:
-          target: !KeyOf dev-final-application
-          group: !Find [authentik_core.group, [name, dev-admins]]
-          order: 0
-        attrs:
-          target: !KeyOf dev-final-application
-          group: !Find [authentik_core.group, [name, dev-admins]]
-          order: 0
-          enabled: true
-          negate: false
-          timeout: 30
       - model: authentik_outposts.outpost
         identifiers:
           name: authentik Embedded Outpost
@@ -1092,7 +1067,6 @@ data:
           providers:
             - !KeyOf rom-request-proxy-provider
             - !KeyOf dev-proxy-provider
-            - !KeyOf dev-final-provider
             - !KeyOf notes-proxy-provider
       # Keep cleanup entries for the former full-access ROMarr proxy.
       - model: authentik_core.application
