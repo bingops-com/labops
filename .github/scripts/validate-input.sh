@@ -1,4 +1,11 @@
 #!/usr/bin/bash
+case "${IMAGE_NAME}" in
+  coder-bootstrap|coder-workspace|homeops-dev)
+    echo "Retired Coder images cannot be built or published." >&2
+    exit 1
+    ;;
+esac
+
 missing_input=false
 
 if [ -z "${IMAGE_NAME}" ]; then

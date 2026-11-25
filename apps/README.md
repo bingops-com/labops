@@ -45,7 +45,9 @@ PostgreSQL backups use the Terraform-owned `bingops-cnpg-labprod` R2 bucket.
 The native VM owns the development portal, SSH, discovery and gallery outside
 Kubernetes; see [its runbook](../terraform/dev-vm/README.md). The former
 `coder-labprod` and `dev-labprod` Applications are excluded from the GitOps root.
-Their old workload sources are retained for archive recovery, with shared R2
+Both old namespaces and their live volumes were deleted after verified data
+and full-system restoration. Coder image builds and dependency updates are
+disabled. Their old sources are retained for archive recovery, with shared R2
 buckets, credentials and operators preserved.
 
 Render before delivery:

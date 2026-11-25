@@ -1,5 +1,11 @@
 # Coder development environment
 
+> Archived on 2026-11-25 after verified migration and deletion of the old
+> `coder` and `coder-workspaces` namespaces. The instructions below describe
+> the former environment and must not be used to deploy production. Image
+> builds and dependency updates are disabled. Use the [native VM runbook](../../../terraform/dev-vm/README.md)
+> for `dev.lab.bingo`, current ownership and retained-backup recovery.
+
 Coder provides the private control plane at `https://coder.lab.bingo`. The `bingops/lab` workspace is intended for persistent experimentation, including the city simulator. Its native OpenSSH endpoint is `coder.lab.bingo:30222`, usable from iSH with the Tailscale iOS app connected.
 
 ## Ownership and deployment status

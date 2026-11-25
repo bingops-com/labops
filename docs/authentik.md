@@ -21,6 +21,14 @@ Authentik 2025.10 and later. Only the confidential Argo CD client secret and the
 Authentik bootstrap password are stored in the Bitwarden `labprod` project and
 mapped by tracked BitwardenSecret resources.
 
+The native Dev VM uses the owner-only proxy provider at
+`https://dev.lab.bingo`, including `PORT.dev.lab.bingo` previews. Its `dev-admins`
+group contains only `bingops`. The shared embedded outpost declares exactly the
+Dev, ROM requests and Notes providers. The former Coder OIDC application and
+temporary domain-migration provider are removed by blueprint tombstones; do
+not recreate them during a rebuild. Native SSH is independent of Authentik.
+See the [VM runbook](../terraform/dev-vm/README.md).
+
 The same blueprint owns the `auth.lab.bingo` brand. Its inline custom CSS uses
 neutral `LabOps SSO` branding shared by every relying application, while the
 brand attributes keep the Authentik interface in light mode. The login flow

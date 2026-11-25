@@ -1,6 +1,18 @@
 #!/usr/bin/bash
 
-if [[ "${GITHUB_EVENT_NAME}" == "repository_dispatch" ]]; then
+# Retained Coder sources are archives, never active image build contexts.
+retired_image() {
+  case "$1" in
+    coder-bootstrap|coder-workspace|homeops-dev) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+if [[ "${GITHUB_EVENT_NAME}" == "repository_dispatch" ]] && retired_image "${IMAGE_NAME}"; then
+  echo '::notice:: Skipping retired Coder image.'
+  echo '{"include":[]}' > matrix.json
+  echo "has_changes=false" >> "$GITHUB_OUTPUT"
+elif [[ "${GITHUB_EVENT_NAME}" == "repository_dispatch" ]]; then
   echo "::notice:: Triggered by repository_dispatch. Using image from payload."
   echo "{\"include\":[{\"image\":\"${IMAGE_NAME}\",\"is_pr\":\"${IS_PR}\"}]}" > matrix.json
   echo "has_changes=true" >> "$GITHUB_OUTPUT"
@@ -19,7 +31,9 @@ else
   # A removed context still appears in the diff; only build those that remain.
   modified_dirs=""
   for dir in $(git diff --name-only "$BEFORE_SHA" "${GITHUB_SHA}" | grep '^docker/' | cut -d/ -f2 | sort -u); do
-    if [ -f "docker/$dir/Dockerfile" ]; then
+    if retired_image "$dir"; then
+      echo "::notice:: Skipping retired Coder context: $dir"
+    elif [ -f "docker/$dir/Dockerfile" ]; then
       modified_dirs+="$dir "
     else
       echo "::notice:: Skipping removed Docker context: $dir"
