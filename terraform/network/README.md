@@ -18,14 +18,14 @@ queries to native DNSmasq at `100.65.212.7`; CoreDNS mirrors that same private
 answer. There is no public record or application tunnel. Connect with
 `ssh dev@dev.lab.bingo` on Tailscale, port 22. The firewall accepts SSH only
 through `tailscale0`; the verified Tailscale IP is the DNS recovery endpoint.
-The parallel `code.lab.bingo` route and former Coder records are retired during
+The parallel `code.lab.bingo` route and former Coder records were retired at
 cutover. If re-enrollment changes the Tailscale IP, update this split route and
 the mirrored answer together; never substitute the underlay address.
 
 Review a Terraform plan before apply because it contacts and changes the live
-tailnet. During the native Code route deployment, the retained worktree also
+tailnet. During the native Dev route deployment, the retained worktree also
 contained unrelated router changes: a targeted plan/apply of
-`tailscale_dns_configuration.tailnet` isolated the additive DNS update rather
+`tailscale_dns_configuration.tailnet` isolated the final Dev DNS replacement rather
 than running the router provisioner. Review the complete plan before later
 network maintenance; targeting does not reconcile unrelated pending changes.
 Verify `argocd`, `grafana` and the `lab.bingo` apex resolve to `192.168.10.151` while on

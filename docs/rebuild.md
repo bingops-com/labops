@@ -16,7 +16,9 @@ portal use `dev.lab.bingo` (`100.65.212.7`) through Tailscale. CAPI and
 `terraform/proxmox` do not own this VM or its dedicated disk.
 
 The owning runbook records migration acceptance, recovery evidence and the
-exact retirement boundary for `coder` and `coder-workspaces`. Restore existing
+completed retirement of `coder` and `coder-workspaces`, including their old
+live volumes. Do not recreate either namespace during a production rebuild.
+Coder image builds and dependency updates are disabled. Restore existing
 Terraform states and credentials before planning an existing component. The VM
 is the sole operator Terraform runner; the GaaS gateway remains owned by its
 protected Kubernetes backend, never the retired local gateway state.

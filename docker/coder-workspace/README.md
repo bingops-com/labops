@@ -1,5 +1,11 @@
 # Coder workspace image
 
+> Archived on 2026-11-25 after verified migration and deletion of the old
+> `coder` and `coder-workspaces` namespaces. The instructions below describe
+> the former environment and must not be used to deploy production. Image
+> builds and dependency updates are disabled. Use the [native VM runbook](../../terraform/dev-vm/README.md)
+> for `dev.lab.bingo`, current ownership and retained-backup recovery.
+
 The existing image workflow builds `ghcr.io/bingops-com/coder-workspace` from this directory. `VERSION` provides a release tag; the workspace template must be pinned to the published digest before its production import. No new registry credential is required: publication uses the repository's scoped Actions token.
 
 Ubuntu, Node and Go base images are pinned by digest. Python, build tools, OpenSSH, Git, tmux and scientific plotting packages are installed at image build time. Replacing a workspace pod does not run an installation script or require an apt mirror. Rebuilding the image can pick up Ubuntu package updates; its new digest must be reviewed before adoption.

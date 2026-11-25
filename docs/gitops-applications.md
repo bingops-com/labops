@@ -113,5 +113,7 @@ It owns namespace cka, a public web Service and a private single-writer lab
 controller. See [the CKA runbook](../apps/workloads/cka/README.md).
 
 Native development now belongs to VM 160 at `dev.lab.bingo`, outside Argo CD.
+The old Coder Applications, namespaces and live volumes were retired after
+verified restoration; their image builds and dependency updates are disabled.
 See the [VM runbook](../terraform/dev-vm/README.md) for migration acceptance,
 independent encrypted backups and retained Coder archive recovery.
