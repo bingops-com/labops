@@ -28,11 +28,12 @@ Production names under `lab.bingo` are explicit. Cloudflare Tunnel publishes
 and `status.lab.bingo`; `bingops.com` and
 `www.bingops.com` reach the portfolio. `blog.bingops.com` reaches the
 [static blog](workloads/blog/README.md) in namespace `bingops`. Argo CD and Grafana remain private
-through exact-name Tailscale split-DNS routes, Coder and its dynamic `dev.lab.bingo` previews use the private
-`lab.bingo` parent route, and the LabOps Portal is
+through exact-name Tailscale split-DNS routes. The native development VM and
+its previews use the private `code.lab.bingo` split route to `100.65.212.7`;
+the LabOps Portal is
 private at `portal.lab.bingo`. The apex `lab.bingo` serves the separate public
 [service directory](workloads/hub/README.md), including when accessed privately.
-The private names resolve to `192.168.10.151`;
+The cluster-hosted private names resolve to `192.168.10.151`;
 the private DNS zone `lab.bingo` forwards every other name (for example
 `auth.lab.bingo`) to public resolvers. TLS uses the Bitwarden-delivered
 cert-manager token and Cloudflare DNS-01.
@@ -41,13 +42,11 @@ Secrets are represented only by BitwardenSecret mappings. The sole Bitwarden
 machine token is injected with `./hacks/bootstrap-bitwarden.sh labprod`.
 PostgreSQL backups use the Terraform-owned `bingops-cnpg-labprod` R2 bucket.
 
-Coder's operator-managed database and retained experimentation workspace are
-defined in `workloads/coder`. Its native SSH NodePort remains private through
-the existing LAN/Tailscale route. Deployment and recovery acceptance are
-tracked in [the Coder runbook](workloads/coder/README.md).
-The independent `dev-labprod` Application follows
-[`bingops-com/dev`](https://github.com/bingops-com/dev) for the development dashboard
-and discovery/gallery agent; LabOps retains its Coder ingress, TLS and repository allowlist.
+The native VM owns the development portal, SSH, discovery and gallery outside
+Kubernetes; see [its runbook](../terraform/dev-vm/README.md). The former
+`coder-labprod` and `dev-labprod` Applications are excluded from the GitOps root.
+Their old workload sources are retained for archive recovery, with shared R2
+buckets, credentials and operators preserved.
 
 Render before delivery:
 

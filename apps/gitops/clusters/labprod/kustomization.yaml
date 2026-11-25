@@ -34,7 +34,5 @@ resources:
   - ghost.yaml
   - rom.yaml
   - pz-server.yaml
-  - coder.yaml
-  - dev.yaml
   - affine.yaml
   - gaas.yaml

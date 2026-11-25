@@ -9,36 +9,28 @@
 
 ## Standalone development VM migration
 
-The replacement for Coder is running in parallel, owned by
-[`terraform/dev-vm`](../terraform/dev-vm/README.md), with native configuration in
-`ansible/roles/dev_vm` and tool versions in `environments/dev-vm`. VM 160 is
-created; SSH over Tailscale, native tools, project copies and portal HTTPS
-have been verified at `code.lab.bingo`, declared in
-`apps/platform/private-dns/labprod`. The native portal runs independently of
-the existing Coder/Dev deployments. Actual encrypted R2 data backup and isolated
-sentinel/SQLite restoration have passed; initial acceptance and timers are active.
-A local full VM archive has passed isolated boot, tool and
-operator-file restoration in disconnected VM 161, now stopped and retained.
-The full off-host VM archive is uploading, and its R2 restore remains required
-before Coder retirement. The user explicitly requested keeping Coder active
-while existing work continues; do not retire it automatically after backup completion.
-Renovate's scheduled runner has opened actual tool PRs and dispatched validation.
-The provisional home copy does not transfer Terraform ownership or certify
-final data synchronization. Native service and final migration acceptance remain separate;
-the Coder recovery procedure below still owns the active
-workspace until cutover acceptance. Proxmox VM 160 and its 80 GiB disk belong
-to this separate Terraform state; CAPI and `terraform/proxmox` never own them.
-The rebuild path is Proxmox/VLAN 10 → Debian VM → guest-agent Tailscale
-enrollment → Ansible/native services → private DNS/SSO → encrypted backup
-restore and acceptance. SSH is restricted to the VM Tailscale interface.
-Restore the existing state before planning an already-created VM.
+The standalone development environment is VM 160, owned by
+[`terraform/dev-vm`](../terraform/dev-vm/README.md), with native services in
+`ansible/roles/dev_vm` and pinned tools in `environments/dev-vm`. SSH and the
+portal use `code.lab.bingo` (`100.65.212.7`) through Tailscale. CAPI and
+`terraform/proxmox` do not own this VM or its dedicated disk.
 
-The runbook owns the external Tailscale enrollment, Cloudflare DNS-01 token,
-bucket-scoped R2 credential and separate Restic password recovery from
-Bitwarden. No new secret or local Terraform state may be committed. Keep old
-Coder data and archives until native backup/restore and final migration pass;
-retirement is an explicit guarded action against only `coder` and
-`coder-workspaces`, after their GitOps declarations are removed.
+The owning runbook records migration acceptance, recovery evidence and the
+exact retirement boundary for `coder` and `coder-workspaces`. Restore existing
+Terraform states and credentials before planning an existing component. The VM
+is the sole operator Terraform runner; the GaaS gateway remains owned by its
+protected Kubernetes backend, never the retired local gateway state.
+
+Rebuild order: Proxmox/VLAN 10 → Debian VM → guest-agent Tailscale enrollment →
+Ansible/native services → private DNS/SSO → encrypted data and full-system
+restoration → acceptance. Bitwarden owns the independent Restic password,
+Cloudflare DNS-01 and bucket-scoped R2 credentials. Git contains their recovery
+identifiers and the recovery helper, never their values.
+
+Retain the recovered Coder home, Git bundles, previous VM archives and old R2
+file/database archives. Shared buckets, provider credentials and operators are
+outside Coder retirement. GaaS is already suspended with its ephemeral gateway
+VM/IP/DNS released; development recovery must not recreate that gateway.
 
 ## Inputs outside Git
 
@@ -183,68 +175,17 @@ configs are sensitive generated state, not documentation.
    If the workload is healthy but its public name returns `NXDOMAIN`, use the
    Terraform DNS recovery procedure in `docs/infrastructure/cloudflare.md`;
    reconciling the tunnel Application does not create DNS records.
-   Coder also depends on this private DNS zone, Authentik, CloudNativePG and
-   the published workspace image. Restore its Barman database generation and
-   retained home before starting recovered workspaces; keep file backups
-   suspended until restoration is verified. The public OIDC client adds no
-   secret, and Coder reuses the existing bucket-scoped R2 key through
-   Bitwarden mappings. The backup/restore R2 remote declares `no_check_bucket`
-   for the pre-provisioned bucket and object-scoped key; verify a fresh backup
-   Job succeeds after reconciliation. The home backup first creates private
-   online Codex SQLite snapshots through a GitOps-provided init script, then
-   transfers them and archives previous SQLite/journal files. Its staging
-   volume is disposable; source account data stays on the retained home.
-   Reconcile the existing backup ConfigMap before enabling its daily CronJob:
-   both `snapshot-codex.py` and `prune-archives.sh` must be present. The file
-   policy and prefix-based archive retention are owned by the
-   [Coder backup runbook](../apps/workloads/coder/README.md#backup-behavior).
-   Its automatic setup provisions only the `bingops`
-   OIDC owner and imports the Git-tracked template without a persistent setup
-   password. Update its bootstrap generation after database-only recovery,
-   then perform isolated database/file restore checks.
-   The `homeops-dev` image supplies Codex, Claude (from 0.1.2) and HomeOps clients. Publish the reviewed
-   image before completing workspace acceptance, then re-enroll the trusted
-   operator's `labmgmt`/`labprod` client configs with `provision-homeops-dev.py`
-   if they were not recovered with the home. First Codex/Claude login belongs to the
-   operator accounts and stays outside Git/images. Their user-owned auth/config
-   files persist under the home and are never replaced by startup or cluster-only
-   access refresh. Recover a lost or revoked login by signing into its provider
-   again. Optional `--shell-aliases` enrollment restores personal Bash aliases
-   from the owner's private source file if they were not recovered with the home;
-   it preserves existing profiles and adds interactive loading hooks. A failed initial workspace
-   start retries against the active template without replacing its retained home.
-   Terraform must complete before Coder can authorize the workspace agent;
-   the Deployment does not wait for agent-dependent SSH readiness during apply.
-   Verify agent startup and Kubernetes readiness separately after provisioning.
-   Coder is the selected primary Terraform workstation: after cloning LabOps,
-   enroll its ignored API inputs and the current local states from the trusted
-   source, with no simultaneous source Terraform operation. Retain the source
-   snapshots privately for recovery and use only the workspace state afterward.
-   Selected Proxmox SSH, CLI sessions and AWS files are separate sensitive
-   inputs, never image layers. The real `/home/coder` startup directory avoids
-   runc's failure on the project symlink while mounting the persistent home.
-   Renovate proposes Codex npm/lockfile updates and the published workspace
-   image digest; the operator reviews image releases and adopts the reconciled
-   template through Coder. Native SSH supplies UTF-8 and image acceptance
-   verifies browser/emoji fonts. iSH terminal font selection belongs to the
-   client device. GitOps also declares shared Codex, Claude and tmux system
-   settings in the Coder template. Their checksum participates in template
-   import and Pod adoption. Codex defaults to full access with no approvals,
-   using the existing restricted Pod as its isolation boundary; it therefore
-   does not require nested user namespaces on Talos. Personal account files
-   stay on the retained home. The [image runbook](../docker/homeops-dev/README.md)
-   owns the setting paths, precedence, non-sensitive tests and rollback.
-   See [the Coder runbook](../apps/workloads/coder/README.md) for ordering,
-   external inputs, private iSH access, the development dashboard and read-only
-   image gallery at `dev.lab.bingo`. The separate `dev-labprod` Application follows
-   `bingops-com/dev` for its Deployment and agent ConfigMap. Applications use `PORT.dev.lab.bingo` through
-   the authenticated alias gateway. Reconcile Dev's required gallery ConfigMap
-   before adopting the Coder template; startup supervises its port 4175 worker.
-   Adopt that mount for live port inventory; no new credentials are needed. Also observe the
-   single-node availability limit. Restore/start the RPG process in the retained
-   workspace separately; the dynamic proxy does not launch project servers.
-   Reconcile the private wildcard DNS and DNS-01 certificate before validating
-   previews; adopt the gallery mount/startup via a Coder workspace update.
+   The native development VM is reconstructed independently using the
+   [VM runbook](../terraform/dev-vm/README.md). Restore operator projects,
+   personal tool sessions and reconciled Terraform states from the encrypted
+   data repository. Keep newer VM work intact when restoring older Coder
+   archives; stage differing source work separately and import its Git refs
+   under a recovery namespace. Never overwrite active Codex SQLite databases.
+   Verify tailnet-only SSH, owner SSO, HTTP/WebSocket previews, gallery access,
+   backup restoration and the full VM checkpoint before resuming operations.
+   Historical Coder manifests remain only for isolated archive recovery through
+   the [archived Coder runbook](../apps/workloads/coder/README.md); they are not
+   part of the production rebuild order.
 10. Create the bucket-scoped Project Zomboid R2 token in Bitwarden, reconcile
     its mappings and the workload, then verify a Restic snapshot and a
     disposable restore before retiring the Build 41 VM.

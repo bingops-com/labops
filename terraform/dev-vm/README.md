@@ -20,8 +20,9 @@ if the VM reboots before it completes, finish initial data acceptance and rerun
 `sudo systemctl start dev-checkpoint.service`. A completed local restore does
 not substitute for this off-host copy. Normal later updates continue to enforce
 their own required checkpoint before adoption.
-Coder retirement remains explicitly on hold at the user's request while work
-continues in the existing environment.
+The final migration was authorized on 2026-11-25. Retirement remains gated on
+the completed acceptance receipt described below.
+
 The running Coder workspace remains the source of operator data until final
 migration acceptance. No
 namespace, PVC or old archive may be deleted just because these files exist.
@@ -294,6 +295,31 @@ copies' writers to be stopped and any VM edits reconciled first.
 
 ## Data migration and final Coder retirement
 
+Freeze project writes and all Terraform operations. If the VM already contains
+new work, do not run an overlay rsync into its home. Recover the source into a
+private, separate home tree first; preserve its entire Git metadata and dirty
+files, then checksum-compare material files with source writes stopped. Online
+SQLite snapshots must include committed WAL data. Runtime sockets, shared-memory
+files and process logs are not project changes. Retain a private inventory and
+binary patches for every dirty worktree. Import recovered branches under
+`refs/remotes/coder-recovered/` and repair only the recovered Git worktree paths.
+Keep existing VM files and live account databases; adopt only absent personal
+files or new project worktrees. Differing source work remains usable in the
+recovered tree rather than overwriting newer VM work.
+
+Before **any** Terraform command, inventory each source and VM state's lineage,
+serial and complete-file SHA-256 privately. Equal serials require equal contents;
+differing lineages need explicit ownership resolution. Preserve both originals,
+select the current state per stack and verify its checksum after installation.
+The VM becomes the sole operator runner. The production GaaS edge gateway is
+already managed through the protected `gaming-state` Kubernetes backend; archive
+stale local execution state instead of reviving it. PZ remains Suspended and its
+gateway VM/IP/DNS stay released. No gateway plan/apply belongs to this migration.
+
+The original push helper below is appropriate only for a quiesced destination
+whose existing changes have already been reconciled. Its default copy replaces
+same-name files; it must not be used to discover conflicts.
+
 Freeze project writes and all Terraform operations. Copy the entire operator
 home, including uncommitted work, account caches and current local Terraform
 states, through `migrate-dev-home.py`; it snapshots active SQLite databases,
@@ -318,8 +344,10 @@ It removes `coder-labprod`/`dev-labprod` from the GitOps root, deletes the old
 OIDC identities declaratively, removes the legacy Dev DNS route and installs the native Code split route and updates Portal/
 Gatus. The old Applications currently have no deletion finalizers, so removing
 them does not itself clean up workloads: do not mistake that for retirement.
-Complete the retirement receipt with actual data/system snapshot IDs, release
-identity and observed checks. Then the guarded helper deletes only the exact
+Complete the retirement receipt with actual 64-character data/system snapshot
+IDs, release identity and observed checks. Its guards require preserved conflicting
+work, reconciled Terraform, owner browser SSO and an isolated full-system restore
+as well as data restoration. A pending owner check never counts as acceptance. Then the guarded helper deletes only the exact
 namespaces `coder` and `coder-workspaces`, including Coder, its old Dev
 Deployment, CNPG database, retained home PVC, SSH NodePort 30222, ConfigMaps,
 credential mappings, bootstrap/sync/backup jobs, ingress, certificates and

@@ -83,9 +83,9 @@ class HubIsolationTests(unittest.TestCase):
         parser = Links()
         parser.feed((ROOT / "base/site/index.html").read_text())
         services = [(urlsplit(url), access) for url, access in parser.links if access]
-        self.assertEqual(len(services), 14)
-        self.assertEqual(len({url.hostname for url, _ in services}), 14)
-        private = {"portal.lab.bingo", "coder.lab.bingo", "dev.lab.bingo", "argocd.lab.bingo", "grafana.lab.bingo"}
+        self.assertEqual(len(services), 13)
+        self.assertEqual(len({url.hostname for url, _ in services}), 13)
+        private = {"portal.lab.bingo", "code.lab.bingo", "argocd.lab.bingo", "grafana.lab.bingo"}
         for url, access in services:
             self.assertEqual(url.scheme, "https")
             self.assertFalse(url.username or url.password or url.query or url.port)

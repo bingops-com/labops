@@ -59,7 +59,6 @@ The current application decisions are:
 | Blog | None; stateless public articles. | Not applicable; public, read-only site with no privileged UI. | Redeploy the pinned public GHCR image; no PVC. Source/artifact recovery limits are documented in `apps/workloads/blog/README.md`. |
 | Service directory | None; static public links at `lab.bingo`. | Not applicable; no login, privileged UI or private API. Linked services enforce their own access policies. | Git contains the complete site and local fonts; pinned Caddy image, no PVC or external app credential. See [the runbook](../apps/workloads/hub/README.md). |
 | AFFiNE Notes | `affine-postgresql` (CNPG + pgvector) and retained `affine-data` PVC. | Authentik proxy + OIDC/PKCE, active `bingops` only. | Daily complete application archive and CNPG/WAL, both 14 days. See [the runbook](../apps/workloads/affine/README.md). |
-| Coder (acceptance in progress) | `coder-postgresql` (CloudNativePG). | Public OIDC PKCE client restricted to `coder-admins`, only `bingops`; automatically provisioned OIDC owner. Temporary local bootstrap identities are deleted. | WAL and daily database backups to the `coder` R2 prefix; daily retained-home backup to `coder-workspaces/bingops-lab` with 14-day prefix-based changed-object history. See the [Coder backup runbook](../apps/workloads/coder/README.md#backup-behavior). Both restore acceptance checks are required. |
 | Project Zomboid | None. | Not applicable; the game protocol does not use browser SSO. | Restic backup to the dedicated `bingops-pz-labprod` R2 bucket. |
 
 Update this table in the same change whenever an application's classification
@@ -112,3 +111,7 @@ for Argo CD to report Synced and Healthy.
 CKA (cka-labprod) pins bingops-com/cka source and both immutable GHCR images.
 It owns namespace cka, a public web Service and a private single-writer lab
 controller. See [the CKA runbook](../apps/workloads/cka/README.md).
+
+Native development now belongs to VM 160 at `code.lab.bingo`, outside Argo CD.
+See the [VM runbook](../terraform/dev-vm/README.md) for migration acceptance,
+independent encrypted backups and retained Coder archive recovery.

@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+import re
 import subprocess
 
 ROOT=Path(__file__).resolve().parent.parent
@@ -14,11 +15,15 @@ def main():
     parser.add_argument('--confirm',choices=['coder,coder-workspaces'],required=True)
     args=parser.parse_args()
     receipt=json.loads(args.receipt.read_text())
-    required=['data_verified','vm_health_verified','tailscale_ssh_verified','lan_ssh_denied','backup_verified','restore_verified','dev_dns_verified']
+    required=['data_verified','conflicts_preserved','terraform_reconciled',
+              'vm_health_verified','tailscale_ssh_verified','lan_ssh_denied',
+              'backup_verified','restore_verified','system_restore_verified',
+              'owner_sso_verified','dev_dns_verified']
     if any(receipt.get(key) is not True for key in required):
         raise SystemExit('Migration and recovery acceptance are incomplete')
     for key in ['release_id','data_snapshot','system_snapshot']:
-        if not isinstance(receipt.get(key),str) or not receipt[key]:raise SystemExit('Missing recovery identity')
+        if not isinstance(receipt.get(key),str) or not re.fullmatch('[a-f0-9]{64}',receipt[key]):
+            raise SystemExit('Missing or invalid recovery identity')
     def kubectl(*args):
         return subprocess.run(['kubectl','--context','labprod',*args],check=True,capture_output=True,text=True).stdout
     # Argo must first stop declaring these applications, otherwise self-heal can

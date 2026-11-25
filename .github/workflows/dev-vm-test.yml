@@ -10,6 +10,8 @@ name: Standalone development VM acceptance
       - ansible/roles/dev_vm/**
       - hacks/*dev*.py
       - hacks/tests/test_dev_vm.py
+      - hacks/retire-coder.py
+      - hacks/tests/test_retire_coder.py
       - renovate.json
       - .github/workflows/dev-vm-test.yml
   workflow_dispatch:
@@ -30,6 +32,8 @@ jobs:
           python -m pip install ansible-core==2.19.2
       - name: Verify real encrypted backup and isolated SQLite restoration
         run: python -m unittest discover -s hacks/tests -p test_dev_vm.py -v
+      - name: Reject incomplete Coder retirement evidence
+        run: python -m unittest discover -s hacks/tests -p test_retire_coder.py -v
       - name: Check Ansible syntax without contacting a host
         run: ansible-playbook -i 'dev,' ansible/dev-vm.yml --syntax-check
       - name: Check health helper syntax
