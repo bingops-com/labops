@@ -1,9 +1,11 @@
 # Standalone development VM
 
 Status (2026-11-25): VM 160 runs the native portal, discovery, gallery, DNS and
-private SSH at `code.lab.bingo`, with the accepted pinned tool release.
+private SSH moving to `dev.lab.bingo`, with the accepted pinned tool release.
 Final migration is authorized. Recovery and technical acceptance are complete;
-retirement waits only for the owner's real browser SSO test. The old home
+the owner has confirmed the real browser SSO test. The requested final name is
+`dev.lab.bingo` for SSH, the web portal and `PORT.dev.lab.bingo` previews.
+The reviewed native update and DNS/SSO cutover run before namespace retirement. The old home
 (about 13 GiB, including cached dependencies) has been recovered independently at
 `/home/dev/recovered-coder-20261125`; 38 Git worktrees retain their original HEAD
 and dirty status, including 75 changed paths across five worktrees. Seventeen
@@ -42,7 +44,8 @@ The encrypted system snapshot is
 It was restored from R2 and its complete archive SHA-256 matches the exact
 archive boot-tested in VM 162. The active native release remains
 `b36c6cde946931e56b2b388fb8c89bf80cc0572f829f94236a9f2bd66b509601`.
-Only owner browser SSO acceptance is still pending. PR
+Owner browser SSO acceptance is confirmed. The final hostname cutover is
+being installed through the checkpointing updater. PR
 [#247](https://github.com/bingops-com/labops/pull/247) remains a draft: its
 branch is pushed, but the production GitOps cutover and namespace deletion
 have not happened. The old Coder task processes remain paused for final sync;
@@ -51,12 +54,12 @@ the VM is the sole operator Terraform runner. Private evidence is in
 cutover worktree's `.runtime/dev-vm`. No namespace or source volume has been
 retired merely because preparation files exist.
 
-The parallel VM SSH endpoint is **`code.lab.bingo`** (`100.65.212.7`), using
+The final VM SSH endpoint is **`dev.lab.bingo`** (`100.65.212.7`), using
 account `dev` on port 22 with Tailscale connected. The private A record is owned
-by native DNSmasq through the specific `code.lab.bingo` tailnet DNS route in
+by native DNSmasq through the specific `dev.lab.bingo` tailnet DNS route in
 `terraform/network`; CoreDNS retains a matching answer. No public record or tunnel is created. See the
-[DNS ownership and recovery](../network/README.md). The existing
-`coder.lab.bingo` and `dev.lab.bingo` endpoints remain on Coder until acceptance.
+[DNS ownership and recovery](../network/README.md). The legacy Coder route is removed during the final GitOps cutover; the
+parallel `code.lab.bingo` name is retired. No public DNS or tunnel is added.
 GitHub/Codex/cluster access checks pass; Claude's source session was already
 logged out and needs a new provider login if used. Tools and projects are present,
 but a provisional copy does not certify final data synchronization or backups.
@@ -117,9 +120,8 @@ initial acceptance; accepted environments must use the checkpointing updater.
 The gateway executes the release-selected Node binary directly, so its
 read-only service sandbox does not need Mise to write personal trust/cache state.
 
-The native portal is published at `https://code.lab.bingo`, with previews at
-`https://PORT.code.lab.bingo`. The existing `dev.lab.bingo` portal remains on
-Coder during parallel acceptance. The native portal/gateway and discovery listen
+The native portal is published at `https://dev.lab.bingo`, with previews at
+`https://PORT.dev.lab.bingo`. The same hostname is used for native SSH. The native portal/gateway and discovery listen
 on loopback ports 8080/4175.
 Nginx exposes TLS only through the tailnet and Authentik's verified `bingops`
 identity. It overwrites client identity headers. The gateway also checks the
@@ -138,9 +140,9 @@ the setting. Verify `keyExpiryDisabled: true` through the provider's device API
 after changing it. Reapply this provider setting after enrolling a replacement;
 never assume it is inherited from a VM backup or from operator permissions.
 
-DNSmasq answers only the `code.lab.bingo` zone on the tailnet interface. The
+DNSmasq answers only the `dev.lab.bingo` zone on the tailnet interface. The
 specific Tailscale split-DNS rule points that zone to the VM independently of
-Coder retirement; legacy names retain their existing route. Native DNS does
+the Kubernetes cluster; the former Code/Coder routes are retired. Native DNS does
 not require Kubernetes. The VM uses external resolvers with Tailscale DNS acceptance
 disabled, avoiding a self-resolution/bootstrap loop. Authentik remains an
 external dependency for browser login; SSH and terminal processes do not depend
@@ -240,8 +242,8 @@ Prepare and review `hacks/prepare-dev-cutover.py --phase bootstrap --tailscale-i
 It writes an ignored patch without applying it. This bootstrap phase adds only
 the new Authentik provider and preserves the old Coder login. Use `--phase retire`
 after native acceptance to prepare the separate DNS/GitOps/Coder removal patch.
-Parallel acceptance uses `code.lab.bingo`; the legacy `dev.lab.bingo` and
-`coder.lab.bingo` routes remain active until retirement.
+Parallel acceptance previously used `code.lab.bingo`. Final cutover transfers
+`dev.lab.bingo` to the VM and retires the Code and Coder routes.
 
 Build a release and supply these non-secret Ansible variables plus the paths
 to protected input files:
@@ -365,8 +367,8 @@ Do not proceed on an unavailable or unverified recovery input.
 
 Apply the reviewed cutover source patch and publish it only after VM acceptance.
 It removes `coder-labprod`/`dev-labprod` from the GitOps root, deletes the old
-OIDC identities declaratively, removes the legacy Dev DNS route and installs the native Code split route and updates Portal/
-Gatus. The old Applications currently have no deletion finalizers, so removing
+OIDC identities declaratively, transfers the Dev DNS route to the VM, removes the parallel Code route and
+updates Portal/Gatus. The old Applications currently have no deletion finalizers, so removing
 them does not itself clean up workloads: do not mistake that for retirement.
 Complete the retirement receipt with actual 64-character data/system snapshot
 IDs, release identity and observed checks. Its guards require preserved conflicting
@@ -568,5 +570,6 @@ substitute an unreviewed version. Rebuilding an empty VM is not data recovery.
   complete Coder database restore passed. The full local VM archive booted in
   disconnected VM 162; the encrypted R2 archive was restored and matches that
   exact boot-tested archive by SHA-256. Both stopped rehearsal VMs and all old
-  archives are retained. The owner must still verify their real browser SSO login.
-  That pending check blocks merging the cutover and deleting the old namespaces.
+  archives are retained. The owner confirmed their real browser SSO login.
+  Final Dev hostname/SSH/DNS checks precede merging the cutover and deleting
+  the old namespaces.

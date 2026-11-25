@@ -31,7 +31,7 @@ pages:
                   links:
                     - { title: Argo CD, url: "https://argocd.lab.bingo", description: GitOps, icon: "si:argo", checkUrl: "http://argocd-server.argocd-system.svc.cluster.local/healthz" }
                     - { title: Grafana, url: "https://grafana.lab.bingo", description: Métriques et journaux, icon: "si:grafana", checkUrl: "http://monitoring-grafana.monitoring.svc.cluster.local/api/health" }
-                    - { title: Dev, url: "https://code.lab.bingo", description: VM privée via Tailscale }
+                    - { title: Dev, url: "https://dev.lab.bingo", description: VM privée via Tailscale }
                     - { title: Authentik, url: "https://auth.lab.bingo", description: SSO, icon: "si:authentik", checkUrl: "https://auth.lab.bingo/-/health/live/" }
                     - { title: RomM, url: "https://rom.lab.bingo", description: Bibliothèque de jeux, icon: "si:nintendogamecube", checkUrl: "https://rom.lab.bingo/api/heartbeat" }
                     - { title: Demandes ROM, url: "https://rom-requests.lab.bingo", description: Rechercher et télécharger, icon: "si:nintendogamecube", checkUrl: "http://rom-request-portal.rom.svc.cluster.local:8080/healthz" }

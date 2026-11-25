@@ -112,6 +112,6 @@ CKA (cka-labprod) pins bingops-com/cka source and both immutable GHCR images.
 It owns namespace cka, a public web Service and a private single-writer lab
 controller. See [the CKA runbook](../apps/workloads/cka/README.md).
 
-Native development now belongs to VM 160 at `code.lab.bingo`, outside Argo CD.
+Native development now belongs to VM 160 at `dev.lab.bingo`, outside Argo CD.
 See the [VM runbook](../terraform/dev-vm/README.md) for migration acceptance,
 independent encrypted backups and retained Coder archive recovery.

@@ -106,7 +106,7 @@ policies remain owned by their applications. Test keyboard search/filter/reset,
 no-JavaScript links, light/dark mode and widths 320, 390, 768 and 1440 px.
 Never print session cookies, private layouts or credential-bearing responses.
 
-The private development entry is the native VM at `https://code.lab.bingo`.
+The private development entry is the native VM at `https://dev.lab.bingo`.
 Coder and the legacy `dev.lab.bingo` portal are retired through the
 [VM migration runbook](../../../terraform/dev-vm/README.md); the directory
 does not expose the VM through the public tunnel.

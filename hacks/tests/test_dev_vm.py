@@ -109,11 +109,11 @@ class RecoveryTest(unittest.TestCase):
         changes=cutover.prepare('100.64.0.160','retire')
         self.assertNotIn('terraform/tailscale-dns/dev.tf',changes)
         _,network=changes['terraform/network/dns.tf']
-        self.assertIn('domain = "code.lab.bingo"',network)
+        self.assertIn('domain = "dev.lab.bingo"',network)
         self.assertIn('address = "100.64.0.160"',network)
         self.assertIn('domain = "lab.bingo"',network)
         _,dns=changes['apps/platform/private-dns/labprod/configmap.yaml']
-        self.assertIn('code.lab.bingo:53',dns)
+        self.assertIn('dev.lab.bingo:53',dns)
         self.assertIn('30 IN A 100.64.0.160',dns)
         self.assertNotIn('coder.lab.bingo:53',dns)
 

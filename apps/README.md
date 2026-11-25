@@ -29,7 +29,7 @@ and `status.lab.bingo`; `bingops.com` and
 `www.bingops.com` reach the portfolio. `blog.bingops.com` reaches the
 [static blog](workloads/blog/README.md) in namespace `bingops`. Argo CD and Grafana remain private
 through exact-name Tailscale split-DNS routes. The native development VM and
-its previews use the private `code.lab.bingo` split route to `100.65.212.7`;
+its previews use the private `dev.lab.bingo` split route to `100.65.212.7`;
 the LabOps Portal is
 private at `portal.lab.bingo`. The apex `lab.bingo` serves the separate public
 [service directory](workloads/hub/README.md), including when accessed privately.

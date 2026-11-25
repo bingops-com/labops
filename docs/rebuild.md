@@ -12,7 +12,7 @@
 The standalone development environment is VM 160, owned by
 [`terraform/dev-vm`](../terraform/dev-vm/README.md), with native services in
 `ansible/roles/dev_vm` and pinned tools in `environments/dev-vm`. SSH and the
-portal use `code.lab.bingo` (`100.65.212.7`) through Tailscale. CAPI and
+portal use `dev.lab.bingo` (`100.65.212.7`) through Tailscale. CAPI and
 `terraform/proxmox` do not own this VM or its dedicated disk.
 
 The owning runbook records migration acceptance, recovery evidence and the

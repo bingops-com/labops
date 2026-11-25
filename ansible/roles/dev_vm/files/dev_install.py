@@ -271,8 +271,8 @@ def install_tools(root):
 def install(root):
     install_tools(root)
     # Keep previous tool installations and release venvs for rollback.
-    if not Path('/etc/letsencrypt/live/code.lab.bingo/fullchain.pem').exists():
-        call(['certbot','certonly','--non-interactive','--agree-tos','--register-unsafely-without-email','--dns-cloudflare','--dns-cloudflare-credentials','/etc/dev-vm/cloudflare.ini','--cert-name','code.lab.bingo','-d','code.lab.bingo','-d','*.code.lab.bingo'])
+    if not Path('/etc/letsencrypt/live/dev.lab.bingo/fullchain.pem').exists():
+        call(['certbot','certonly','--non-interactive','--agree-tos','--register-unsafely-without-email','--dns-cloudflare','--dns-cloudflare-credentials','/etc/dev-vm/cloudflare.ini','--cert-name','dev.lab.bingo','-d','dev.lab.bingo','-d','*.dev.lab.bingo'])
     hook = Path('/etc/letsencrypt/renewal-hooks/deploy/dev-nginx')
     hook.parent.mkdir(parents=True,exist_ok=True)
     hook.write_text('#!/bin/sh\nnginx -t && systemctl reload nginx\n');hook.chmod(0o755)
