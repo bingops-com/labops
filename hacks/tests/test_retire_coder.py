@@ -42,5 +42,25 @@ class RetirementGuards(unittest.TestCase):
                 self.assertNotIn('delete', run.call_args.args[0])
 
 
+    def test_complete_evidence_deletes_only_the_two_exact_namespaces(self):
+        example = json.loads((ROOT / 'environments/dev-vm/retirement-receipt.example.json').read_text())
+        accepted = {key: True if isinstance(value, bool) else 'a' * 64 for key, value in example.items()}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / 'apps/gitops/clusters/labprod/kustomization.yaml'
+            config.parent.mkdir(parents=True)
+            config.write_text('resources: []\n')
+            receipt = root / 'receipt.json'
+            receipt.write_text(json.dumps(accepted))
+            with patch.object(sys, 'argv', ['retire-coder', '--receipt', str(receipt), '--confirm', 'coder,coder-workspaces']), patch.object(retire, 'ROOT', root), patch.object(retire.subprocess, 'run') as run:
+                run.return_value.stdout = ''
+                retire.main()
+                self.assertEqual(run.call_count, 3)
+                self.assertEqual(run.call_args.args[0], [
+                    'kubectl', '--context', 'labprod', 'delete', 'namespace',
+                    'coder', 'coder-workspaces', '--ignore-not-found=true',
+                    '--wait=true', '--timeout=10m'])
+
+
 if __name__ == '__main__':
     unittest.main()
