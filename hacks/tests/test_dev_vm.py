@@ -21,6 +21,30 @@ def load(name,path):
 
 
 class RecoveryTest(unittest.TestCase):
+    def test_native_package_pins_prevent_drift_without_reinstalling_matching_tools(self):
+        installer=load('package_pin_installer',FILES / 'dev_install.py')
+        with tempfile.TemporaryDirectory() as directory:
+            base=Path(directory);release=base / 'release';environment=release / 'environment'
+            environment.mkdir(parents=True)
+            for name in ['apt.conf.d','sources.list.d']:
+                (base / 'etc/apt' / name).mkdir(parents=True)
+            (environment / 'trust.json').write_text('[]')
+            packages=[{'name':name,'version':'1.0'} for name in ['chromium','chromium-common']]
+            (environment / 'apt-tools.json').write_text(json.dumps(packages))
+            def mapped_path(name):
+                return base / str(name).lstrip('/') if str(name).startswith('/etc/') else Path(name)
+            class FinishedPackageStage(Exception):
+                pass
+            with mock.patch.object(installer,'Path',side_effect=mapped_path), mock.patch.object(installer,'verify_release',return_value='a'*64), mock.patch.object(installer.subprocess,'run') as installed, mock.patch.object(installer,'call') as call, mock.patch.object(installer,'install_oci_tools',side_effect=FinishedPackageStage):
+                installed.return_value.stdout='chromium\t1.0\nchromium-common\t1.0\n'
+                with self.assertRaises(FinishedPackageStage):installer.install_tools(release)
+                call.assert_not_called()
+            policy=base / 'etc/apt/preferences.d/90-dev-vm-native'
+            self.assertEqual(policy.stat().st_mode & 0o777,0o644)
+            self.assertEqual(policy.read_text().count('Pin-Priority: 1000'),2)
+            for package in packages:
+                self.assertIn(f"Package: {package['name']}\nPin: version 1.0\n",policy.read_text())
+
     def test_sqlite_snapshot_contains_committed_wal_changes(self):
         backup=load('backup_sqlite',FILES / 'dev_backup.py')
         with tempfile.TemporaryDirectory() as directory:
