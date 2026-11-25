@@ -429,7 +429,12 @@ extraction covers every native package, including SSH, Tailscale, DNS and
 backup clients. Pip-compile refreshes hashed Python requirements and Ansible
 Galaxy tracks collections. The bootstrap Mise release is also versioned.
 `kubectl` and `talosctl` remain within the declared cluster minor until an
-explicit compatibility change. Self-updaters do not bypass reviewed releases.
+explicit compatibility change. Self-updaters do not bypass reviewed releases. Native APT preferences pin only
+the declared tool packages at priority 1000, preserving ordinary OS security
+updates while preventing unreviewed tool-version drift. Chromium and
+`chromium-common` are reviewed together. The 2026-11-25 domain update detected
+the already installed security release `156.0.8078.108-1~deb13u1`; its manifest
+now matches that tested version instead of attempting a downgrade.
 After reviewing and merging a tool PR, the normal update is one command:
 
 ```sh

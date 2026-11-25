@@ -221,6 +221,14 @@ def install_tools(root):
     for package in packages:
         if not re.fullmatch(r'[a-z0-9][a-z0-9+.-]*', package['name']) or not re.fullmatch(r'[A-Za-z0-9:.+~_-]+',package['version']):
             raise ValueError('Invalid package declaration')
+    # Keep reviewed native tools stable while ordinary OS security updates run.
+    # Priority 1000 selects the declared version without automatic downgrades.
+    preferences = Path('/etc/apt/preferences.d/90-dev-vm-native')
+    preferences.parent.mkdir(parents=True, exist_ok=True)
+    preferences.write_text('\n'.join(
+        f"Package: {p['name']}\nPin: version {p['version']}\nPin-Priority: 1000\n"
+        for p in packages))
+    preferences.chmod(0o644)
     requested = {p['name']:p['version'] for p in packages}
     installed = subprocess.run(['dpkg-query','--show','--showformat=${Package}\t${Version}\n',*requested],capture_output=True,text=True).stdout
     actual = dict(line.split('\t',1) for line in installed.splitlines() if '\t' in line)
