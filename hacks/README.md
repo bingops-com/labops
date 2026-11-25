@@ -4,7 +4,9 @@ The standalone development VM uses `build-dev-release.py`,
 `migrate-dev-home.py` and the guarded `retire-coder.py`. Their ownership,
 recovery inputs, exact retirement targets and safe acceptance checks are in
 [the VM runbook](../terraform/dev-vm/README.md). These helpers do not publish
-source or apply Terraform automatically.
+source or apply Terraform automatically. Retirement also requires preserved
+conflicting work, reconciled Terraform state, owner SSO acceptance and a
+verified full-system restore; a data-only backup receipt is insufficient.
 
 `test-dev-vm-restore.py --archive /var/lib/vz/dump/VM160_ARCHIVE.vma.zst`
 verifies a completed local VM160 archive and restores it to an unused rehearsal

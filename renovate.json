@@ -234,6 +234,17 @@
         "deb"
       ],
       "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
+      "description": "Keep the native Chromium browser and common files ABI-compatible",
+      "matchDatasources": [
+        "deb"
+      ],
+      "matchPackageNames": [
+        "chromium",
+        "chromium-common"
+      ],
+      "groupName": "Chromium native browser"
     }
   ],
   "mise": {

@@ -19,11 +19,11 @@ def prepare(tail_ip, phase="retire"):
         if updated!=original:changes[name]=(original,updated)
     edit('apps/gitops/clusters/labprod/kustomization.yaml',lambda s:s.replace('\n  - coder.yaml','').replace('\n  - dev.yaml',''))
     def dns(s):
-        # Keep the new native code zone; remove only the legacy Coder zones.
-        for name in ['dev.lab.bingo','coder.lab.bingo']:
+        # Keep the final native Dev zone; remove the parallel Code and Coder zones.
+        for name in ['code.lab.bingo','coder.lab.bingo']:
             pattern=r'    '+re.escape(name)+r':53 \{\n.*?(?=    [^ \n]+:53 \{|\Z)'
             s=re.sub(pattern,'',s,flags=re.DOTALL)
-        pattern=r'(    code[.]lab[.]bingo:53 \{\n.*?30 IN A )100[.][0-9.]+(")'
+        pattern=r'(    dev[.]lab[.]bingo:53 \{\n.*?30 IN A )[0-9.]+(")'
         return re.sub(pattern,lambda m:m[1]+tail_ip+m[2],s,count=1,flags=re.DOTALL)
     edit('apps/platform/private-dns/labprod/configmap.yaml',dns)
     def authentik(s):
@@ -57,12 +57,14 @@ def prepare(tail_ip, phase="retire"):
             s=s.replace(marker,textwrap.indent(entries,'      ')+marker)
         key='            - !KeyOf rom-request-proxy-provider\n'
         if '            - !KeyOf dev-proxy-provider\n' not in s:s=s.replace(key,key+'            - !KeyOf dev-proxy-provider\n')
-        return s
+        return s.replace('code.lab.bingo','dev.lab.bingo')
     edit('apps/platform/authentik/blueprint.yaml',authentik)
     def tailnet_dns(s):
         # network owns the entire DNS configuration; tailscale-dns is retired.
+        # Remove the parallel name instead of leaving a second split route.
+        s=re.sub(r'  split_dns \{\n    domain = "code[.]lab[.]bingo"\n\n    nameservers \{\n      address = "[^"\n]+"\n    \}\n  \}\n\n','',s,count=1)
         block=f'''  split_dns {{
-    domain = "code.lab.bingo"
+    domain = "dev.lab.bingo"
 
     nameservers {{
       address = "{tail_ip}"
@@ -70,11 +72,11 @@ def prepare(tail_ip, phase="retire"):
   }}
 
 '''
-        existing=r'  split_dns \{\n    domain = "code[.]lab[.]bingo"\n\n    nameservers \{\n      address = "[^"\n]+"\n    \}\n  \}\n\n'
+        existing=r'  split_dns \{\n    domain = "dev[.]lab[.]bingo"\n\n    nameservers \{\n      address = "[^"\n]+"\n    \}\n  \}\n\n'
         if re.search(existing,s):
             return re.sub(existing,lambda _:block,s,count=1)
         marker='  magic_dns          = true\n'
-        if s.count(marker)!=1 or 'domain = "code.lab.bingo"' in s:
+        if s.count(marker)!=1 or 'domain = "dev.lab.bingo"' in s:
             raise ValueError('Tailnet DNS ownership/layout changed; review terraform/network/dns.tf')
         return s.replace(marker,block+marker)
     if phase=='retire':edit('terraform/network/dns.tf',tailnet_dns)
@@ -83,7 +85,7 @@ def prepare(tail_ip, phase="retire"):
         pattern=r'  - name: Coder\n(?:(?!  - name:)[\s\S])*?(?=  - name:|\Z)'
         return re.sub(pattern,'',s,count=1)
     edit('apps/workloads/gatus/base/config.yaml',gatus)
-    edit('apps/workloads/portal/base/portal.yaml',lambda s:s.replace('                - coder-workspaces/coder-home-r2-backup\n','').replace('{ title: Coder, url: "https://coder.lab.bingo", description: Développement persistant, checkUrl: "http://coder.coder.svc.cluster.local/healthz" }','{ title: Dev, url: "https://code.lab.bingo", description: VM privée via Tailscale }'))
+    edit('apps/workloads/portal/base/portal.yaml',lambda s:s.replace('                - coder-workspaces/coder-home-r2-backup\n','').replace('{ title: Coder, url: "https://coder.lab.bingo", description: Développement persistant, checkUrl: "http://coder.coder.svc.cluster.local/healthz" }','{ title: Dev, url: "https://dev.lab.bingo", description: VM privée via Tailscale }'))
     return {name:change for name,change in changes.items() if name=='apps/platform/authentik/blueprint.yaml'} if phase=='bootstrap' else changes
 
 

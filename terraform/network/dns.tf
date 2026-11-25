@@ -32,7 +32,7 @@ resource "tailscale_dns_configuration" "tailnet" {
   }
 
   split_dns {
-    domain = "code.lab.bingo"
+    domain = "dev.lab.bingo"
 
     nameservers {
       address = "100.65.212.7"

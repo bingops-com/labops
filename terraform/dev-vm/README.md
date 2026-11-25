@@ -1,37 +1,65 @@
 # Standalone development VM
 
-Status (2026-11-22): VM 160 serves the native portal at `code.lab.bingo`,
-with valid wildcard HTTPS, private SSH, active gateway/discovery/DNS services,
-the 15 pinned Mise tools, Trivy, native packages and Python tools installed.
-Thirty-seven project directories and personal settings have been provisionally
-copied. Native health checks and anonymous/spoofed-identity SSO rejection pass.
-The actual encrypted R2 data backup and isolated sentinel/SQLite restoration
-passed on 2026-11-22; native initial acceptance is complete and timers are enabled.
-A full **local** VM archive has passed an isolated boot rehearsal:
-VM 161, no NIC, all native tools, six operator files and 37 project directories.
-That rehearsal copy is stopped with on-boot disabled and retained for review.
-A full off-host system checkpoint is uploading; restoration of that VM archive
-from R2 is not yet certified. The first encrypted system checkpoint runs as the transient
-`dev-first-system-checkpoint.service`, ordered after `dev-bootstrap` and guarded
-by the data-acceptance receipt. Inspect its pending job with
-`sudo systemctl list-jobs` and the actual upload with
-`sudo journalctl -u dev-checkpoint`. This deployment job is not enabled at boot:
-if the VM reboots before it completes, finish initial data acceptance and rerun
-`sudo systemctl start dev-checkpoint.service`. A completed local restore does
-not substitute for this off-host copy. Normal later updates continue to enforce
-their own required checkpoint before adoption.
-Coder retirement remains explicitly on hold at the user's request while work
-continues in the existing environment.
-The running Coder workspace remains the source of operator data until final
-migration acceptance. No
-namespace, PVC or old archive may be deleted just because these files exist.
+Status (2026-11-25): VM 160 runs the native portal, discovery, gallery, DNS and
+private SSH moving to `dev.lab.bingo`, with the accepted pinned tool release.
+Final migration is authorized. Recovery and technical acceptance are complete;
+the owner has confirmed the real browser SSO test. The requested final name is
+`dev.lab.bingo` for SSH, the web portal and `PORT.dev.lab.bingo` previews.
+The reviewed native update and DNS/SSO cutover run before namespace retirement. The old home
+(about 13 GiB, including cached dependencies) has been recovered independently at
+`/home/dev/recovered-coder-20261125`; 38 Git worktrees retain their original HEAD
+and dirty status, including 75 changed paths across five worktrees. Seventeen
+Git bundles and private per-worktree patches provide independent recovery.
+Existing VM work and account databases have been preserved. Missing personal
+files and absent project worktrees have been adopted; differing source work
+remains in the recovered home. Six standalone source SQLite snapshots passed
+integrity checks.
 
-The parallel VM SSH endpoint is **`code.lab.bingo`** (`100.65.212.7`), using
+Seven local Terraform states were compared by lineage, serial and SHA-256.
+The newer network state is installed on the VM; other selected states match.
+The retired local gateway execution state is archived, while production GaaS
+continues to own its protected Kubernetes backend. The VM is now the sole
+operator Terraform runner. PZ stays Suspended with gateway VM/IP/DNS released.
+
+Verified runtime checks include trusted tailnet SSH from Proxmox, LAN SSH
+refusal, native tools, Screen reconnection, service restart, discovery and
+HTTP/WebSocket/image previews. Nginx rejects anonymous and spoofed identities.
+The latest local full VM archive booted successfully in disconnected VM 162,
+with native tools, six operator files and 38 project directories verified.
+VMs 161 and 162 are stopped and retained with on-boot disabled; do not delete
+their disks as part of Coder cleanup. Previous VM archives are preserved at
+`/var/lib/vz/dump` and additionally linked under the root-only
+`/var/lib/vz/dev-migration-preserved-20261125` directory on Proxmox.
+
+The new encrypted data snapshot is
+`23ba4de027c86e2d6ade3a50c712cf63e22eed0dd6a8fe4ec9fac2d783fe139a`.
+Its native integrity sampling and isolated sentinel/SQLite restore passed.
+A separate restore checksum-verified 219 migration files, including unpublished
+work, Terraform states, Git bundles, source SQLite snapshots and the final Coder
+database dump. That dump also restored all 130 public tables in a temporary
+database, which was removed afterward. All 21 repository snapshots passed the
+metadata check; 17 unreferenced packs were retained without pruning.
+The encrypted system snapshot is
+`8528c7e28a9420f41f47fdada793ee0d41a5dd930f275211ad634daaf1055a70`.
+It was restored from R2 and its complete archive SHA-256 matches the exact
+archive boot-tested in VM 162. The active native release remains
+`b36c6cde946931e56b2b388fb8c89bf80cc0572f829f94236a9f2bd66b509601`.
+Owner browser SSO acceptance is confirmed. The final hostname cutover is
+being installed through the checkpointing updater. PR
+[#247](https://github.com/bingops-com/labops/pull/247) remains a draft: its
+branch is pushed, but the production GitOps cutover and namespace deletion
+have not happened. The old Coder task processes remain paused for final sync;
+the VM is the sole operator Terraform runner. Private evidence is in
+`/home/dev/projects/labops/.runtime/dev-vm/migration-20261125` and the dedicated
+cutover worktree's `.runtime/dev-vm`. No namespace or source volume has been
+retired merely because preparation files exist.
+
+The final VM SSH endpoint is **`dev.lab.bingo`** (`100.65.212.7`), using
 account `dev` on port 22 with Tailscale connected. The private A record is owned
-by native DNSmasq through the specific `code.lab.bingo` tailnet DNS route in
+by native DNSmasq through the specific `dev.lab.bingo` tailnet DNS route in
 `terraform/network`; CoreDNS retains a matching answer. No public record or tunnel is created. See the
-[DNS ownership and recovery](../network/README.md). The existing
-`coder.lab.bingo` and `dev.lab.bingo` endpoints remain on Coder until acceptance.
+[DNS ownership and recovery](../network/README.md). The legacy Coder route is removed during the final GitOps cutover; the
+parallel `code.lab.bingo` name is retired. No public DNS or tunnel is added.
 GitHub/Codex/cluster access checks pass; Claude's source session was already
 logged out and needs a new provider login if used. Tools and projects are present,
 but a provisional copy does not certify final data synchronization or backups.
@@ -92,9 +120,8 @@ initial acceptance; accepted environments must use the checkpointing updater.
 The gateway executes the release-selected Node binary directly, so its
 read-only service sandbox does not need Mise to write personal trust/cache state.
 
-The native portal is published at `https://code.lab.bingo`, with previews at
-`https://PORT.code.lab.bingo`. The existing `dev.lab.bingo` portal remains on
-Coder during parallel acceptance. The native portal/gateway and discovery listen
+The native portal is published at `https://dev.lab.bingo`, with previews at
+`https://PORT.dev.lab.bingo`. The same hostname is used for native SSH. The native portal/gateway and discovery listen
 on loopback ports 8080/4175.
 Nginx exposes TLS only through the tailnet and Authentik's verified `bingops`
 identity. It overwrites client identity headers. The gateway also checks the
@@ -113,9 +140,9 @@ the setting. Verify `keyExpiryDisabled: true` through the provider's device API
 after changing it. Reapply this provider setting after enrolling a replacement;
 never assume it is inherited from a VM backup or from operator permissions.
 
-DNSmasq answers only the `code.lab.bingo` zone on the tailnet interface. The
+DNSmasq answers only the `dev.lab.bingo` zone on the tailnet interface. The
 specific Tailscale split-DNS rule points that zone to the VM independently of
-Coder retirement; legacy names retain their existing route. Native DNS does
+the Kubernetes cluster; the former Code/Coder routes are retired. Native DNS does
 not require Kubernetes. The VM uses external resolvers with Tailscale DNS acceptance
 disabled, avoiding a self-resolution/bootstrap loop. Authentik remains an
 external dependency for browser login; SSH and terminal processes do not depend
@@ -215,8 +242,8 @@ Prepare and review `hacks/prepare-dev-cutover.py --phase bootstrap --tailscale-i
 It writes an ignored patch without applying it. This bootstrap phase adds only
 the new Authentik provider and preserves the old Coder login. Use `--phase retire`
 after native acceptance to prepare the separate DNS/GitOps/Coder removal patch.
-Parallel acceptance uses `code.lab.bingo`; the legacy `dev.lab.bingo` and
-`coder.lab.bingo` routes remain active until retirement.
+Parallel acceptance previously used `code.lab.bingo`. Final cutover transfers
+`dev.lab.bingo` to the VM and retires the Code and Coder routes.
 
 Build a release and supply these non-secret Ansible variables plus the paths
 to protected input files:
@@ -294,7 +321,32 @@ copies' writers to be stopped and any VM edits reconciled first.
 
 ## Data migration and final Coder retirement
 
-Freeze project writes and all Terraform operations. Copy the entire operator
+Freeze project writes and all Terraform operations. If the VM already contains
+new work, do not run an overlay rsync into its home. Recover the source into a
+private, separate home tree first; preserve its entire Git metadata and dirty
+files, then checksum-compare material files with source writes stopped. Online
+SQLite snapshots must include committed WAL data. Runtime sockets, shared-memory
+files and process logs are not project changes. Retain a private inventory and
+binary patches for every dirty worktree. Import recovered branches under
+`refs/remotes/coder-recovered/` and repair only the recovered Git worktree paths.
+Keep existing VM files and live account databases; adopt only absent personal
+files or new project worktrees. Differing source work remains usable in the
+recovered tree rather than overwriting newer VM work.
+
+Before **any** Terraform command, inventory each source and VM state's lineage,
+serial and complete-file SHA-256 privately. Equal serials require equal contents;
+differing lineages need explicit ownership resolution. Preserve both originals,
+select the current state per stack and verify its checksum after installation.
+The VM becomes the sole operator runner. The production GaaS edge gateway is
+already managed through the protected `gaming-state` Kubernetes backend; archive
+stale local execution state instead of reviving it. PZ remains Suspended and its
+gateway VM/IP/DNS stay released. No gateway plan/apply belongs to this migration.
+
+The original push helper below is appropriate only for a quiesced destination
+whose existing changes have already been reconciled. Its default copy replaces
+same-name files; it must not be used to discover conflicts.
+
+Copy the entire operator
 home, including uncommitted work, account caches and current local Terraform
 states, through `migrate-dev-home.py`; it snapshots active SQLite databases,
 refuses changing source data during the rsync verification and deletes nothing
@@ -315,11 +367,13 @@ Do not proceed on an unavailable or unverified recovery input.
 
 Apply the reviewed cutover source patch and publish it only after VM acceptance.
 It removes `coder-labprod`/`dev-labprod` from the GitOps root, deletes the old
-OIDC identities declaratively, removes the legacy Dev DNS route and installs the native Code split route and updates Portal/
-Gatus. The old Applications currently have no deletion finalizers, so removing
+OIDC identities declaratively, transfers the Dev DNS route to the VM, removes the parallel Code route and
+updates Portal/Gatus. The old Applications currently have no deletion finalizers, so removing
 them does not itself clean up workloads: do not mistake that for retirement.
-Complete the retirement receipt with actual data/system snapshot IDs, release
-identity and observed checks. Then the guarded helper deletes only the exact
+Complete the retirement receipt with actual 64-character data/system snapshot
+IDs, release identity and observed checks. Its guards require preserved conflicting
+work, reconciled Terraform, owner browser SSO and an isolated full-system restore
+as well as data restoration. A pending owner check never counts as acceptance. Then the guarded helper deletes only the exact
 namespaces `coder` and `coder-workspaces`, including Coder, its old Dev
 Deployment, CNPG database, retained home PVC, SSH NodePort 30222, ConfigMaps,
 credential mappings, bootstrap/sync/backup jobs, ingress, certificates and
@@ -375,7 +429,12 @@ extraction covers every native package, including SSH, Tailscale, DNS and
 backup clients. Pip-compile refreshes hashed Python requirements and Ansible
 Galaxy tracks collections. The bootstrap Mise release is also versioned.
 `kubectl` and `talosctl` remain within the declared cluster minor until an
-explicit compatibility change. Self-updaters do not bypass reviewed releases.
+explicit compatibility change. Self-updaters do not bypass reviewed releases. Native APT preferences pin only
+the declared tool packages at priority 1000, preserving ordinary OS security
+updates while preventing unreviewed tool-version drift. Chromium and
+`chromium-common` are reviewed together. The 2026-11-25 domain update detected
+the already installed security release `156.0.8078.108-1~deb13u1`; its manifest
+now matches that tested version instead of attempting a downgrade.
 After reviewing and merging a tool PR, the normal update is one command:
 
 ```sh
@@ -436,6 +495,23 @@ environment during a reviewed maintenance window. Timers/services report
 failures through systemd; monitor failed units and last successful backup/restore.
 These are data recovery checks, not proof of a full bootable VM restoration.
 
+A reboot during Restic can leave a repository lock from the previous boot.
+Verify the recorded process no longer exists, then run the existing
+`dev-backup-init.service`; its `restic unlock` removes only stale locks. Never
+use `unlock --remove-all`, prune packs or delete archives to make acceptance
+pass. The 2026-11-25 checkpoint upload committed successfully but its final
+check initially encountered the 2026-11-22 stale lock. Repeating integrity
+checks and restoring the already committed system snapshot avoids uploading
+another VM archive. Match that restored archive's SHA-256 with the exact local
+archive used for the isolated boot test before recording the accepted checkpoint.
+
+Backup manifests must resolve project aliases to their material files before
+comparing a staged restore. Restic preserves a directory symlink rather than
+copying its target a second time. The recovered CKA Terraform alias now points
+inside the recovered home; its original target is recorded privately. Restore
+into a separate directory and compare material files without following absolute
+restored links back into the active home.
+
 For selective data restore, load the protected Restic environment in a root
 recovery shell with tracing disabled and restore the selected **data** snapshot
 to a separate staging directory. Verify files there before replacing live data.
@@ -492,10 +568,13 @@ substitute an unreviewed version. Rebuilding an empty VM is not data recovery.
 - Safe checks: Terraform fmt/validate, Ansible syntax/lint, local HTTP/WebSocket
   and browser fixtures, real temporary encrypted Restic backup/restore, SQLite
   WAL acceptance, file checksum tampering and Renovate extraction/validation.
-- Runtime verified: native SSH, refusal outside the tailnet, HTTPS and anonymous/
-  spoofed-identity SSO rejection, tools/project copies, plus isolated boot/tools/
-  operator-file restoration from a local VM archive. The owner must still verify
-  their real browser SSO login. Actual encrypted R2 data backup/isolated SQLite
-  recovery passed, and normal backup/restore timers are enabled. The off-host
-  full-system checkpoint is uploading; its R2 archive restore/boot proof remains
-  required before Coder retirement and is distinct from the local VM rehearsal.
+- Runtime verified: trusted native tailnet SSH, LAN refusal, terminal reconnection,
+  current tools and service recovery, real HTTP/WebSocket/image previews, TLS
+  and anonymous/spoofed identity rejection. Data integrity sampling, isolated
+  sentinel/SQLite restoration, 219 restored migration-file checksums and the
+  complete Coder database restore passed. The full local VM archive booted in
+  disconnected VM 162; the encrypted R2 archive was restored and matches that
+  exact boot-tested archive by SHA-256. Both stopped rehearsal VMs and all old
+  archives are retained. The owner confirmed their real browser SSO login.
+  Final Dev hostname/SSH/DNS checks precede merging the cutover and deleting
+  the old namespaces.

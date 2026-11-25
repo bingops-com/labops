@@ -12,22 +12,15 @@ The Tailscale OAuth client is an external sensitive input with the minimum DNS
 write and network scopes required by this stack. Store it only in an ignored
 variables file and rotate it in the admin console if lost.
 
-The private `coder.lab.bingo` name also uses the existing `lab.bingo` parent
-route. Its answer is owned by `apps/platform/private-dns/labprod`; adding
-Coder does not require a tailnet DNS mutation.
-
-The separate native development VM uses `code.lab.bingo`, whose private A
-record points directly to its Tailscale address `100.65.212.7`. A more specific
-`code.lab.bingo` split route in this stack sends queries directly to the native
-VM's tailnet-only DNSmasq. CoreDNS retains the same answer as a parallel mirror;
-there is no public Cloudflare record or application tunnel. Connect with
-`ssh dev@code.lab.bingo` on Tailscale (standard port 22). The VM firewall
-accepts SSH only through `tailscale0`. Coder and the current `dev.lab.bingo`
-portal keep their existing names and addresses during parallel preparation.
-If the VM is re-enrolled with a different Tailscale IP, review/update this A
-record and the split route from `tailscale ip -4`; do not substitute its LAN
-address. This native zone does not require the Kubernetes DNS service. The
-verified Tailscale IP remains the SSH recovery endpoint during DNS maintenance.
+The native development VM uses `dev.lab.bingo` for SSH, HTTPS and
+`PORT.dev.lab.bingo` application previews. Its dedicated split route sends
+queries to native DNSmasq at `100.65.212.7`; CoreDNS mirrors that same private
+answer. There is no public record or application tunnel. Connect with
+`ssh dev@dev.lab.bingo` on Tailscale, port 22. The firewall accepts SSH only
+through `tailscale0`; the verified Tailscale IP is the DNS recovery endpoint.
+The parallel `code.lab.bingo` route and former Coder records are retired during
+cutover. If re-enrollment changes the Tailscale IP, update this split route and
+the mirrored answer together; never substitute the underlay address.
 
 Review a Terraform plan before apply because it contacts and changes the live
 tailnet. During the native Code route deployment, the retained worktree also

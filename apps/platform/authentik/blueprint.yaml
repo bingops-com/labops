@@ -781,74 +781,21 @@ data:
     metadata:
       name: labops-coder
     entries:
-      - model: authentik_core.group
-        id: coder-admins
-        identifiers:
-          name: coder-admins
-        attrs:
-          is_superuser: false
-          users:
-            - !Find [authentik_core.user, [username, bingops]]
-      - model: authentik_providers_oauth2.scopemapping
-        id: coder-email
-        identifiers:
-          name: Coder verified email
-        attrs:
-          scope_name: email
-          expression: |
-            return {"email": request.user.email, "email_verified": True}
-      - model: authentik_providers_oauth2.scopemapping
-        id: coder-groups
-        identifiers:
-          name: Coder group membership
-        attrs:
-          scope_name: groups
-          expression: |
-            return {"groups": [group.name for group in request.user.all_groups()]}
-      - model: authentik_providers_oauth2.oauth2provider
-        id: coder-provider
-        identifiers:
-          name: Coder production
-        attrs:
-          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
-          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
-          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
-          client_type: public
-          client_id: coder
-          grant_types: [authorization_code, refresh_token]
-          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
-          include_claims_in_id_token: true
-          issuer_mode: per_provider
-          property_mappings:
-            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, openid]]
-            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, profile]]
-            - !Find [authentik_providers_oauth2.scopemapping, [scope_name, offline_access]]
-            - !KeyOf coder-email
-            - !KeyOf coder-groups
-          redirect_uris:
-            - matching_mode: strict
-              url: https://coder.lab.bingo/api/v2/users/oidc/callback
       - model: authentik_core.application
-        id: coder-application
-        identifiers:
-          slug: coder
-        attrs:
-          name: Coder
-          provider: !KeyOf coder-provider
-          meta_launch_url: https://coder.lab.bingo
-          policy_engine_mode: all
-      - model: authentik_policies.policybinding
-        identifiers:
-          target: !KeyOf coder-application
-          group: !KeyOf coder-admins
-          order: 0
-        attrs:
-          target: !KeyOf coder-application
-          group: !KeyOf coder-admins
-          order: 0
-          enabled: true
-          negate: false
-          timeout: 30
+        state: absent
+        identifiers: {slug: coder}
+      - model: authentik_providers_oauth2.oauth2provider
+        state: absent
+        identifiers: {name: Coder production}
+      - model: authentik_providers_oauth2.scopemapping
+        state: absent
+        identifiers: {name: Coder verified email}
+      - model: authentik_providers_oauth2.scopemapping
+        state: absent
+        identifiers: {name: Coder group membership}
+      - model: authentik_core.group
+        state: absent
+        identifiers: {name: coder-admins}
   romm.yaml: |
     version: 1
     metadata:
@@ -1065,6 +1012,13 @@ data:
           order: 0
           enabled: true
       # These entries are inserted into the existing shared-outpost blueprint.
+      # Retire the additive hostname-acceptance provider after the final cutover.
+      - model: authentik_core.application
+        state: absent
+        identifiers: {slug: dev-final-migration}
+      - model: authentik_providers_proxy.proxyprovider
+        state: absent
+        identifiers: {name: Dev final migration}
       - model: authentik_core.group
         id: dev-admins
         identifiers:
@@ -1079,8 +1033,8 @@ data:
           name: Dev VM production
         attrs:
           mode: forward_domain
-          external_host: https://code.lab.bingo
-          cookie_domain: code.lab.bingo
+          external_host: https://dev.lab.bingo
+          cookie_domain: dev.lab.bingo
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
           invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
       - model: authentik_core.application
@@ -1090,48 +1044,16 @@ data:
         attrs:
           name: Dev
           provider: !KeyOf dev-proxy-provider
-          meta_launch_url: https://code.lab.bingo
-          policy_engine_mode: all
-      - model: authentik_policies.policybinding
-        identifiers:
-          target: !KeyOf dev-application
-          group: !KeyOf dev-admins
-          order: 0
-        attrs:
-          target: !KeyOf dev-application
-          group: !KeyOf dev-admins
-          order: 0
-          enabled: true
-          negate: false
-          timeout: 30
-      # Temporary final-domain acceptance while the Code endpoint stays live.
-      - model: authentik_providers_proxy.proxyprovider
-        id: dev-final-provider
-        identifiers:
-          name: Dev final migration
-        attrs:
-          mode: forward_domain
-          external_host: https://dev.lab.bingo
-          cookie_domain: dev.lab.bingo
-          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
-          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
-      - model: authentik_core.application
-        id: dev-final-application
-        identifiers:
-          slug: dev-final-migration
-        attrs:
-          name: Dev final migration
-          provider: !KeyOf dev-final-provider
           meta_launch_url: https://dev.lab.bingo
           policy_engine_mode: all
       - model: authentik_policies.policybinding
         identifiers:
-          target: !KeyOf dev-final-application
-          group: !Find [authentik_core.group, [name, dev-admins]]
+          target: !KeyOf dev-application
+          group: !KeyOf dev-admins
           order: 0
         attrs:
-          target: !KeyOf dev-final-application
-          group: !Find [authentik_core.group, [name, dev-admins]]
+          target: !KeyOf dev-application
+          group: !KeyOf dev-admins
           order: 0
           enabled: true
           negate: false
@@ -1145,7 +1067,6 @@ data:
           providers:
             - !KeyOf rom-request-proxy-provider
             - !KeyOf dev-proxy-provider
-            - !KeyOf dev-final-provider
             - !KeyOf notes-proxy-provider
       # Keep cleanup entries for the former full-access ROMarr proxy.
       - model: authentik_core.application

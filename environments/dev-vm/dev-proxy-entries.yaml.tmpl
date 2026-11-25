@@ -13,8 +13,8 @@
     name: Dev VM production
   attrs:
     mode: forward_domain
-    external_host: https://code.lab.bingo
-    cookie_domain: code.lab.bingo
+    external_host: https://dev.lab.bingo
+    cookie_domain: dev.lab.bingo
     authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
     invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
 - model: authentik_core.application
@@ -24,7 +24,7 @@
   attrs:
     name: Dev
     provider: !KeyOf dev-proxy-provider
-    meta_launch_url: https://code.lab.bingo
+    meta_launch_url: https://dev.lab.bingo
     policy_engine_mode: all
 - model: authentik_policies.policybinding
   identifiers:

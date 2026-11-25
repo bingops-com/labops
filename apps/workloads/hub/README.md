@@ -20,7 +20,7 @@ highlights Notes and Portal; the catalogue uses quiet, grouped rows rather
 than repeated promotional cards. Search and access filters drive interaction;
 motion is limited to the initial reveal and respects reduced-motion settings.
 The initial plan of equal application tiles was replaced by these rows to
-make a fourteen-service directory quicker to scan on desktop and mobile.
+make a thirteen-service directory quicker to scan on desktop and mobile.
 
 Edit the actual links, `data-access`, descriptions and searchable
 `data-keywords` together. Access classifications are descriptive, not an
@@ -105,3 +105,8 @@ resolve the portal. Verify the native portal login redirects back to
 policies remain owned by their applications. Test keyboard search/filter/reset,
 no-JavaScript links, light/dark mode and widths 320, 390, 768 and 1440 px.
 Never print session cookies, private layouts or credential-bearing responses.
+
+The private development entry is the native VM at `https://dev.lab.bingo`.
+Coder and the legacy `dev.lab.bingo` portal are retired through the
+[VM migration runbook](../../../terraform/dev-vm/README.md); the directory
+does not expose the VM through the public tunnel.
