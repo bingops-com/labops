@@ -1,31 +1,38 @@
 # Standalone development VM
 
-Status (2026-11-22): VM 160 serves the native portal at `code.lab.bingo`,
-with valid wildcard HTTPS, private SSH, active gateway/discovery/DNS services,
-the 15 pinned Mise tools, Trivy, native packages and Python tools installed.
-Thirty-seven project directories and personal settings have been provisionally
-copied. Native health checks and anonymous/spoofed-identity SSO rejection pass.
-The actual encrypted R2 data backup and isolated sentinel/SQLite restoration
-passed on 2026-11-22; native initial acceptance is complete and timers are enabled.
-A full **local** VM archive has passed an isolated boot rehearsal:
-VM 161, no NIC, all native tools, six operator files and 37 project directories.
-That rehearsal copy is stopped with on-boot disabled and retained for review.
-A full off-host system checkpoint is uploading; restoration of that VM archive
-from R2 is not yet certified. The first encrypted system checkpoint runs as the transient
-`dev-first-system-checkpoint.service`, ordered after `dev-bootstrap` and guarded
-by the data-acceptance receipt. Inspect its pending job with
-`sudo systemctl list-jobs` and the actual upload with
-`sudo journalctl -u dev-checkpoint`. This deployment job is not enabled at boot:
-if the VM reboots before it completes, finish initial data acceptance and rerun
-`sudo systemctl start dev-checkpoint.service`. A completed local restore does
-not substitute for this off-host copy. Normal later updates continue to enforce
-their own required checkpoint before adoption.
-The final migration was authorized on 2026-11-25. Retirement remains gated on
-the completed acceptance receipt described below.
+Status (2026-11-25): VM 160 runs the native portal, discovery, gallery, DNS and
+private SSH at `code.lab.bingo`, with the accepted pinned tool release.
+Final migration is authorized. The old home has been recovered independently at
+`/home/dev/recovered-coder-20261125`; 38 Git worktrees retain their original HEAD
+and dirty status, including 75 changed paths across five worktrees. Seventeen
+Git bundles and private per-worktree patches provide independent recovery.
+Existing VM work and account databases have been preserved. Missing personal
+files and absent project worktrees have been adopted; differing source work
+remains in the recovered home. Six standalone source SQLite snapshots passed
+integrity checks.
 
-The running Coder workspace remains the source of operator data until final
-migration acceptance. No
-namespace, PVC or old archive may be deleted just because these files exist.
+Seven local Terraform states were compared by lineage, serial and SHA-256.
+The newer network state is installed on the VM; other selected states match.
+The retired local gateway execution state is archived, while production GaaS
+continues to own its protected Kubernetes backend. The VM is now the sole
+operator Terraform runner. PZ stays Suspended with gateway VM/IP/DNS released.
+
+Verified runtime checks include trusted tailnet SSH from Proxmox, LAN SSH
+refusal, native tools, Screen reconnection, service restart, discovery and
+HTTP/WebSocket/image previews. Nginx rejects anonymous and spoofed identities.
+The latest local full VM archive booted successfully in disconnected VM 162,
+with native tools, six operator files and 38 project directories verified.
+VMs 161 and 162 are stopped and retained with on-boot disabled; do not delete
+their disks as part of Coder cleanup. Previous VM archives are preserved at
+`/var/lib/vz/dump` and additionally linked under the root-only
+`/var/lib/vz/dev-migration-preserved-20261125` directory on Proxmox.
+
+The new encrypted off-host system checkpoint is uploading. Final data backup,
+isolated restoration and owner browser SSO acceptance remain mandatory before
+the GitOps cutover and exact namespace deletion. Private evidence is in
+`/home/dev/projects/labops/.runtime/dev-vm/migration-20261125` and the dedicated
+cutover worktree's `.runtime/dev-vm`. No namespace or source volume has been
+retired merely because preparation files exist.
 
 The parallel VM SSH endpoint is **`code.lab.bingo`** (`100.65.212.7`), using
 account `dev` on port 22 with Tailscale connected. The private A record is owned
@@ -320,7 +327,7 @@ The original push helper below is appropriate only for a quiesced destination
 whose existing changes have already been reconciled. Its default copy replaces
 same-name files; it must not be used to discover conflicts.
 
-Freeze project writes and all Terraform operations. Copy the entire operator
+Copy the entire operator
 home, including uncommitted work, account caches and current local Terraform
 states, through `migrate-dev-home.py`; it snapshots active SQLite databases,
 refuses changing source data during the rsync verification and deletes nothing
