@@ -238,3 +238,15 @@ the controller. The retained PVC is the sole production writer. Recovery,
 credential rotation and current limitations are documented in the CKA
 [production runbook](https://github.com/bingops-com/cka/blob/main/docs/production.md).
 Public simulations must stay usable without SSO; all real-lab APIs require SSO.
+
+CKA study login additionally depends on the prepared common Arcade identity
+migration. Rebuild Arcade and restore its identity data first, bootstrap the
+CNPG-managed cka_app credential/CA through hacks/bootstrap-cka-study.py, apply
+the transactional CKA study schema with the operator role, and only then enable
+CKA_DATABASE_URL on the web image. Study progress is part of the common backup.
+Real labs still require Bingops SSO. The private CKA Git source requires its
+retained read-only deploy key, Argo repository credential and declared SSH URL;
+bootstrap with hacks/bootstrap-cka-repository.py before reconciling that source.
+These candidate additions are not authorization to cut over Games/Slots or to
+apply local CKA/Argo changes. See apps/workloads/cka/README.md for recovery and
+non-sensitive validation.

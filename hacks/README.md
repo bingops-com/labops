@@ -78,3 +78,14 @@ retained-home backup scope, checks hashes internally and refuses a concurrent
 lifecycle change. Snapshot files are sensitive and must never be printed or
 committed. No VM disk or operator credential is included. Recovery must fence
 the active writer and reconcile live VM identities before restoring state.
+
+### CKA study accounts and private Git source
+
+bootstrap-cka-study.py --apply generates/adopts the dedicated CNPG role password
+and namespace-local verified TLS URI/CA, without migrating accounts or restarting
+applications. bootstrap-cka-repository.py --apply generates/adopts a retained
+read-only GitHub deploy key and its Argo repository Secret. Both refuse unknown
+identities and suppress secret output. These helpers perform live writes only
+when explicitly invoked with --apply; they have not been run by the local code
+preparation. Ownership, prerequisite permissions, partial-failure behavior and
+recovery are documented in apps/workloads/cka/README.md.

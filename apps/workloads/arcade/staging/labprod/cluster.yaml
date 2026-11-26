@@ -8,6 +8,16 @@ metadata:
 spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie
   instances: 1
+  managed:
+    roles:
+      - name: cka_app
+        ensure: present
+        login: true
+        superuser: false
+        createdb: false
+        createrole: false
+        passwordSecret:
+          name: cka-database-role
   bootstrap:
     initdb:
       database: arcade

@@ -257,3 +257,21 @@ are idempotent; lifecycle ownership/order is explicit; safe verification uses
 counts, health, backup conditions and disposable fixtures. Production PG18,
 Barman restore, live collision coverage and enforced network isolation remain
 acceptance gates, not claims made by the local PostgreSQL 17 rehearsal.
+
+## CKA study progress consumer
+
+The private CKA application has a prepared consumer of this common database.
+Its managed cka_app role is declared on the staging/recovery Cluster, with a
+generated password Secret bootstrapped by hacks/bootstrap-cka-study.py. The
+owner-run CKA db/001-study.sql migration requires identity version 1, creates the
+cka schema, and grants read-only identity fields/shared session use plus CKA
+progress writes. It cannot alter player passwords, wallet values or game data.
+Both original game backends retain their existing shared-mode ownership model.
+
+This consumer does not activate the common database, migrate legacy accounts,
+change collision policy or switch either application's database. Perform the
+existing migration/backup acceptance before granting and activating CKA. Shared
+password/session revocation covers CKA player login; Authentik Bingops remains
+an independent requirement for real CKA labs. The
+[CKA runbook](../cka/README.md#study-account-database-and-private-git-source)
+owns its credentials, deployment order, verification and recovery.
