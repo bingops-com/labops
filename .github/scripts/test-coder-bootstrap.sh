@@ -51,7 +51,7 @@ TERRAFORM
 chmod 666 "$scratch/template/main.tf"
 touch "$scratch/template/startup.sh"
 cp "$repo_root/apps/workloads/coder/base/template/.terraform.lock.hcl" "$scratch/template/.terraform.lock.hcl"
-for name in codex.toml claude.json tmux.conf; do
+for name in codex.toml claude.json screenrc; do
   cp "$repo_root/apps/workloads/coder/base/template/$name" "$scratch/template/$name"
 done
 # The synthetic update phase runs as UID 1000, unlike the hosted runner.
@@ -87,7 +87,7 @@ if [[ "$mode" == kubernetes ]]; then
   kubectl create namespace coder-workspaces
   kubectl label namespace coder-workspaces pod-security.kubernetes.io/enforce=restricted
   kubectl -n coder-workspaces create configmap coder-workspace-ssh --from-file="authorized_keys=$scratch/client_key.pub"
-  kubectl -n coder-workspaces create configmap coder-lab-template --from-file="codex.toml=$scratch/template/codex.toml" --from-file="claude.json=$scratch/template/claude.json" --from-file="tmux.conf=$scratch/template/tmux.conf"
+  kubectl -n coder-workspaces create configmap coder-lab-template --from-file="codex.toml=$scratch/template/codex.toml" --from-file="claude.json=$scratch/template/claude.json" --from-file="screenrc=$scratch/template/screenrc"
   cat > "$scratch/gallery.py" <<'GALLERY'
 from http.server import BaseHTTPRequestHandler, HTTPServer
 

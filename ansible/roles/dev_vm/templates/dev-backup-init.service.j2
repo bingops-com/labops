@@ -1,0 +1,9 @@
+[Unit]
+Description=Initialize or verify the dedicated encrypted development backup repository
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/dev-vm/backup.env
+ExecStart=/usr/local/sbin/dev-backup init
+UMask=0077

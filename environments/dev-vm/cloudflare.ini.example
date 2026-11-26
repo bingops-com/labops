@@ -1,0 +1,2 @@
+# Zone:DNS:Edit restricted to lab.bingo; stored and recovered through Bitwarden.
+dns_cloudflare_api_token = replace-with-zone-scoped-cloudflare-token

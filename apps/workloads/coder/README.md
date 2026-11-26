@@ -195,7 +195,7 @@ ssh -p 30222 coder@coder.lab.bingo
 Verify the host-key fingerprint through the operator channel before accepting the first connection. The host key lives in the retained home and is included in backups.
 
 ```sh
-tmux new -As lab
+screen -U -S lab -D -RR
 ```
 
 Codex runs on the workspace through this SSH session. For first account enrollment, use [official device-code login](https://learn.chatgpt.com/docs/auth); subsequent runs reuse the private `.codex` directory:
@@ -222,9 +222,11 @@ test -d /opt/homeops/labops/.git || git clone https://github.com/bingops-com/lab
 cd /opt/homeops/labops && codex
 ```
 
-The GitOps template mounts shared Codex defaults at `/etc/codex/config.toml`: full access (`danger-full-access`) and no approval prompts (`never`), with the restricted non-root Pod as the isolation boundary. Shared Claude/tmux settings are mounted at their system paths. Settings changes are included in template hashing/import and adopted through Coder **Update**; personal account files are preserved. Explicit Codex user/project/CLI settings can override system defaults, and resumed threads may retain earlier permissions. Verify effective permissions in `/status` in a new session. The [image runbook](../../../docker/homeops-dev/README.md) owns the settings table, precedence, tests and rollback.
+The GitOps template mounts shared Codex defaults at `/etc/codex/config.toml`: full access (`danger-full-access`) and no approval prompts (`never`), with the restricted non-root Pod as the isolation boundary. Shared Claude/Screen settings are mounted at their system paths. Settings changes are included in template hashing/import and adopted through Coder **Update**; personal account files are preserved. Explicit Codex user/project/CLI settings can override system defaults, and resumed threads may retain earlier permissions. Verify effective permissions in `/status` in a new session. The [image runbook](../../../docker/homeops-dev/README.md) owns the settings table, precedence, tests and rollback.
 
-The workspace's autostop is disabled. `tmux` preserves a shell and its jobs across iPhone disconnects. A pod replacement or node outage still stops processes; long simulations must checkpoint to the home volume. The current single-node cluster provides persistence and restart, not high availability.
+Detach Screen with **Ctrl-A, then D**; reconnect with the same command to resume its session.
+
+The workspace's autostop is disabled. `screen` preserves a shell and its jobs across iPhone disconnects. A pod replacement or node outage still stops processes; long simulations must checkpoint to the home volume. The current single-node cluster provides persistence and restart, not high availability.
 
 ```sh
 cd ~/projects
@@ -349,6 +351,12 @@ Codex's root `.codex/*.sqlite` databases use an online SQLite backup first. An i
 The transfer excludes live SQLite main/WAL/SHM/lock files. It archives the previous root SQLite file set using the existing timestamped archive prefix, then uploads the standalone snapshots. This prevents old WAL/SHM files from being restored alongside a newer main database. A snapshot or transfer failure fails the Job; archive pruning runs only after all steps succeed. Each SQLite database is internally consistent; this is not a transaction across different databases or the entire home. Staging files and PIDs are generated state, not recovery inputs. A new Pod reconstructs staging from the retained home.
 
 Retention deletes objects older than 30 days without requesting directory removal. R2 prefixes are virtual, and combining the age filter with `--rmdirs` can fail when recent archived files keep a directory non-empty. The end-to-end test uses the actual declared rclone release and retains those recent archive objects.
+
+The full-home sync and archive pruning use `--fast-list` to list S3 objects recursively in pages instead of traversing each virtual directory separately. The small, filtered SQLite migration and snapshot copy keep their existing traversal: listing the entire current prefix recursively for these steps could increase requests. This reduces Class A listing operations without changing the four-hour schedule, 30-day retention, exclusions, modification-time comparisons or upload integrity checks. It does not eliminate Class B metadata requests or promise a particular bill reduction. Recursive listings use additional memory (rclone estimates roughly 1 KiB per object); the existing 256 MiB limit must be monitored as the inventory grows. Do not replace comparisons with `--size-only` or disable upload verification to reduce requests.
+
+Run `python3 -m unittest discover -s apps/workloads/coder/tests -p test_home_backup.py -v` with rclone on PATH. Tests use a loopback-only S3 fixture to compare normal traversal with recursive, paginated listing, and synthetic files to verify same-size edits, deleted-file archives, 30-day pruning and isolated SQLite/file restoration. No real credentials, bucket contents or cloud writes are needed. CI runs the suite with the rclone release declared in `backup.yaml`.
+
+After an authorized GitOps rollout, verify that a newly scheduled Job completes and `lastSuccessfulTime` advances; no manual backup is required. Compare Class A and Class B operation counts over equivalent periods in Cloudflare R2 Metrics (with Billing for charged quantities). GraphQL analytics require an appropriately scoped analytics credential; the Terraform token was denied analytics access during the billing investigation. Never place a token in logs or documentation. Compare actual usage rather than invoice amounts alone, because R2 bills operations in rounded million-request units. Roll back the two `--fast-list` flags through Git if memory pressure or backup failures appear. This optimization adds no credentials, resources or external reconstruction prerequisites.
 
 Raw copying of active SQLite files can otherwise fail with “source file is being updated” or `BadDigest`, even after R2 permissions are correct. Synthetic tests cover a live concurrent WAL writer, standalone database restoration, old-journal archiving, file permissions and refusal of symlinks/partial snapshots; they never use real account files or cloud storage.
 

@@ -34,7 +34,7 @@ configMapGenerator:
       - .terraform.lock.hcl=template/.terraform.lock.hcl
       - codex.toml=template/codex.toml
       - claude.json=template/claude.json
-      - tmux.conf=template/tmux.conf
+      - screenrc=template/screenrc
   - name: coder-lab-template
     namespace: coder-workspaces
     options:
@@ -45,7 +45,7 @@ configMapGenerator:
       - .terraform.lock.hcl=template/.terraform.lock.hcl
       - codex.toml=template/codex.toml
       - claude.json=template/claude.json
-      - tmux.conf=template/tmux.conf
+      - screenrc=template/screenrc
   - name: coder-workspace-ssh
     namespace: coder-workspaces
     options:

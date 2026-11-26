@@ -1,0 +1,10 @@
+[Unit]
+Description=Full VM checkpoint to Proxmox and encrypted off-host storage
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/dev-vm/backup.env
+ExecStart=/usr/local/sbin/dev-backup checkpoint
+TimeoutStartSec=3h
+UMask=0077

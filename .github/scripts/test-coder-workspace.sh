@@ -27,7 +27,7 @@ if [[ ${2:-basic} == homeops ]]; then
   tool_mounts=(
     --mount "type=bind,src=$repo_root/apps/workloads/coder/base/template/codex.toml,dst=/etc/codex/config.toml,readonly"
     --mount "type=bind,src=$repo_root/apps/workloads/coder/base/template/claude.json,dst=/etc/claude-code/managed-settings.json,readonly"
-    --mount "type=bind,src=$repo_root/apps/workloads/coder/base/template/tmux.conf,dst=/etc/tmux.conf,readonly"
+    --mount "type=bind,src=$repo_root/apps/workloads/coder/base/template/screenrc,dst=/etc/screenrc,readonly"
   )
 fi
 container_id=$(docker run -d --workdir /home/coder --cap-drop ALL --security-opt no-new-privileges --publish 127.0.0.1::2222 --mount "type=bind,src=$scratch/home,dst=/home/coder" --mount "type=bind,src=$scratch/client_key.pub,dst=/etc/coder-ssh/authorized_keys,readonly" --mount "type=bind,src=$repo_root/apps/workloads/coder/base/template/startup.sh,dst=/opt/lab-startup.sh,readonly" "${tool_mounts[@]}" "$image" /bin/bash -ec '/bin/bash /opt/lab-startup.sh; exec sleep infinity')

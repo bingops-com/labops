@@ -21,7 +21,7 @@ data "coder_workspace_owner" "me" {}
 locals {
   # Coder imports/dry-runs have no owner; the pinned provider supplies these defaults.
   template_preview = data.coder_workspace_owner.me.name == "default" && data.coder_workspace_owner.me.email == "default@example.com"
-  tool_config_hash = sha256(join("", [for name in ["codex.toml", "claude.json", "tmux.conf"] : file("${path.module}/${name}")]))
+  tool_config_hash = sha256(join("", [for name in ["codex.toml", "claude.json", "screenrc"] : file("${path.module}/${name}")]))
   labels = {
     "app.kubernetes.io/name" = "coder-workspace"
     "labops.bingo/workspace" = "bingops-lab"
@@ -151,8 +151,8 @@ resource "kubernetes_deployment_v1" "lab" {
           }
           volume_mount {
             name       = "tool-config"
-            mount_path = "/etc/tmux.conf"
-            sub_path   = "tmux.conf"
+            mount_path = "/etc/screenrc"
+            sub_path   = "screenrc"
             read_only  = true
           }
         }
@@ -191,8 +191,8 @@ resource "kubernetes_deployment_v1" "lab" {
               path = "claude/managed-settings.json"
             }
             items {
-              key  = "tmux.conf"
-              path = "tmux.conf"
+              key  = "screenrc"
+              path = "screenrc"
             }
           }
         }

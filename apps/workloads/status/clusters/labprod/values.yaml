@@ -26,6 +26,9 @@ config:
     - name: Portfolio
       description: Site public
       url: https://www.bingops.com
+    - name: Blog
+      description: Articles cybersécurité et DevOps
+      url: https://blog.bingops.com
     - name: RomM
       description: Bibliothèque de jeux
       url: https://rom.lab.bingo
