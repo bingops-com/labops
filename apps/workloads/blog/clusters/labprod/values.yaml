@@ -1,0 +1,22 @@
+# Keep the Service in bingops: the existing Cloudflare Tunnel targets it there.
+fullnameOverride: blog
+
+image:
+  repository: ghcr.io/bingops-com/blog
+  tag: sha-7e71ec4
+  digest: sha256:fe71fa3cd8bb2264d0c27590c98395a4f7bc21dd3a9eade28f5b0ff0b89724dc
+
+ingress:
+  enabled: false
+
+# The published image contains Linux/amd64 Node and Caddy binaries.
+nodeSelector:
+  kubernetes.io/arch: amd64
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi

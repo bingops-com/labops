@@ -1,0 +1,12 @@
+{
+  "data_verified": false,
+  "vm_health_verified": false,
+  "tailscale_ssh_verified": false,
+  "lan_ssh_denied": false,
+  "backup_verified": false,
+  "restore_verified": false,
+  "dev_dns_verified": false,
+  "release_id": "",
+  "data_snapshot": "",
+  "system_snapshot": ""
+}

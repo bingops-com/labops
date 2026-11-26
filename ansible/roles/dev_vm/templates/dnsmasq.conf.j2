@@ -1,0 +1,8 @@
+# Authoritative local answers for this private development zone only.
+interface=tailscale0
+listen-address={{ dev_tail_ip.stdout | trim }}
+bind-dynamic
+no-resolv
+no-hosts
+local=/dev.lab.bingo/
+address=/dev.lab.bingo/{{ dev_tail_ip.stdout | trim }}

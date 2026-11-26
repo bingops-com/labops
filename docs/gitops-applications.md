@@ -56,6 +56,7 @@ The current application decisions are:
 | Ghost (retired; retained data only) | `ghost-postgresql` (CloudNativePG), retained independently of the private application repository. | No running game, public route or player login. | PVC and continuing WAL/daily backups to the `ghost` R2 prefix; deletion requires separate authorization. |
 | Mail (dormant; excluded from the GitOps root) | No database; Postfix queue on `relay-spool` PVC. | Internal authenticated submission only; no public SMTP endpoint. | Bitwarden owns SMTP/DKIM credentials; cert-manager reissues TLS. Queue survives pod replacement but is disposable after disk loss. See `apps/platform/mail/labprod/README.md`. |
 | Portfolio | None; stateless public site. | Not applicable; no privileged UI. | Rebuild from Git and the immutable image. |
+| Blog | None; stateless public articles. | Not applicable; public, read-only site with no privileged UI. | Redeploy the pinned public GHCR image; no PVC. Source/artifact recovery limits are documented in `apps/workloads/blog/README.md`. |
 | Coder (acceptance in progress) | `coder-postgresql` (CloudNativePG). | Public OIDC PKCE client restricted to `coder-admins`, only `bingops`; automatically provisioned OIDC owner. Temporary local bootstrap identities are deleted. | WAL and daily backups to the `coder` R2 prefix; retained home to `coder-workspaces/bingops-lab` with 30-day changed-object history. Both restore acceptance checks are required. |
 | Project Zomboid | None. | Not applicable; the game protocol does not use browser SSO. | Restic backup to the dedicated `bingops-pz-labprod` R2 bucket. |
 
@@ -77,7 +78,7 @@ kubectl kustomize "apps/workloads/${APP_NAME}/clusters/labprod" >/dev/null
 kubectl kustomize --enable-helm apps/gitops/clusters/labprod >/dev/null
 ```
 
-An application delivered by a chart under `charts/` (currently Status) keeps
+An application delivered by a chart under `charts/` (currently Blog and Status) keeps
 only its `clusters/labprod/values.yaml` under `apps/workloads/<app>`; its
 Argo CD Application renders the chart from `master` with that file. Validate
 it with `helm lint` and `helm template` as shown in its README instead of the

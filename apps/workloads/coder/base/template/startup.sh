@@ -73,4 +73,4 @@ if [[ ! -f /home/coder/.profile ]]; then
   printf '%s\n' 'export PATH="$HOME/.local/bin:/usr/local/go/bin:$PATH"' 'cd "$HOME/projects"' > /home/coder/.profile
 fi
 touch /home/coder/.lab-initialized
-echo 'Workspace ready. Connect with OpenSSH and use tmux new -As lab.'
+echo 'Workspace ready. Connect with OpenSSH and use screen -U -S lab -D -RR.'

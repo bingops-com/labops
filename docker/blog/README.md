@@ -2,6 +2,11 @@
 
 Cette image Docker sert à builder et servir un site statique avec [Caddy](https://caddyserver.com/) à partir d’un projet Node.js.
 
+Le déploiement GitOps, les dépendances et la reprise du site public sont décrits
+dans le [runbook du blog](../../apps/workloads/blog/README.md). La production
+utilise une empreinte d’image figée ; reconstruire cette image depuis la branche
+`master` du dépôt source ne garantit pas un contenu identique.
+
 ---
 
 ## 📦 Contenu de l'image

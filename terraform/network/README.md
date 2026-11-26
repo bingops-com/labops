@@ -16,6 +16,18 @@ The private `coder.lab.bingo` name also uses the existing `lab.bingo` parent
 route. Its answer is owned by `apps/platform/private-dns/labprod`; adding
 Coder does not require a tailnet DNS mutation.
 
+The separate native development VM uses `code.lab.bingo`, whose private A
+record points directly to its Tailscale address `100.65.212.7`. It is declared
+in the same private CoreDNS ConfigMap and uses the existing parent split route;
+there is no public Cloudflare record or application tunnel. Connect with
+`ssh dev@code.lab.bingo` on Tailscale (standard port 22). The VM firewall
+accepts SSH only through `tailscale0`. Coder and the current `dev.lab.bingo`
+portal keep their existing names and addresses during parallel preparation.
+If the VM is re-enrolled with a different Tailscale IP, review/update this A
+record from `tailscale ip -4`; do not substitute its LAN address. DNS currently
+depends on the private CoreDNS service; the verified Tailscale IP is the SSH
+recovery endpoint when that resolver is unavailable.
+
 Review a Terraform plan before apply because it contacts and changes the live
 tailnet. Verify `argocd`, `grafana` and the `lab.bingo` apex resolve to `192.168.10.151` while on
 LAN/Tailscale and are not publicly routed.

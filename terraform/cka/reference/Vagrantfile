@@ -1,0 +1,30 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-22.04"
+  config.vm.synced_folder "shared/", "/opt/shared"
+
+  $update_hosts = <<-SCRIPT
+    echo "192.168.60.20 k8s-master" >> /etc/hosts
+    echo "192.168.60.21 k8s-worker-1" >> /etc/hosts
+  SCRIPT
+
+  config.vm.define "k8s-master" do |master|
+    master.vm.hostname = "k8s-master"
+    master.vm.network "private_network", ip: "192.168.60.20", auto_config: true
+    master.vm.provision "shell", inline: $update_hosts
+    master.vm.network "forwarded_port", guest: 6443, host: 6443
+    master.vm.provider "virtualbox" do |v|
+      v.memory = 1800
+      v.cpus = 2
+    end
+  end
+
+  config.vm.define "k8s-worker-1" do |worker|
+    worker.vm.hostname = "k8s-worker-1"
+    worker.vm.network "private_network", ip: "192.168.60.21", auto_config: true
+    worker.vm.provision "shell", inline: $update_hosts
+    worker.vm.provider "virtualbox" do |v|
+      v.memory = 3000
+      v.cpus = 2
+    end
+  end
+end

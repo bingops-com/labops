@@ -5,6 +5,21 @@ metadata:
   namespace: private-dns
 data:
   Corefile: |
+    code.lab.bingo:53 {
+        errors
+        log
+        reload 10s
+        bind 192.168.10.160
+        template IN A {
+            match ^code[.]lab[.]bingo[.]$
+            answer "{{ .Name }} 30 IN A 100.65.212.7"
+        }
+        template IN AAAA {
+            match ^code[.]lab[.]bingo[.]$
+            rcode NOERROR
+        }
+        cache 30
+    }
     dev.lab.bingo:53 {
         errors
         log
@@ -54,6 +69,21 @@ data:
         template IN A {
             match ^grafana[.]lab[.]bingo[.]$
             answer "{{ .Name }} 30 IN A 192.168.10.151"
+        }
+        cache 30
+    }
+    portal.lab.bingo:53 {
+        errors
+        log
+        reload 10s
+        bind 192.168.10.160
+        template IN A {
+            match ^portal[.]lab[.]bingo[.]$
+            answer "{{ .Name }} 30 IN A 192.168.10.151"
+        }
+        template IN AAAA {
+            match ^portal[.]lab[.]bingo[.]$
+            rcode NOERROR
         }
         cache 30
     }

@@ -1,0 +1,9 @@
+# Shared defaults; personal ~/.screenrc can override them.
+startup_message off
+deflogin off
+defutf8 on
+term screen-256color
+defscrollback 10000
+autodetach on
+defnonblock 5
+vbell off

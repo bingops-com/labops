@@ -1,0 +1,58 @@
+map $http_upgrade $dev_connection_upgrade {
+    default upgrade;
+    '' close;
+}
+server {
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
+    server_name _;
+    ssl_certificate /etc/letsencrypt/live/dev.lab.bingo/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/dev.lab.bingo/privkey.pem;
+    return 444;
+}
+server {
+    listen {{ dev_tail_ip.stdout | trim }}:443 ssl;
+    server_name dev.lab.bingo *.dev.lab.bingo;
+    ssl_certificate /etc/letsencrypt/live/dev.lab.bingo/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/dev.lab.bingo/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    # Queries may contain OAuth callbacks or application credentials.
+    access_log off;
+    error_log /var/log/nginx/dev-error.log crit;
+    client_max_body_size 64m;
+    proxy_buffers 8 16k;
+    proxy_buffer_size 32k;
+    auth_request /outpost.goauthentik.io/auth/nginx;
+    auth_request_set $dev_identity $upstream_http_x_authentik_username;
+    auth_request_set $dev_cookie $upstream_http_set_cookie;
+    add_header Set-Cookie $dev_cookie always;
+    error_page 401 = @dev_signin;
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        # Overwrite the client's identity header with the verified outpost result.
+        proxy_set_header X-Authentik-Username $dev_identity;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $dev_connection_upgrade;
+        proxy_read_timeout 3600s;
+    }
+    location /outpost.goauthentik.io/ {
+        auth_request off;
+        proxy_pass https://auth.lab.bingo/outpost.goauthentik.io/;
+        proxy_ssl_server_name on;
+        proxy_ssl_name auth.lab.bingo;
+        proxy_ssl_verify on;
+        proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
+        proxy_set_header Host $host;
+        proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length '';
+    }
+    location @dev_signin {
+        internal;
+        auth_request off;
+        return 302 /outpost.goauthentik.io/start?rd=$scheme://$http_host$request_uri;
+    }
+}

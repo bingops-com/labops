@@ -1,0 +1,19 @@
+[Unit]
+Description=Read-only development discovery and image gallery
+After=network-online.target
+
+[Service]
+User=dev
+Group=dev
+WorkingDirectory=/home/dev/projects
+ExecStart=/usr/bin/python3 -B /opt/dev-vm/current/app/workspace/agent.py --root /home/dev/projects --port 4175
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

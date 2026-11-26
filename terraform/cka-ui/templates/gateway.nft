@@ -1,0 +1,39 @@
+#!/usr/sbin/nft -f
+# This VM is infrastructure, never a learner terminal target.
+flush ruleset
+table inet cka_gateway {
+  set private_v4 {
+    type ipv4_addr
+    flags interval
+    elements = { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8,
+      169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 198.18.0.0/15,
+      224.0.0.0/4, 240.0.0.0/4 }
+  }
+  chain input {
+    type filter hook input priority filter; policy drop;
+    iifname "lo" accept
+    ct state invalid drop
+    ct state established,related accept
+    # The management side is reachable only through the existing private LAN.
+    iifname "eth0" ip saddr { 192.168.10.0/24, 10.244.0.0/16 } tcp dport 22 accept
+    # HA API front-end; no SSH, DNS, management or other service from the lab.
+    iifname "eth1" ip saddr 172.30.90.0/24 tcp dport 6443 accept
+  }
+  chain forward {
+    type filter hook forward priority filter; policy drop;
+    ct state invalid drop
+    # These denials precede established flows and cannot be changed by guests.
+    iifname "eth1" ip saddr != 172.30.90.0/24 drop
+    iifname "eth1" ip daddr @private_v4 drop
+    ct state established,related accept
+    iifname "eth1" oifname "eth0" ip saddr 172.30.90.0/24 tcp dport {80,443} accept
+    iifname "eth1" oifname "eth0" ip saddr 172.30.90.0/24 ip daddr {1.1.1.1,9.9.9.9} udp dport 53 accept
+    iifname "eth1" oifname "eth0" ip saddr 172.30.90.0/24 ip daddr {1.1.1.1,9.9.9.9} tcp dport 53 accept
+  }
+}
+table ip cka_nat {
+  chain postrouting {
+    type nat hook postrouting priority srcnat; policy accept;
+    ip saddr 172.30.90.0/24 oifname "eth0" masquerade
+  }
+}

@@ -6,6 +6,7 @@ from pathlib import Path
 import selectors
 import signal
 import subprocess
+import tempfile
 import time
 
 
@@ -61,9 +62,29 @@ def check_codex():
         server.stdout.close()
 
 
+def check_screen(config="/etc/screenrc"):
+    with tempfile.TemporaryDirectory(prefix="homeops-screen-") as directory:
+        marker = str(Path(directory) / "terminal")
+        environment = {**os.environ, "SCREENDIR": directory, "TERM": "xterm-256color"}
+        environment.pop("STY", None)
+        command = ["screen", "-c", str(Path(config).resolve()), "-dmS", "homeops-check", "/bin/sh", "-c", 'printf "%s\\n" "$TERM" > "$1"; sleep 30', "screen-fixture", marker]
+        subprocess.run(command, env=environment, check=True, capture_output=True)
+        try:
+            for _ in range(50):
+                if Path(marker).exists():
+                    break
+                time.sleep(0.1)
+            assert Path(marker).read_text().strip() == "screen-256color", "Screen terminal settings differ"
+            info = subprocess.check_output(["screen", "-S", "homeops-check", "-Q", "info"], env=environment, text=True)
+            assert "UTF-8" in info, "Screen UTF-8 mode is disabled"
+        finally:
+            subprocess.run(["screen", "-S", "homeops-check", "-X", "quit"], env=environment, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
 if __name__ == "__main__":
     settings = json.loads(Path("/etc/claude-code/managed-settings.json").read_text())
     assert settings["env"]["DISABLE_AUTOUPDATER"] == "1"
-    assert Path("/etc/tmux.conf").is_file()
+    assert Path("/etc/screenrc").is_file()
     check_codex()
+    check_screen()
     print("GitOps tool settings and Codex execution verified without account or model requests.")

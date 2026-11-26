@@ -7,6 +7,42 @@
 - Argo CD owns all platform services and workloads on `labprod`.
 - Bitwarden owns plaintext application credentials; Git owns their mappings.
 
+The optional CKA training lab has its own Terraform stack and state in
+[`terraform/cka`](../terraform/cka/README.md). It owns only Ubuntu VMs 620/621,
+their pool, image and snippets. Reuse the ignored Proxmox API credential file
+with `-var-file=../proxmox/credentials.auto.tfvars` from that stack. Restore its
+existing state before planning an existing lab; a separate empty state would
+attempt duplicate creation. The local `labops-cka/terraform/cka` compatibility
+link points to this same directory and state. Rebuild order is existing Proxmox
+and VLAN 10 networking → CKA Terraform → cloud-init → manual Kubernetes
+installation. The lab does not depend on CAPI or the workload rebuild below.
+
+
+The scenario-driven CKA lab is owned separately by [terraform/cka-ui](../terraform/cka-ui/README.md). Its controller derives the VM topology from the chosen exercise; the web UI cannot supply node counts or preparation commands. It reserves VM 700, 710–712 and 720–722, bridge vmbr90 and gateway address 192.168.10.22. Preserve its private Terraform state and controller runtime with the retained-home backups. Retire the historical 620/621 lab only after confirming those targets and their disk loss, using its original state. The owning runbook documents operator inputs, ordering, validation, partial-failure recovery and the current console limitations.
+
+## Standalone development VM migration
+
+The replacement for Coder is prepared in
+[`terraform/dev-vm`](../terraform/dev-vm/README.md), with native configuration in
+`ansible/roles/dev_vm` and tool versions in `environments/dev-vm`. VM 160 is
+created and SSH over Tailscale has been verified; its parallel private SSH
+name is `code.lab.bingo`, declared in `apps/platform/private-dns/labprod`.
+Native tools, portal and backup services still need installation and acceptance;
+the Coder recovery procedure below still owns the active
+workspace until cutover acceptance. Proxmox VM 160 and its 80 GiB disk belong
+to this separate Terraform state; CAPI and `terraform/proxmox` never own them.
+The rebuild path is Proxmox/VLAN 10 → Debian VM → guest-agent Tailscale
+enrollment → Ansible/native services → private DNS/SSO → encrypted backup
+restore and acceptance. SSH is restricted to the VM Tailscale interface.
+Restore the existing state before planning an already-created VM.
+
+The runbook owns the external Tailscale enrollment, Cloudflare DNS-01 token,
+bucket-scoped R2 credential and separate Restic password recovery from
+Bitwarden. No new secret or local Terraform state may be committed. Keep old
+Coder data and archives until native backup/restore and final migration pass;
+retirement is an explicit guarded action against only `coder` and
+`coder-workspaces`, after their GitOps declarations are removed.
+
 ## Inputs outside Git
 
 Required recoverable inputs are the Proxmox Terraform and CAPMOX API tokens,
@@ -106,6 +142,13 @@ configs are sensitive generated state, not documentation.
    `ghost-postgresql-g1` R2 archive before reconciling a replacement cluster;
    see `apps/workloads/ghost/README.md` for the restore gate and ownership.
 
+   Restore the public static blog from its pinned GHCR artifact after the
+   shared Cloudflare DNS/tunnel and credential are ready. `blog-labprod` owns
+   `blog` in namespace `bingops`, matching the existing tunnel destination.
+   It needs no database, PVC, application secret or SSO; reconcile Gatus and
+   Status afterward. Artifact/source recovery limits and safe verification
+   are documented in [the blog runbook](../apps/workloads/blog/README.md).
+
 9. Reconcile the private DNS zone `lab.bingo`, Gatus and the LabOps Portal;
    verify `https://lab.bingo` through LAN or Tailscale without publishing it
    through the public Cloudflare Tunnel. The portal image is built from
@@ -165,7 +208,7 @@ configs are sensitive generated state, not documentation.
    image digest; the operator reviews image releases and adopts the reconciled
    template through Coder. Native SSH supplies UTF-8 and image acceptance
    verifies browser/emoji fonts. iSH terminal font selection belongs to the
-   client device. GitOps also declares shared Codex, Claude and tmux system
+   client device. GitOps also declares shared Codex, Claude and Screen system
    settings in the Coder template. Their checksum participates in template
    import and Pod adoption. Codex defaults to full access with no approvals,
    using the existing restricted Pod as its isolation boundary; it therefore

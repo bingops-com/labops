@@ -5,6 +5,7 @@ fullnameOverride: blog
 image:
   repository: ghcr.io/bingops-com/blog
   tag: latest
+  digest: ""
   pullPolicy: IfNotPresent
 
 service:

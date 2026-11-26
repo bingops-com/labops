@@ -1,0 +1,9 @@
+[Unit]
+Description=Verify development backup integrity and isolated restoration
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/dev-vm/backup.env
+ExecStart=/usr/local/sbin/dev-backup restore-test
+UMask=0077

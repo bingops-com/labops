@@ -34,3 +34,10 @@ __pycache__/
 
 # Local Coder dashboard browser captures (fixture data only).
 /hacks/tests/artifacts/
+
+# Private VM migration inputs, release artifacts and recovery reports.
+/.runtime/dev-vm/
+/ansible/inventories/dev-vm.ini
+/environments/dev-vm/*.env
+/environments/dev-vm/*.ini
+/environments/dev-vm/*password*

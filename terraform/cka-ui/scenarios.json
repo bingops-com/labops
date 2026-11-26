@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "scenarios": {
+    "service": {
+      "title": "Rétablir un accès applicatif",
+      "domain": "network",
+      "level": "Intermédiaire",
+      "minutes": 20,
+      "controlPlanes": 1,
+      "workers": 2,
+      "target": "cka-cp-1",
+      "mission": "Dans cka-service, le Service web ne permet plus de joindre l’application. Rétablis l’accès HTTP depuis les Pods du cluster. Conserve le Deployment, le nom du Service et son ClusterIP."
+    },
+    "rollout": {
+      "title": "Rétablir une application après une mise à jour",
+      "domain": "workload",
+      "level": "Intermédiaire",
+      "minutes": 20,
+      "controlPlanes": 1,
+      "workers": 1,
+      "target": "cka-cp-1",
+      "mission": "Dans cka-rollout, l’application api est indisponible après une mise à jour. Rétablis ses trois réplicas avec l’image de la révision précédente, sans supprimer le Deployment."
+    },
+    "rbac": {
+      "title": "Configurer les accès d’un compte de service",
+      "domain": "cluster",
+      "level": "Intermédiaire",
+      "minutes": 25,
+      "controlPlanes": 1,
+      "workers": 1,
+      "target": "cka-cp-1",
+      "mission": "Le ServiceAccount reader de cka-rbac doit pouvoir get, list et watch les Pods de ce namespace. La suppression des Pods, la lecture des Secrets et la lecture des Pods dans default doivent rester refusées."
+    },
+    "schedule": {
+      "title": "Rendre un workload disponible",
+      "domain": "workload",
+      "level": "Intermédiaire",
+      "minutes": 20,
+      "controlPlanes": 1,
+      "workers": 2,
+      "target": "cka-cp-1",
+      "mission": "Le Deployment app dans cka-schedule reste indisponible. Rends-le opérationnel sur un worker approprié en conservant sa contrainte de placement et les autres workloads."
+    },
+    "probes": {
+      "title": "Rétablir la disponibilité du service web",
+      "domain": "workload",
+      "level": "Intermédiaire",
+      "minutes": 25,
+      "controlPlanes": 1,
+      "workers": 1,
+      "target": "cka-cp-1",
+      "mission": "L’application web du namespace cka-probes ne reçoit plus de trafic. Rétablis sa disponibilité. Conserve une vérification HTTP de readiness pertinente pour l’application, ainsi que son Service."
+    },
+    "pending-pvc": {
+      "title": "Rendre un stockage utilisable",
+      "domain": "storage",
+      "level": "Intermédiaire",
+      "minutes": 20,
+      "controlPlanes": 1,
+      "workers": 1,
+      "target": "cka-cp-1",
+      "mission": "Le PVC data de cka-pvc doit fournir au moins 1 Gi de stockage en ReadWriteOnce. Rends-le Bound, en conservant son nom et la capacité demandée. Les données d’exercice sont jetables."
+    },
+    "crashloop": {
+      "title": "Stabiliser un workload",
+      "domain": "troubleshoot",
+      "level": "Intermédiaire",
+      "minutes": 20,
+      "controlPlanes": 1,
+      "workers": 1,
+      "target": "cka-cp-1",
+      "mission": "Le Deployment worker dans cka-crash redémarre continuellement. Rétablis un Pod stable et Ready en conservant son image et son mécanisme de démarrage."
+    },
+    "kubelet": {
+      "title": "Rétablir la capacité d’un cluster",
+      "domain": "troubleshoot",
+      "level": "Intermédiaire",
+      "minutes": 25,
+      "controlPlanes": 1,
+      "workers": 2,
+      "target": "cka-cp-1",
+      "mission": "Un worker du cluster n’est plus Ready. Identifie le nœud concerné et rétablis le fonctionnement du cluster, sans remplacer les machines ni supprimer les nœuds."
+    },
+    "controlplane": {
+      "title": "Rétablir la planification",
+      "domain": "troubleshoot",
+      "level": "Avancé",
+      "minutes": 30,
+      "controlPlanes": 1,
+      "workers": 2,
+      "target": "cka-cp-1",
+      "mission": "Les nouvelles applications ne sont plus planifiées alors que l’API reste accessible. Rétablis la planification et démontre qu’un nouveau Pod peut démarrer sur un worker, sans remplacer le cluster."
+    },
+    "drain": {
+      "title": "Préparer la maintenance d’un nœud",
+      "domain": "cluster",
+      "level": "Intermédiaire",
+      "minutes": 25,
+      "controlPlanes": 1,
+      "workers": 2,
+      "target": "cka-cp-1",
+      "mission": "Prépare cka-worker-1 pour une intervention de maintenance. Les Pods de l’application web dans cka-drain doivent être déplacés vers l’autre worker ; ses trois réplicas et son accès HTTP doivent rester disponibles. Conserve le budget de disponibilité et laisse le nœud en état de maintenance."
+    },
+    "policy": {
+      "title": "Contrôler les accès réseau",
+      "domain": "network",
+      "level": "Avancé",
+      "minutes": 30,
+      "controlPlanes": 1,
+      "workers": 2,
+      "target": "cka-cp-1",
+      "mission": "Dans cka-policy, seuls les Pods du même namespace portant access=allowed doivent pouvoir joindre les Pods app=web sur TCP/80. Vérifie que good est autorisé et bad refusé, sans modifier leurs labels ni supprimer les applications."
+    },
+    "ha-controlplane": {
+      "title": "Rétablir les points d’accès Kubernetes",
+      "domain": "cluster",
+      "level": "Avancé",
+      "minutes": 30,
+      "controlPlanes": 3,
+      "workers": 2,
+      "target": "cka-cp-1",
+      "mission": "Un des trois control planes ne fournit plus son point d’accès API. Rétablis les trois points d’accès et conserve la disponibilité de l’API commune. Ne remplace aucun nœud et conserve le quorum etcd."
+    }
+  }
+}

@@ -1,0 +1,3 @@
+---
+# renovate: datasource=github-releases depName=jdx/mise
+dev_mise_version: "2026.11.12"
