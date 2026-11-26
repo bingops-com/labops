@@ -133,14 +133,6 @@ url = "https://github.com/terraform-linters/tflint/releases/download/v0.52.0/tfl
 url_api = "https://api.github.com/repos/terraform-linters/tflint/releases/assets/178051066"
 provenance = "github-attestations"
 
-[[tools.trivy]]
-version = "0.66.0"
-backend = "aqua:aquasecurity/trivy"
-specifiers = ["0.66.0"]
-
-[tools.trivy."platforms.linux-x64"]
-provenance = "cosign"
-
 [[tools.yq]]
 version = "4.45.1"
 backend = "aqua:mikefarah/yq"

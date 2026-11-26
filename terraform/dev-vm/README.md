@@ -78,6 +78,18 @@ outpost provider list; preserve both when preparing the cutover patch.
 | TLS DNS-01 token | Cloudflare `Zone:DNS:Edit` restricted to `lab.bingo`; recover/rotate in Bitwarden/Cloudflare. Install `/etc/dev-vm/cloudflare.ini` mode 0600. It issues wildcard TLS without opening public HTTP or copying a Kubernetes TLS private key. |
 | Provider logins | Personal GitHub/Codex/Claude sessions and cluster access migrate encrypted over SSH. Expired/revoked sessions require signing into their original provider. |
 
+The non-sensitive identifiers in `environments/dev-vm/recovery.json` locate the
+native VM password and DNS token in the existing Bitwarden project. Recover
+inputs with `hacks/prepare-dev-recovery-inputs.py --output PRIVATE_DIRECTORY`
+and the operator's external `BWS_ACCESS_TOKEN`. The hashed Python environment
+includes the official Bitwarden SDK. It rereads existing keys and refuses to
+replace differing local credentials. For initial enrollment only, the explicit
+`--use-cluster-token --cloudflare-from-cluster` flags recover the existing
+machine token and DNS credential from trusted `labprod` Secrets. They are not
+new cluster prerequisites after the keys are safely persisted in Bitwarden.
+The helper never prints values or places them in process arguments. Keep the
+password secret while any retained Restic repository key depends on it.
+
 `backup.env.example`, `cloudflare.ini.example` and `inventory.ini.example`
 contain fake placeholders. Keep real files in ignored `.runtime/dev-vm`, with
 mode 0600. Never print environment files, passwords, Terraform state, account
@@ -153,6 +165,51 @@ to the tailnet IP explicitly, so initial acceptance does not require switching
 production DNS. The additive Authentik bootstrap must already be reconciled. Repeat the same release after partial failure to finish
 acceptance; use `devctl update` for later releases.
 
+## Parallel tool installation and live home copy
+
+The initial CLI environment can be installed before portal cutover, without TLS
+or backup credentials. Build a verified release as above, then run the same
+Ansible play with `dev_tools_only: true`, `dev_release_id` and
+`dev_release_archive`. This installs signed native packages, locked Mise/Python
+clients, Codex/Claude/Screen system defaults and the SSH tool environment.
+`sudo devctl install-tools ID` only accepts an uninitialized VM or a retry of
+the same initial tooling release. It cannot replace an active release or adopt
+a different tool release without the backup-protected update path.
+`/opt/dev-vm/tooling` records this stage; `/opt/dev-vm/current` is reserved for
+full native service acceptance. Tooling success is not backup acceptance.
+
+Trivy 0.66.0's upstream release assets are no longer available. Its reviewed
+OCI image is pinned by digest in `environments/dev-vm/oci-tools.json`, matching
+the original workspace image. Installation verifies the multiarchitecture
+manifest, Linux/amd64 manifest and every downloaded layer digest, then reads
+only the declared binary. Renovate tracks its image tag/digest separately from
+the Mise tools. Rebuilds require the public registry mirror, not a private copy
+of an old executable. Keep the existing exact-version contract for all tools.
+
+While Coder is running, a provisional home copy is supported:
+
+```sh
+python3 hacks/migrate-dev-home.py --host ACTUAL_TAILNET_IP \
+  --identity ~/.ssh/homeops-proxmox --live-copy
+```
+
+A trusted jump host and separate VM host trust can be supplied with
+`--proxy-jump bingo@192.168.1.100 --known-hosts /absolute/verified/known_hosts`.
+This copies projects, Git metadata, uncommitted files, project dependencies,
+personal provider logins, profiles, skills and client configuration. Directory
+group/other write bits are removed on the destination to satisfy OpenSSH
+StrictModes (the retained source home is 0777); source file modes remain intact. It skips
+old workspace SSH-server identities/configuration, transient locks and
+Terraform provider/module download caches. Codex SQLite databases use online
+SQLite snapshots, including committed WAL changes. Source files and running
+processes are never deleted or stopped. File churn is recorded in a private
+`live-copy.json`; it never sets `data_verified` or transfers Terraform ownership.
+Coder remains the only Terraform runner until a final quiesced synchronization.
+Do not make concurrent project edits on both copies. After copying profiles,
+retry `sudo devctl install-tools ID` to restore the native shell hook and verify
+all clients through a fresh SSH session. Final synchronization requires both
+copies' writers to be stopped and any VM edits reconciled first.
+
 ## Data migration and final Coder retirement
 
 Freeze project writes and all Terraform operations. Copy the entire operator
@@ -201,7 +258,7 @@ acceptance. No infrastructure operation should depend on this chat history.
 ## Updates, rollback and restoration
 
 Renovate proposes one PR per declared tool, with automatic merge disabled.
-Mise handles 16 version-pinned tools and the npm sidecar locks; custom Debian
+Mise handles 15 version-pinned tools plus the separately pinned OCI Trivy artifact and the npm sidecar locks; custom Debian
 extraction covers every native package, including SSH, Tailscale, DNS and
 backup clients. Pip-compile refreshes hashed Python requirements and Ansible
 Galaxy tracks collections. The bootstrap Mise release is also versioned.

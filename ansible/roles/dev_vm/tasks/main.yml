@@ -8,10 +8,16 @@
       - dev_release_archive is defined
       - dev_release_id is defined
       - dev_release_id is match('^[a-f0-9]{64}$')
+    fail_msg: Use the dev VM runbook; recovery inputs must exist outside Git before installation.
+
+- name: Require external recovery inputs before enabling native services
+  ansible.builtin.assert:
+    that:
       - dev_backup_env_file is defined
       - dev_restic_password_file is defined
       - dev_cloudflare_credentials_file is defined
-    fail_msg: Use the dev VM runbook; recovery inputs must exist outside Git before installation.
+    fail_msg: Recover backup and TLS inputs before activating native services.
+  when: not dev_tools_only | default(false) | bool
 
 - name: Inspect an existing active release
   ansible.builtin.stat:
@@ -23,6 +29,14 @@
     that:
       - not dev_existing_release.stat.exists or dev_existing_release.stat.lnk_source | basename == dev_release_id
     fail_msg: Use sudo devctl update for a new release; do not reprovision an active VM.
+
+- name: Keep the native home compatible with OpenSSH strict modes
+  ansible.builtin.file:
+    path: /home/dev
+    state: directory
+    owner: dev
+    group: dev
+    mode: '0755'
 
 - name: Create the operator SSH directory
   ansible.builtin.file:
@@ -94,6 +108,7 @@
     - {name: dev-health, source: health.sh}
 
 - name: Install private recovery credentials
+  when: not dev_tools_only | default(false) | bool
   ansible.builtin.copy:
     src: "{{ item.source }}"
     dest: "{{ item.destination }}"
@@ -123,6 +138,7 @@
     creates: '/opt/dev-vm/releases/{{ dev_release_id }}/manifest.json'
 
 - name: Install TLS and HTTP configuration
+  when: not dev_tools_only | default(false) | bool
   ansible.builtin.template:
     src: nginx.conf.j2
     dest: /etc/dev-vm/nginx.conf
@@ -131,6 +147,7 @@
     mode: '0644'
 
 - name: Configure the private development DNS zone
+  when: not dev_tools_only | default(false) | bool
   ansible.builtin.template:
     src: dnsmasq.conf.j2
     dest: /etc/dev-vm/dnsmasq.conf
@@ -139,6 +156,7 @@
     mode: '0644'
 
 - name: Install supervised services and timers
+  when: not dev_tools_only | default(false) | bool
   ansible.builtin.template:
     src: '{{ item }}.j2'
     dest: '/etc/systemd/system/{{ item }}'
@@ -186,5 +204,5 @@
 
 - name: Install the initial release or update an existing installation safely
   ansible.builtin.command:
-    argv: [/usr/local/sbin/devctl, install, '{{ dev_release_id }}']
+    argv: [/usr/local/sbin/devctl, "{{ 'install-tools' if dev_tools_only | default(false) | bool else 'install' }}", '{{ dev_release_id }}']
   changed_when: true

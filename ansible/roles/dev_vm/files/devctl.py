@@ -10,6 +10,9 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
+# Release trees are immutable and their complete file sets are checksummed.
+sys.dont_write_bytecode = True
+
 BASE = Path('/opt/dev-vm')
 STATE = Path('/var/lib/dev-vm')
 
@@ -44,6 +47,14 @@ def main():
     from dev_install import verify_release
     verify_release(root)
     current=(BASE / 'current').resolve() if (BASE / 'current').exists() else None
+    if action == 'install-tools':
+        tooling=BASE / 'tooling'
+        if current or (tooling.exists() and tooling.resolve() != root):
+            raise SystemExit('Tool bootstrap only accepts the same initial release; later updates require backups and devctl update')
+        installer(root).install_tools(root)
+        command('/usr/bin/env','MISE_DATA_DIR=/opt/dev-vm/mise','/usr/local/bin/mise','exec','--','/bin/bash',root / 'environment/check-tools.sh')
+        (STATE / 'tooling.json').write_text(json.dumps({'release':root.name,'tools_verified':True,'backup_ready':False,'completed_at':datetime.now(timezone.utc).isoformat()},indent=2)+'\n')
+        return
     if action == 'install':
         if current:
             if current != root:

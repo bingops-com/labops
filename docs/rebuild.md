@@ -14,7 +14,9 @@ The replacement for Coder is prepared in
 `ansible/roles/dev_vm` and tool versions in `environments/dev-vm`. VM 160 is
 created and SSH over Tailscale has been verified; its parallel private SSH
 name is `code.lab.bingo`, declared in `apps/platform/private-dns/labprod`.
-Native tools, portal and backup services still need installation and acceptance;
+The runbook supports a parallel tools-only bootstrap and provisional live home
+copy; these do not certify backups, cut over the portal or transfer Terraform
+ownership. Native service and final migration acceptance remain separate;
 the Coder recovery procedure below still owns the active
 workspace until cutover acceptance. Proxmox VM 160 and its 80 GiB disk belong
 to this separate Terraform state; CAPI and `terraform/proxmox` never own them.

@@ -12,7 +12,6 @@ tflint = "0.52.0"
 task = "3.52.0"
 kubeseal = "0.29.0"
 "github:michaelsauter/crane" = "3.6.0"
-trivy = "0.66.0"
 "npm:@openai/codex" = "0.165.0"
 "npm:@anthropic-ai/claude-code" = "2.1.287"
 

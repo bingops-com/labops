@@ -88,6 +88,16 @@
       "matchStrings": [
         "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\s+dev_mise_version: \"(?<currentValue>[^\"]+)\""
       ]
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^environments/dev-vm/oci-tools\\.json$/"
+      ],
+      "matchStrings": [
+        "\"image\": \"(?<depName>mirror\\.gcr\\.io/[^\"\\s:]+):(?<currentValue>[^\"@]+)@(?<currentDigest>sha256:[a-f0-9]{64})\""
+      ],
+      "datasourceTemplate": "docker"
     }
   ],
   "packageRules": [

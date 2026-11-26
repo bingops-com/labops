@@ -106,6 +106,36 @@ class RecoveryTest(unittest.TestCase):
             implementation.install.assert_not_called();implementation.activate.assert_not_called()
             self.assertEqual(json.loads((state / 'update.json').read_text())['status'],'aborted')
 
+    def test_tool_bootstrap_cannot_replace_an_initialized_tool_release(self):
+        controller=load('guarded_tool_bootstrap',FILES / 'devctl.py')
+        with tempfile.TemporaryDirectory() as directory:
+            base=Path(directory);previous=base / 'releases' / ('a'*64);target=base / 'releases' / ('b'*64)
+            previous.mkdir(parents=True);target.mkdir()
+            (base / 'tooling').symlink_to(previous)
+            controller.BASE=base;controller.STATE=base / 'state'
+            trusted=mock.Mock();implementation=mock.Mock()
+            import sys
+            with mock.patch.dict(sys.modules,{'dev_install':trusted}), mock.patch.object(sys,'argv',['devctl','install-tools',target.name]), mock.patch.object(controller.os,'geteuid',return_value=0), mock.patch.object(controller,'installer',return_value=implementation):
+                with self.assertRaisesRegex(SystemExit,'later updates require backups'):
+                    controller.main()
+            implementation.install_tools.assert_not_called()
+            self.assertEqual((base / 'tooling').resolve(),previous)
+
+    def test_live_copy_never_certifies_migration_or_transfers_terraform_ownership(self):
+        migration=load('live_migration',ROOT / 'hacks/migrate-dev-home.py')
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);home=root / 'source';home.mkdir();project=home / 'project.txt';project.write_text('still running')
+            migration.ROOT=root
+            def run(command,**kwargs):
+                return subprocess.CompletedProcess(command,0,'changed-during-copy' if '--dry-run' in command else '', '')
+            import sys
+            args=['migrate-dev-home','--host','100.64.0.160','--identity',str(root/'key'),'--source',str(home),'--live-copy']
+            with mock.patch.object(sys,'argv',args),mock.patch.object(migration.subprocess,'run',side_effect=run):migration.main()
+            receipt=json.loads((root / '.runtime/dev-vm/live-copy.json').read_text())
+            self.assertFalse(receipt['data_verified']);self.assertTrue(receipt['provisional']);self.assertTrue(receipt['source_changes_observed'])
+            self.assertEqual(receipt['terraform_primary'],'coder');self.assertTrue(project.is_file())
+            self.assertFalse((root / '.runtime/dev-vm/migration.json').exists())
+
     def test_release_content_changes_are_detected(self):
         builder=load('builder',ROOT / 'hacks/build-dev-release.py')
         installer=load('installer',FILES / 'dev_install.py')
@@ -116,6 +146,9 @@ class RecoveryTest(unittest.TestCase):
             identifier,archive=builder.build(app,root / 'artifacts')
             with tarfile.open(archive) as tar:tar.extractall(root / 'releases',filter='data')
             release=root / 'releases' / identifier
+            self.assertEqual(installer.verify_release(release),identifier)
+            controller=load('release_controller',FILES / 'devctl.py')
+            controller.installer(release)
             self.assertEqual(installer.verify_release(release),identifier)
             (release / 'app/server.mjs').write_text('tampered')
             with self.assertRaises(ValueError):installer.verify_release(release)
