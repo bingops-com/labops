@@ -33,6 +33,10 @@ Retain the recovered Coder home, Git bundles, previous VM archives and old R2
 file/database archives. Shared buckets, provider credentials and operators are
 outside Coder retirement. GaaS is already suspended with its ephemeral gateway
 VM/IP/DNS released; development recovery must not recreate that gateway.
+After restoring project files, reconcile their working copies with the current
+default branches using the [VM project-reconciliation procedure](../terraform/dev-vm/README.md#project-reconciliation-after-migration).
+The named archive branches preserve old drafts; they must not be deployed as
+the active Coder, CKA or GaaS configuration.
 
 ## Inputs outside Git
 

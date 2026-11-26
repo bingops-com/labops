@@ -7,6 +7,8 @@
 # Terraform
 terraform/**/.terraform/
 terraform/**/terraform.tfstate*
+# Private historical controller state, saved plans and logs remain local.
+terraform/**/.runtime/
 terraform/**/credentials.auto.tfvars
 terraform/**/credentials*.tfvars
 terraform/**/*.tfvars

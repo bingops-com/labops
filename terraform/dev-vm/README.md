@@ -65,6 +65,42 @@ Git records recovery procedures and non-sensitive identifiers, never credentials
 Claude's old source session was already logged out and requires provider login
 if used; migrated files do not revive expired sessions.
 
+## Project reconciliation after migration
+
+The 2026-11-26 reconciliation compares the 17 distinct project repositories
+and their 41 VM working copies with the current default branches. The current
+Dev native code, completed Coder retirement, production CKA controller and
+suspended ephemeral GaaS configuration take precedence over older drafts.
+The recovered CKA design section is published separately through
+[CKA PR #38](https://github.com/bingops-com/cka/pull/38).
+
+Unpublished VM and Coder variants are retained on these remote archive branches:
+
+| Repository | Branches under `archive/reconcile-20261126/` |
+| --- | --- |
+| [LabOps](https://github.com/bingops-com/labops/branches) | `vm-labops`, `source-labops`, `vm-labops-dev-vm`, `vm-labops-cka-production`, `vm-labops-gaas` |
+| [Dev](https://github.com/bingops-com/dev/branches) | `vm-dev`, `source-dev` |
+| [PZ server](https://github.com/bingops-com/pz-server/branches) | `vm-pz-server` |
+
+These branches preserve historical code and unfinished experiments, including
+the old standalone CKA Terraform labs and Coder journal-backup draft. They are
+not production recovery targets. Never merge them wholesale or deploy their
+old Coder, Code-hostname or gateway configuration. Fetch an archive branch into
+a separate worktree to recover selected source changes, then review them against
+the active default branch. The original recovered home remains unchanged.
+
+The pre-reconciliation encrypted data backup is
+`f84fd8f06fa08d6f9736ca6b01d8dc4b6e726a3740a9823095138902c1948823`.
+Private before/after inventories, binary patches and Git bundles are retained
+under `/home/dev/projects/.reconcile-20261126`. Local stashes preserve each dirty
+working copy before switching it to current source; original branch refs remain.
+Default branches are used for the primary project directories, while auxiliary
+working copies use local `synced/20261126/` branches. Ignored credentials,
+Terraform state and runtime data remain outside Git and are checksum-verified
+after checkout. No Terraform command or infrastructure reactivation is needed
+for this source reconciliation. Use the existing external-input recovery table
+for credentials; archived states must not replace the canonical reconciled state.
+
 ## Ownership and target
 
 Terraform in this directory owns only Proxmox VM **160**, pool `Development`,
