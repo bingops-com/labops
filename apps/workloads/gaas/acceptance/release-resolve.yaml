@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gaas-release-resolve-20261122
+  namespace: pz-server
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 900
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: resolve
+        image: ghcr.io/bingops-com/pz-server@sha256:e00438367209e4812472a90c2e18616567e83fd8cc5f0ad62d4ff5596a8e1e6d
+        command:
+        - python3
+        - -c
+        args:
+        - |
+          import json, subprocess
+          values=json.loads(subprocess.check_output(['restic','snapshots','--json','--tag','gaas-release'],text=True))
+          if len(values)!=1: raise SystemExit('A unique binary snapshot is required')
+          print('GAAS_RELEASE_SNAPSHOT_JSON='+json.dumps({'binarySnapshot':values[0]['id']}))
+        env:
+        - name: RESTIC_REPOSITORY
+          value: s3:https://4d31056d6b4bf143606ff3ca757e0b8c.r2.cloudflarestorage.com/bingops-pz-labprod/gaas-releases-20261122
+        - name: RESTIC_CACHE_DIR
+          value: /tmp/restic-cache
+        - name: AWS_DEFAULT_REGION
+          value: auto
+        envFrom:
+        - secretRef:
+            name: pz-r2-credentials
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        emptyDir:
+          sizeLimit: 2Gi
